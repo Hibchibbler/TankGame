@@ -6,10 +6,10 @@ Here we can see the intended structures appearing.
 
 Screenshots of Prototype 
 ------------------------
-![logo](http://imagebin.org/234676)
-![logo](http://imagebin.org/234677)
-![logo](http://imagebin.org/234680)
-![logo](http://imagebin.org/234681)
+![logo]()
+![logo]()
+![logo]()
+![logo]()
 
 
 
