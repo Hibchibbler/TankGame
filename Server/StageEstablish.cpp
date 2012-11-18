@@ -76,7 +76,7 @@ sf::Uint32 StageEstablish::doRemoteEvent(TeamManager & teamMan,
             std::cout << "Got Action" << std::endl;
             //These are from players when they change the state of the game via an input mechanism
             //After crunching this event, send a Result packet to each player.
-
+           
 
             break;
         }
@@ -121,7 +121,7 @@ sf::Uint32 StageEstablish::doLoop(Comm & comm, TeamManager & teamMan)
     return getSummary(0);
 }
 
-sf::Uint32 StageEstablish::doLocalInput(TeamManager & teamMan)
+sf::Uint32 StageEstablish::doLocalInput(sf::RenderWindow & window, TeamManager & teamMan)
 {
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::T)){
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::X)){

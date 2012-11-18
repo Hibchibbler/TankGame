@@ -19,7 +19,17 @@ namespace tg
         State
     };};
 
-
+    struct PlayerAction{
+        enum PA{
+            None,
+            ThrottleUp,
+            ThrottleDown,
+            BodyRight,
+            BodyLeft,
+            TurretMove,
+            Attack
+        };
+    };
 
 
     class MSG_DATA
@@ -82,7 +92,7 @@ namespace tg
         static int sendReady(Comm & comm, TeamManager & teamMan, int cid);
 
 
-        static int sendAction(Comm & comm, TeamManager & teamMan, int cid, int team, int slot, sf::Uint8 attacking);
+        static int sendAction(Comm & comm, TeamManager & teamMan, int cid, int team, int slot, PlayerAction::PA playerAction);
 
         static int sendWhoIs(Comm & comm, TeamManager & teamMan, int cid);
         static int sendId(Comm & comm, TeamManager & teamMan, int cid, std::string name, int team);

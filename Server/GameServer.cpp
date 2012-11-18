@@ -82,7 +82,7 @@ sf::Uint32 GameServer::doLocalEvents()
         curStage->doWindowEvent(window, wevent);
     }
 
-    curStage->doLocalInput(teamMan);
+    curStage->doLocalInput(window, teamMan);
  
     return 0;
 }

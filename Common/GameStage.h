@@ -29,7 +29,7 @@ namespace tg
                                           sf::Event & event);
 
         virtual sf::Uint32 doInit(int w, int h);
-        virtual sf::Uint32 doLocalInput(TeamManager & teamMan);
+        virtual sf::Uint32 doLocalInput(sf::RenderWindow &window, TeamManager & teamMan);
         virtual sf::Uint32 doLoop(Comm & comm, TeamManager & teamMan);
         virtual sf::Uint32 doCleanup();
         virtual sf::Uint32 doDraw(sf::RenderWindow &window);

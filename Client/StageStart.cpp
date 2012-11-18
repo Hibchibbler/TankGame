@@ -28,7 +28,7 @@ sf::Uint32 StageStart::doLoop(Comm & comm, TeamManager & teamMan)
     setSummary(1,0);
     return getSummary(0);
 }
-sf::Uint32 StageStart::doLocalInput(TeamManager & teamMan)
+sf::Uint32 StageStart::doLocalInput(sf::RenderWindow & window, TeamManager & teamMan)
 {
     return 0;
 }

@@ -16,7 +16,7 @@ namespace tg
                                  sf::Uint32 msgId);
 
         sf::Uint32 doLoop(Comm & comm, TeamManager & teamMan);
-        sf::Uint32 doLocalInput(TeamManager & teamMan);
+        sf::Uint32 doLocalInput(sf::RenderWindow & window, TeamManager & teamMan);
     private:
     };
 

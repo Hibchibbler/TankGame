@@ -12,10 +12,10 @@ StageRun::StageRun()
 }
 
 sf::Uint32 StageRun::doRemoteEvent(TeamManager & teamMan, 
-                            ArenaManager & arenaMan,
-                            CommEvent & cevent,
-                            sf::Uint32 connId,
-                            sf::Uint32 msgId)
+                                   ArenaManager & arenaMan,
+                                   CommEvent & cevent,
+                                   sf::Uint32 connId,
+                                   sf::Uint32 msgId)
 {
     Player &player = teamMan.getPlayer(connId);
 
@@ -37,6 +37,28 @@ sf::Uint32 StageRun::doRemoteEvent(TeamManager & teamMan,
             //After crunching this event, send a Result packet to each player.
 
             //std::cout << << std::endl;
+            sf::Uint32 playerAction;
+            
+            float turretAngle;
+            cevent.packet >> playerAction;
+            cevent.packet >> turretAngle;
+
+            switch (playerAction)
+            {
+            case PlayerAction::Attack:
+                break;
+            case PlayerAction::BodyRight:
+                break;
+            case PlayerAction::BodyLeft:
+                break;
+            case PlayerAction::ThrottleUp:
+               break;
+            case PlayerAction::ThrottleDown:
+                break;
+            case PlayerAction::TurretMove:
+                break;
+            }
+            //teamMan.getPlayer(connId).
 
             break;
         }
@@ -67,38 +89,14 @@ sf::Uint32 StageRun::doLoop(Comm & comm, TeamManager & teamMan)
                     Messages::sendStart(comm, teamMan, pi->connectionId);
                     pi->state = PlayerState::Running;
                     break;
-                case PlayerState::Running:
-                    break;
             }
         }
     }
     return getSummary(0);
 }
-sf::Uint32 StageRun::doLocalInput(TeamManager & teamMan)
+sf::Uint32 StageRun::doLocalInput(sf::RenderWindow & window, TeamManager & teamMan)
 {
-    //if (sf::Keyboard::isKeyPressed(sf::Keyboard::T)){
-    //    if (sf::Keyboard::isKeyPressed(sf::Keyboard::X)){
-    //        std::cout << "!";
-    //        bool someNotReady = false;
-    //        for (int y = 1; y < 3 ; y++)
-    //        {
-    //            tg::Team::PlayerIterator & pi = teamMan.getTeam(y).begin();
-    //            for (;pi != teamMan.getTeam(y).end();pi++){
-    //                if  (pi->hasHost == true){
-    //                    if (pi->state != PlayerState::Ready){
-    //                        std::cout << "nostart";
-    //                        someNotReady = true;
-    //                    }
-    //                }
-    //            }
-    //        }
-    //        if (!someNotReady){
-    //            setSummary(0x1);
-    //            std::cout << "@";
-    //        }
-    //        //serverState = Running;
-    //    }
-    //}
+
     return 0;
 }
 

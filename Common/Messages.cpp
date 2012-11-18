@@ -20,21 +20,16 @@ int Messages::sendReady(Comm & comm, TeamManager & teamMan, int cid)
     return 0;
 }
 
-int Messages::sendAction(Comm & comm, TeamManager & teamMan, int cid, int team, int slot, sf::Uint8 attacking)
+int Messages::sendAction(Comm & comm, TeamManager & teamMan, int cid, int team, int slot, PlayerAction::PA playerAction)
 {
     std::cout << "Sent Action" << std::endl;
     tg::CommEvent event;
     event.connectionId = cid;
     event.packet << CommEventType::Data;
     event.packet << MsgId::Action;
-    event.packet << attacking;
-    event.packet << teamMan.getPlayer(cid).tank.bodyAngle;
-    event.packet << teamMan.getPlayer(cid).tank.turretAngle;
-    event.packet << teamMan.getPlayer(cid).tank.throttle;
-
-
-    //Something that indicate what, where, how, etc..
-    //point of origin, and velocity.
+    event.packet << playerAction;
+    event.packet << teamMan.getPlayerBySlot(team,slot).tank.turretAngle;
+    
     comm.Send(event);
     return 0;
 }
@@ -117,7 +112,7 @@ int Messages::sendState(Comm & comm, TeamManager & teamMan)
     for (int t = 1;t < 3;t++){
         event.packet << (sf::Uint32)teamMan.teams[t].players.size();
         for (auto y= teamMan.teams[t].players.begin();y != teamMan.teams[t].players.end();y++){
-            event.packet << y->playerName;//Debug only
+            event.packet << y->slotNum;
             event.packet << y->connectionId;
             event.packet << y->tank.bodyAngle;
             event.packet << y->tank.turretAngle;

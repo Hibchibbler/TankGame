@@ -35,7 +35,6 @@ sf::Uint32 StageLobby::doRemoteEvent(TeamManager & teamMan,
             cevent.packet >> mySlot;
             
             //////////////////////
-            setSummary(1,0);
             setSummary(mySlot,2);
             ///////////////////////
 
@@ -52,6 +51,7 @@ sf::Uint32 StageLobby::doRemoteEvent(TeamManager & teamMan,
             break;
         case MsgId::Start:
             std::cout << "Got Start" << std::endl;
+            setSummary(1,0);
             break;
     }
     return 0;
@@ -98,7 +98,11 @@ sf::Uint32 StageLobby::doLoop(Comm & comm, TeamManager & teamMan)
                 std::cin >> myName;
                 std::cout << "enter team:" << std::endl;
                 std::cin >> myTeam;
+
+                ///////////////////////
                 setSummary(myTeam,1);
+                ///////////////////////
+                
                 tg::Messages::sendId(comm, teamMan, pi->connectionId, myName, myTeam);
                 pi->state = PlayerState::WaitingForIdAck;
                 break;
@@ -119,7 +123,7 @@ sf::Uint32 StageLobby::doLoop(Comm & comm, TeamManager & teamMan)
     
     return getSummary(0);
 }
-sf::Uint32 StageLobby::doLocalInput(TeamManager & teamMan)
+sf::Uint32 StageLobby::doLocalInput(sf::RenderWindow & window, TeamManager & teamMan)
 {
     return 0;
 }

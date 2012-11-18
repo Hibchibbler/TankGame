@@ -20,8 +20,7 @@ namespace tg
             SendingIdAck,
             SendingIdNack,
             WaitingForIdAck,
-            SendingActionControl,
-            SendingActionAttack,
+            SendingAction,
             WaitingForAction,
             SendingState,
             WaitingForState,
@@ -33,6 +32,8 @@ namespace tg
             Paused/***********/
         };
     };
+
+
     class Player
     {
     public:
@@ -56,6 +57,7 @@ namespace tg
         sf::Uint32 team;
         sf::Uint32 health;
         sf::Uint32 state;
+        
     };
 };
 

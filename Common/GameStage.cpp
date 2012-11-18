@@ -38,7 +38,7 @@ sf::Uint32 GameStage::doInit(int w, int h)
     return 0;
 }
 
-sf::Uint32 GameStage::doLocalInput(TeamManager & teamMan)
+sf::Uint32 GameStage::doLocalInput(sf::RenderWindow &window, TeamManager & teamMan)
 {
     //LogFile::get()->log(0,0,"GameStage::doLocalInput");
     return 0;

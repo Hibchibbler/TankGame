@@ -83,7 +83,7 @@ sf::Uint32 GameClient::doLocalEvents()
         curStage->doWindowEvent(window, wevent);
     }
 
-    curStage->doLocalInput(teamMan);
+    curStage->doLocalInput(window, teamMan);
  
     return 0;
 }
@@ -97,7 +97,7 @@ sf::Uint32 GameClient::doInit()
     arenaMan.doInit("Assets\\map1.txt");
     teamMan.doInit();
     //assetMan.doInit(...);
-    
+    window.create(sf::VideoMode(600,600,32),"Client");
     client.StartClient(8280,"127.0.0.1");//.StartServer(8280);
     
 

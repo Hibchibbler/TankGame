@@ -50,6 +50,7 @@ namespace tg
 
                     teams[team].players[i] = p;
                     //teams[team].players[i].state = PlayerState::New;
+                    //teams[team].players[i].connectionId = 
                     teams[team].players[i].playerName = name;
                     teams[team].players[i].team = team;
                     teams[team].players[i].slotNum = i;
