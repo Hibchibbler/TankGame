@@ -1,0 +1,420 @@
+    tg::Team::PlayerIterator pi = teamMan.getPlayerBegin(0);
+    for (;pi != teamMan.getPlayerEnd(0);pi++){
+        switch (pi->state){
+        case tg::Player::New:
+            break;
+        case tg::Player::SendingWhoIs:
+            break;
+        case tg::Player::WaitingForWhoIsAck:
+            break;
+        case tg::Player::SendingId:
+            break;
+        case tg::Player::WaitingForIdAck:
+            break;
+        case tg::Player::SendingAction:
+            break;
+        case tg::Player::WaitingForState:
+            break;
+        case tg::Player::Running:
+            break;
+        }
+    }
+-----------------------------------------------------------------------------------------
+me:  So, architecture;
+there is our beloved main()
+ Sent at 6:34 PM on Wednesday
+ me:  it basically, creates a Window, and instantiates a Game object
+and it pipes all currently pending event notifications from the window, and the network, into the Game object.
+ Sent at 6:36 PM on Wednesday
+ me:  Now, the thing about a game, or, any program really, is that there are distinct phases in the execution paths, during the life cycle of it..i guess that's over complicating it with words, but the concept is birthed from TankGame's need for a 'Start menu' phase, a 'Lobby' phase, and the 'Actual game' phase.
+So, i created the notion of a 'Stage'
+and it is illustrated in the code(that i have not pushed) GameStage.h
+ Sent at 6:40 PM on Wednesday
+ me:  So, the arch-overlord of everything is the TankGame class. it can cycle through the different stages of a game without caring what the stage does. This is done by implementing a stage in a class that inherits from the GameStage class.
+TankGame has 3 stages
+(i was calling them phase for a sec)
+ Sent at 6:43 PM on Wednesday
+ me:  they are implemented by the classes 'StartPopup', 'LobbyPopup', 'Game'
+that's all i got for now 
+ Sent at 6:44 PM on Wednesday
+ me:  For networking, I have defined the following Messages:
+WhoIs,
+       WhoIsAck,
+       Id,
+       IdAck,
+       IdNack,
+       Ready,
+       Start,
+       Action,
+       State
+ Sent at 7:24 PM on Wednesday
+ me:  Ok, so main()
+or....ServerMain() and ClientMain()
+both are of the same basic structure as the main() you have already studied.
+ Sent at 8:00 PM on Wednesday
+ me:  The differences between ServerMain and ClientMain are that ServerMain spends most of it's time processing incoming network messages. ClientMain spends most of its time in processing local input, receiving network  data necessary to draw everything, and watching timers
+both have the doLoop()
+ Sent at 8:03 PM on Wednesday
+ me:  doLoop is takes the current state of the game, multiplies it by the current input, and then spits something out that looks like the next state.
+it is necessary, because network and local input only execute if there are events to be processed.
+where as doLoop, executes every frame
+so, doLoop is a good place to watch timers expire so that you can animate, and stuff.
+or, in the case of the Server, doLoop will take everything it has recieved from all the players, compute the next state of the game, and transmit that state to each player.
+going back to the networking messages i defined..
+normal game play will see Action messages spewing out from the players towards the server.
+The Action message contains data that indicates either a control action, or an attack action.
+So, the Action message is how the client tells the server that it did something.
+ Sent at 8:09 PM on Wednesday
+ me:  the doLoop will actually be using these incoming Action messages to construct a State message. So the client doesn't do any computation, it is completely dumb. it just draws pretty stufff
+i've probably been confusing on when i'm talking about the Server, and when i am talking about the Client.
+but, i should be putting this in a document.
+-----------------------------------------------------------------------------------------
+////////////////WHERE I    AM    ///////////////////////////
+
+#include "Common\Messages.h"
+#include "Common\Comm.h"
+#include "Common\TeamManager.h"
+#include "Common\ArenaManager.h"
+
+#include <iostream>
+
+enum ServerState{
+    Establishing,
+    Ready,
+    Running
+};
+
+sf::Clock stateTimer;
+ServerState serverState = Establishing;
+
+
+
+
+
+int doLocalInput(sg::Comm & comm, tg::TeamManager & teamMan)
+{
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::T)){
+        serverState = Running;
+    }
+    return 0;
+}
+int doLoop(sg::Comm & comm, tg::TeamManager & teamMan);
+int handleData(sg::Comm & comm, tg::TeamManager & teamMan, tg::ArenaManager & arenaMan, tg::Player & player, sg::CommEvent & event, int cid, int mid);
+
+int main()
+{
+    bool done = false;
+    sg::Comm server;
+    tg::TeamManager teamMan;
+    tg::ArenaManager arenaMan;
+
+    arenaMan.doInit("Assets\\map1.txt");
+    server.StartServer(8280);
+    sf::sleep(sf::milliseconds(500));
+    while (!done){
+        sg::CommEvent event;
+        while (server.Receive(event)){
+            sf::Uint32 t;
+            event.packet >> t;
+            switch (t){
+                case sg::CommEvent::Acceptance:{
+                    sf::Uint32 cid;
+                    event.packet >> cid;
+                    tg::Player p;
+                    p.connectionId = cid;
+
+                    teamMan.addPlayer(p,"New Guy", 0);
+
+                    break;
+                }case sg::CommEvent::Disconnect:{
+                    sf::Uint32 cid;
+                    event.packet >> cid;
+                    //remove player from either team0/1/2
+                    teamMan.removePlayer(cid);
+                    std::cout << "Player " << cid << " Disconnected" << std::endl;
+                    break;
+                }case sg::CommEvent::Error:
+                    break;
+                case sg::CommEvent::Data:{
+                    sf::Uint32 mid;
+                    sf::Uint32 cid;
+                    //std::cout << "Got Data" << std::endl;
+                    cid = event.connectionId;
+
+                    tg::Player & p = teamMan.getPlayer(cid);
+
+                    event.packet >> mid;
+                    handleData(server, teamMan, arenaMan,p,event,cid,mid);
+                    break;
+                }case sg::CommEvent::Sent:{
+                    break;
+                }
+            }
+        }
+        doLocalInput(server, teamMan);
+        //Do updates to state based on what's happening around us.
+        //retransmit State
+        doLoop(server, teamMan);
+
+        sf::sleep(sf::milliseconds(30));
+    }
+    return 0;
+}
+
+int handleData(sg::Comm & comm, tg::TeamManager & teamMan, tg::ArenaManager & arenaMan, tg::Player & player, sg::CommEvent & event, int cid, int mid)
+{
+    switch (mid){
+        case tg::Ready:
+        {
+            std::cout << "Got Ready" << std::endl;
+            player.state = Ready;
+            //p = teamMan.getPlayer(cid);
+            break;
+        }
+        case tg::WhoIs:
+            std::cout << "Got WhoIs" << std::endl;
+            sendWhoIsAck(comm, teamMan, cid);
+            break;
+        case tg::Id:{
+                        
+            //Received Id msg
+            std::string name;
+            sf::Uint32 team;
+            event.packet >> name;
+            event.packet >> team;
+            std::cout << "Got Id: " << name << ", " << team << std::endl;
+            if (teamMan.isNameValid(name)){
+                if (teamMan.isTeamValid(team)){
+                    //the specified name and team areok
+                    //remove player form limbo
+                    teamMan.removePlayer(cid);
+                            
+                    //add player to requested team
+                    player.tank.position = arenaMan.getStartPosition(team);
+                    std::cout << "Adding " << name << " to team " << team << std::endl;
+                    sf::Uint32 slot = teamMan.addPlayer(player, name, team);
+
+                    //tell player they are established
+                    sendIdAck(comm, teamMan, cid, slot);
+                }else{
+                    sendIdNack(comm, teamMan, cid);
+                }
+            }else{
+                sendIdNack(comm, teamMan, cid);
+            }
+            break;
+        }case tg::Action:{
+            std::cout << "Got Action" << std::endl;
+            //These are from players when they change the state of the game via an input mechanism
+            //After crunching this event, send a Result packet to each player.
+
+
+            break;
+        }
+    }
+    return 0;
+}
+
+int doLoop(sg::Comm & comm, tg::TeamManager & teamMan)
+{
+    //if (serverstate == Establishing)
+    //{
+    //}
+    //else if (serverstate == Ready)
+    //{
+    //}
+    //else 
+    if (serverState == Running)
+    {
+        //deal with join'ers that are in limbo
+        //wait for them to figure out what team they want to be on
+        //    if their name is not used, and the team requested is available.
+        if (stateTimer.getElapsedTime().asMilliseconds() > 500){
+            sendState(comm, teamMan);
+            stateTimer.restart();
+        }
+    }
+    return 0;
+}
+
+-----------------------------------------------------------------------------------------
+////////////////WHERE I WAS GOING///////////////////////////
+
+#include "Common\Messages.h"
+#include "Common\Comm.h"
+#include "Common\TeamManager.h"
+#include "Common\ArenaManager.h"
+
+#include <iostream>
+
+enum ServerState{
+    Establishing,
+    Ready,
+    Running
+};
+
+sf::Clock stateTimer;
+ServerState serverState = Establishing;
+
+
+int doLocalInput(sg::Comm & comm, tg::TeamManager & teamMan)
+{
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::T)){
+        serverState = Running;
+    }
+    return 0;
+}
+int doLoop(sg::Comm & comm, tg::TeamManager & teamMan);
+int handleData(sg::Comm & comm, tg::TeamManager & teamMan, tg::ArenaManager & arenaMan, tg::Player & player, sg::CommEvent & event, int cid, int mid);
+int handleComm(sg::Comm & comm, sg::CommEvent & event, tg::TeamManager & teamMan, tg::ArenaManager & arenaMan);
+int handleId(sg::Comm & comm, tg::TeamManager & teamMan, tg::ArenaManager & arenaMan, tg::Player & player, sg::CommEvent & event, int cid, int mid);
+
+int main()
+{
+    bool done = false;
+    sg::Comm server;
+    tg::TeamManager teamMan;
+    tg::ArenaManager arenaMan;
+
+    arenaMan.doInit("Assets\\map1.txt");
+    server.StartServer(8280);
+    sf::sleep(sf::milliseconds(500));
+    while (!done){
+        sg::CommEvent event;
+        while (server.Receive(event)){
+            sf::Uint32 t;
+            event.packet >> t;
+            handleComm(server,event,teamMan,arenaMan);
+        }
+        doLocalInput(server, teamMan);
+        //Do updates to state based on what's happening around us.
+        //retransmit State
+        doLoop(server, teamMan);
+
+        sf::sleep(sf::milliseconds(30));
+    }
+    return 0;
+}
+
+
+int handleComm(sg::Comm & comm, sg::CommEvent & event, tg::TeamManager & teamMan, tg::ArenaManager & arenaMan)
+{
+    sf::Uint32 t;
+    event.packet >> t;
+    switch (t){
+        case sg::CommEvent::Acceptance:{
+            sf::Uint32 cid;
+            tg::Player p;
+
+            event.packet >> cid;
+            
+            p.connectionId = cid;
+
+            teamMan.addPlayer(p,"New Guy", 0);
+
+            break;
+        }case sg::CommEvent::Disconnect:{
+            sf::Uint32 cid;
+            event.packet >> cid;
+            //remove player from either team0/1/2
+            teamMan.removePlayer(cid);
+            std::cout << "Player " << cid << " Disconnected" << std::endl;
+            break;
+        }case sg::CommEvent::Error:
+            break;
+        case sg::CommEvent::Data:{
+            sf::Uint32 mid;
+            sf::Uint32 cid;
+            //std::cout << "Got Data" << std::endl;
+            event.packet >> mid;
+            cid = event.connectionId;
+
+            tg::Player & p = teamMan.getPlayer(cid);
+            
+            handleData(comm, teamMan, arenaMan,p,event,cid,mid);
+            break;
+        }case sg::CommEvent::Sent:{
+            break;
+        }
+    }
+    return 0;
+}
+
+int handleData(sg::Comm & comm, tg::TeamManager & teamMan, tg::ArenaManager & arenaMan, tg::Player & player, sg::CommEvent & event, int cid, int mid)
+{
+    switch (mid){
+        case tg::Ready:
+        {
+            std::cout << "Got Ready" << std::endl;
+            player.state = Ready;
+            //p = teamMan.getPlayer(cid);
+            break;
+        }
+        case tg::WhoIs:
+            std::cout << "Got WhoIs" << std::endl;
+            sendWhoIsAck(comm, teamMan, cid);
+            break;
+        case tg::Id:{
+            handleId(comm, teamMan, arenaMan,player,event,cid,mid);
+            std::cout << "Got Id: " << player.playerName << ", " << player.team << std::endl;
+            break;
+        }case tg::Action:{
+            std::cout << "Got Action" << std::endl;
+            //These are from players when they change the state of the game via an input mechanism
+            //After crunching this event, send a Result packet to each player.
+            break;
+        }
+    }
+    return 0;
+}
+
+int handleId(sg::Comm & comm, tg::TeamManager & teamMan, tg::ArenaManager & arenaMan, tg::Player & player, sg::CommEvent & event, int cid, int mid)
+{
+    //Received Id msg
+    std::string name;
+    sf::Uint32 team;
+    event.packet >> name;
+    event.packet >> team;
+
+    if (teamMan.isNameValid(name)){
+        if (teamMan.isTeamValid(team)){
+            //the specified name and team areok
+            //remove player form limbo
+            teamMan.removePlayer(cid);
+                            
+            //add player to requested team
+            player.tank.position = arenaMan.getStartPosition(team);
+            std::cout << "Adding " << name << " to team " << team << std::endl;
+            sf::Uint32 slot = teamMan.addPlayer(player, name, team);
+
+            //tell player they are established
+            sendIdAck(comm, teamMan, cid, slot);
+        }else{
+            sendIdNack(comm, teamMan, cid);
+        }
+    }else{
+        sendIdNack(comm, teamMan, cid);
+    }
+    return 0;
+}
+
+int doLoop(sg::Comm & comm, tg::TeamManager & teamMan)
+{
+    if (serverState == Running)
+    {
+        //deal with join'ers that are in limbo
+        //wait for them to figure out what team they want to be on
+        //    if their name is not used, and the team requested is available.
+        if (stateTimer.getElapsedTime().asMilliseconds() > 500){
+            sendState(comm, teamMan);
+            stateTimer.restart();
+        }
+    }
+    return 0;
+}
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
