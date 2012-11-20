@@ -44,7 +44,7 @@ namespace tg
     class ArenaManager
     {
     public:
-        sf::Uint32 doInit(std::string fn){
+        sf::Uint32 load(std::string fn){
 
             //Open Map data file
             std::ifstream fin(fn,std::ios::in|std::ios::binary  );

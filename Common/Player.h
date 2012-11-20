@@ -20,13 +20,14 @@ namespace tg
             SendingIdAck,
             SendingIdNack,
             WaitingForIdAck,
-            SendingAction,
-            WaitingForAction,
-            SendingState,
-            WaitingForState,
+            SendingStateOfPlayer,
+            WaitingForStateOfPlayer,
+            SendingStateOfUnion,
+            WaitingForStateOfUnion,
             SendingReady,
             WaitingForReady,
             Ready,/***********/
+            WaitingForMap,
             WaitingForStart,
             Running,/***********/
             Paused/***********/
@@ -40,7 +41,7 @@ namespace tg
         
         
         Player(){
-            playerName = "  -empty-  ";
+            playerName = "-empty-";
             connectionId = -1;
             team = -1;
             state = PlayerState::New;

@@ -5,6 +5,7 @@
 #include "Common\Comm.h"
 #include "Common\TeamManager.h"
 #include "Common\ArenaManager.h"
+#include "Common\AssetManager.h"
 
 using namespace tg;
 
@@ -94,8 +95,9 @@ sf::Uint32 GameClient::doInit()
     stageLobby.doInit(600,600);
     stageRun.doInit(600,600);
 
-    arenaMan.doInit("Assets\\map1.txt");
-    teamMan.doInit();
+    assetMan.load();
+    arenaMan.load("Assets\\map1.txt");
+    teamMan.load();
     //assetMan.doInit(...);
     window.create(sf::VideoMode(600,600,32),"Client");
     client.StartClient(8280,"127.0.0.1");//.StartServer(8280);
@@ -157,7 +159,15 @@ sf::Uint32 GameClient::doCleanup()
     return 0;
 }
 
+sf::Uint32 GameClient::doDraw(sf::Time ft)
+{
+    window.clear();
 
+    curStage->doDraw(window, teamMan, assetMan, ft);
+
+    window.display();
+    return 0;
+}
 
 TeamManager & GameClient::getTeamMan()
 {

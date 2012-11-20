@@ -4,6 +4,7 @@
 #include "Comm.h"
 #include "TeamManager.h"
 #include "ArenaManager.h"
+#include "AssetManager.h"
 
 using namespace tg;
 
@@ -56,7 +57,7 @@ sf::Uint32 GameStage::doCleanup()
     return 0;
 }
 
-sf::Uint32 GameStage::doDraw(sf::RenderWindow &window)
+sf::Uint32 GameStage::doDraw(sf::RenderWindow &window, TeamManager & teamMan, AssetManager & assetMan, sf::Time ft)
 {
     //LogFile::get()->log(0,0,"GameStage::doDraw");
     return 0;

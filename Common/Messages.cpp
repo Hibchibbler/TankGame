@@ -20,16 +20,34 @@ int Messages::sendReady(Comm & comm, TeamManager & teamMan, int cid)
     return 0;
 }
 
-int Messages::sendAction(Comm & comm, TeamManager & teamMan, int cid, int team, int slot, PlayerAction::PA playerAction)
+
+int Messages::sendStateOfPlayer(Comm & comm, TeamManager & teamMan, int cid, int team, int slot,Player & player, sf::Uint32 attacking)
 {
-    std::cout << "Sent Action" << std::endl;
+    std::cout << "Sent StateOfPlayer" << std::endl;
     tg::CommEvent event;
     event.connectionId = cid;
     event.packet << CommEventType::Data;
-    event.packet << MsgId::Action;
-    event.packet << playerAction;
-    event.packet << teamMan.getPlayerBySlot(team,slot).tank.turretAngle;
-    
+    event.packet << MsgId::StateOfPlayer;
+    event.packet << player.tank.throttle;
+    event.packet << player.tank.bodyAngle;
+    event.packet << player.tank.turretAngle;
+    event.packet << player.tank.position.x;
+    event.packet << player.tank.position.y;
+    event.packet << player.tank.velocity.x;
+    event.packet << player.tank.velocity.y;
+    event.packet << attacking;// ?
+    comm.Send(event);
+    return 0;
+}
+
+int Messages::sendMap(Comm & comm, std::string name, int cid)
+{
+    std::cout << "Sent Map" << std::endl;
+    tg::CommEvent event;
+    event.connectionId = cid;
+    event.packet << CommEventType::Data;
+    event.packet << MsgId::Map;
+    event.packet << name;
     comm.Send(event);
     return 0;
 }
@@ -99,21 +117,21 @@ int Messages::sendIdNack(Comm & comm,TeamManager & teamMan, int cid)
 }
 
 
-int Messages::sendState(Comm & comm, TeamManager & teamMan)
+int Messages::sendStateOfUnion(Comm & comm, TeamManager & teamMan)
 {
     //std::cout << "Sent State" << std::endl;
     tg::CommEvent event;
     event.connectionId = -1;//Secret code word for "send to all"
 
     event.packet << CommEventType::Data;
-    event.packet << MsgId::State;
+    event.packet << MsgId::StateOfUnion;
 
     //Team 1 & 2 - not 0 because we don't advertise our limbo'ers
     for (int t = 1;t < 3;t++){
         event.packet << (sf::Uint32)teamMan.teams[t].players.size();
         for (auto y= teamMan.teams[t].players.begin();y != teamMan.teams[t].players.end();y++){
             event.packet << y->slotNum;
-            event.packet << y->connectionId;
+            event.packet << y->hasHost;
             event.packet << y->tank.bodyAngle;
             event.packet << y->tank.turretAngle;
             event.packet << y->tank.position.x;

@@ -1,8 +1,39 @@
 #include "AssetManager.h"
 
 #include "LogFile.h"
+using namespace tg;
 
-int tg::AssetManager::load(){
+AssetManager::AssetManager()
+{
+}
+
+AssetManager::~AssetManager()
+{
+    /*tankImages
+    projectileImages
+    floorImages
+    minionImages*/
+    //TODO: Must unload these!!
+}
+
+int AssetManager::load(){
+    /*Current names get the gets.
+    BlueTank
+    RedTank
+    -------
+    Projectile
+    -------
+    Floor1
+    Floor3
+    Team1Garage
+    Team2Garage
+    Team1Generator
+    Team2Generator
+    -------
+    Minion1
+    Minion2
+    */
+    font.loadFromFile("Assets\\digital-7mono.ttf");
     //Load Tanks
     TankImage ti;
     ti.load("Assets\\BlueBody_red.png", "Assets\\BlueTurret.png");
@@ -61,3 +92,24 @@ int tg::AssetManager::load(){
     return 0;
 }
 
+TankImage & AssetManager::getTankImage(std::string name)
+{
+    return tankImages[name];
+}
+FloorImage & AssetManager::getFloorImage(std::string name)
+{
+    return floorImages[name];
+}
+ProjectileImage & AssetManager::getProjectileImage(std::string name)
+{
+    return projectileImages[name];
+}
+MinionImage & AssetManager::getMinionImage(std::string name)
+{
+    return minionImages[name];
+}
+
+sf::Font & AssetManager::getFont()
+{
+    return font;
+}

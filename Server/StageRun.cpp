@@ -31,33 +31,47 @@ sf::Uint32 StageRun::doRemoteEvent(TeamManager & teamMan,
             std::cout << "Got OOB Id" << std::endl;
             player.state = PlayerState::SendingIdNack;
             break;
-        }case MsgId::Action:{
-            std::cout << "Got Action" << std::endl;
+        }case MsgId::StateOfPlayer:{
+            //std::cout << "Got Action" << std::endl;
             //These are from players when they change the state of the game via an input mechanism
             //After crunching this event, send a Result packet to each player.
 
             //std::cout << << std::endl;
             sf::Uint32 playerAction;
             
-            float turretAngle;
-            cevent.packet >> playerAction;
-            cevent.packet >> turretAngle;
+            sf::Uint32 attacking = 0;
+           
+            cevent.packet >> player.tank.throttle;
+            cevent.packet >> player.tank.bodyAngle;
+            cevent.packet >> player.tank.turretAngle;
+            cevent.packet >> player.tank.position.x;
+            cevent.packet >> player.tank.position.y;
+            cevent.packet >> player.tank.velocity.x;
+            cevent.packet >> player.tank.velocity.y;
+            cevent.packet >> attacking;
 
-            switch (playerAction)
-            {
-            case PlayerAction::Attack:
-                break;
-            case PlayerAction::BodyRight:
-                break;
-            case PlayerAction::BodyLeft:
-                break;
-            case PlayerAction::ThrottleUp:
-               break;
-            case PlayerAction::ThrottleDown:
-                break;
-            case PlayerAction::TurretMove:
-                break;
-            }
+            //if (playerAction & (0x1<<(PlayerAction::Throttle-1))){
+            //    //Throttle Action
+            //    std::cout << "Got PlayerAction::Throttle" << std::endl;
+            //    cevent.packet >> teamMan.getPlayer(connId).tank.throttle;
+            //}
+            //if (playerAction & (0x1<<(PlayerAction::Turn-1))){
+            //    //Turn Action
+            //    std::cout << "Got PlayerAction::Turn" << std::endl;
+            //    cevent.packet >> teamMan.getPlayer(connId).tank.bodyAngle;
+            //}
+            //if (playerAction & (0x1<<(PlayerAction::Turret-1))){
+            //    //Turrent Moved Action
+            //    std::cout << "Got PlayerAction::Turret" << std::endl;
+            //    cevent.packet >> teamMan.getPlayer(connId).tank.turretAngle;
+            //}    
+            //if (playerAction & (0x1<<(PlayerAction::Attack-1))){
+            //    //Attack Action
+            //    std::cout << "Got PlayerAction::Attack" << std::endl;
+            //    sf::Uint32 attacking = 0;
+            //    cevent.packet >> attacking;//?
+        
+            //}    
             //teamMan.getPlayer(connId).
 
             break;
@@ -91,6 +105,12 @@ sf::Uint32 StageRun::doLoop(Comm & comm, TeamManager & teamMan)
                     break;
             }
         }
+    }
+
+    if (updateStateTimer.getElapsedTime().asMilliseconds() > 50){
+        //std::cout << "Sent State" << std::endl;
+        Messages::sendStateOfUnion(comm, teamMan);
+        updateStateTimer.restart();
     }
     return getSummary(0);
 }

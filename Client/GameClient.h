@@ -30,7 +30,7 @@ namespace tg
         sf::Uint32 doInit();
         sf::Uint32 doLoop();
         sf::Uint32 doCleanup();
-        sf::Uint32 doDraw();
+        sf::Uint32 doDraw(sf::Time ft);
 
         TeamManager & getTeamMan();
         Comm & getComm();

@@ -15,84 +15,84 @@ namespace tg
         IdNack,
         Ready,
         Start,
-        Action,
-        State
+        StateOfUnion,
+        StateOfPlayer,
+        Map
     };};
+
 
     struct PlayerAction{
         enum PA{
             None,
-            ThrottleUp,
-            ThrottleDown,
-            BodyRight,
-            BodyLeft,
-            TurretMove,
+            Throttle,
+            Turn,
+            Turret,
             Attack
         };
     };
 
 
-    class MSG_DATA
+    class MsgData
     {
     public:
         int cid;
         MsgId dataType;
     };
 
-    class MSG_DATA_READY : public MSG_DATA
+    class MsgDataReady : public MsgData
     {
     public:
    
     };
 
-    class MSG_DATA_ACTION : public MSG_DATA
+    class MsgDataAction : public MsgData
     {
     public:
    
         sf::Uint32 controlOrAttack;
     };
 
-    class MSG_DATA_WHOIS : public MSG_DATA
+    class MsgDataWhoIs : public MsgData
     {
     public:
    
     };
-    class MSG_DATA_WHOISACK : public MSG_DATA
+    class MsgDataWhoIsAck : public MsgData
     {
     public:
        std::vector<std::string> team1;
        std::vector<std::string> team2;
     };
 
-    class MSG_DATA_ID : public MSG_DATA
+    class MsgDataId : public MsgData
     {
     public:
        std::string name;
        sf::Uint32 team;
     };
 
-    class MSG_DATA_IDACK : public MSG_DATA
+    class MSG_DATA_IDACK : public MsgData
     {
     public:
        sf::Uint32 slot;
     };
 
-    class MSG_DATA_IDNACK : public MSG_DATA
+    class MsgDataIdNack : public MsgData
     {
     public:
     };
 
     class Comm;
     class TeamManager;
-    
+    class Player;
 
     class Messages
     {
     public:
         static int sendReady(Comm & comm, TeamManager & teamMan, int cid);
+        //static MsgDataReady extractReady(sf::Packet & packet);
 
-
-        static int sendAction(Comm & comm, TeamManager & teamMan, int cid, int team, int slot, PlayerAction::PA playerAction);
+        static int sendStateOfPlayer(Comm & comm, TeamManager & teamMan, int cid, int team, int slot, Player & player, sf::Uint32 attacking);
 
         static int sendWhoIs(Comm & comm, TeamManager & teamMan, int cid);
         static int sendId(Comm & comm, TeamManager & teamMan, int cid, std::string name, int team);
@@ -102,8 +102,10 @@ namespace tg
         static int sendIdAck(Comm & comm, TeamManager & teamMan, int cid, sf::Uint32 slot);
         static int sendIdNack(Comm & comm, TeamManager & teamMan, int cid);
 
-        static int sendState(Comm & comm, TeamManager & teamMan);
+        static int sendStateOfUnion(Comm & comm, TeamManager & teamMan);
         static int sendStart(Comm & comm, TeamManager & teamMan, int cid);
+
+        static int sendMap(Comm & comm, std::string name, int cid);
     };
 
 

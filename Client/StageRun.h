@@ -2,7 +2,7 @@
 #define StageRun_h_
 
 #include "Common\GameStage.h"
-
+#include "Common\Player.h"
 namespace tg
 {
     class StageRun : public GameStage
@@ -18,10 +18,16 @@ namespace tg
                                  sf::Event & event);
         sf::Uint32 doLoop(Comm & comm, TeamManager & teamMan);
         sf::Uint32 doLocalInput(sf::RenderWindow & window, TeamManager & teamMan);
+        sf::Uint32 doDraw(sf::RenderWindow & window, TeamManager & teamMan, AssetManager & assetMan, sf::Time ft);
     private:
-        sf::Uint32 lastActionReg;
+        Player thisPlayer;
+
+        sf::Uint32 attacking;
         sf::Vector2i curMousePos;
         sf::Vector2i lastMousePos;
+        float curTurretAngle;
+        float lastTurretAngle;
+        sf::Clock stateOfPlayerClock;
 
         bool hasFocus;
         

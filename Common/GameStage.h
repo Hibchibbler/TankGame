@@ -13,6 +13,7 @@ namespace tg
     class TeamManager;
     class ArenaManager;
     class GameServer;
+    class AssetManager;
     //This may have to be server and client specific....
     class GameStage
     {
@@ -32,7 +33,7 @@ namespace tg
         virtual sf::Uint32 doLocalInput(sf::RenderWindow &window, TeamManager & teamMan);
         virtual sf::Uint32 doLoop(Comm & comm, TeamManager & teamMan);
         virtual sf::Uint32 doCleanup();
-        virtual sf::Uint32 doDraw(sf::RenderWindow &window);
+        virtual sf::Uint32 doDraw(sf::RenderWindow &window, TeamManager & teamMan, AssetManager & assetMan, sf::Time ft);
 
         void setId(sf::Uint32 id);
         sf::Uint32 getId();

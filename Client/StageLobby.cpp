@@ -24,8 +24,28 @@ sf::Uint32 StageLobby::doRemoteEvent(TeamManager & teamMan,
         {
             std::cout << "Got WhoIsAck" << std::endl;
             //printWhoIsAck(event);
-                            
-            p.state = PlayerState::SendingId;
+            ////////////////////////////////////////
+            sf::Uint32 teamSize;
+            std::string name;
+            cevent.packet >> teamSize;//Team 1
+            std::cout << "Team 1" << std::endl;
+            for (int k = 0;k < teamSize;k++){
+                cevent.packet >> name;
+                std::cout << name << ", ";
+            }std::cout << std::endl;
+
+            cevent.packet >> teamSize;//Team 2
+            std::cout << "Team 2" << std::endl;
+            for (int k = 0;k < teamSize;k++){
+                cevent.packet >> name;
+                std::cout << name << ", ";
+            }std::cout << std::endl;
+
+            ////////////////////////////////////////
+
+            if (p.state == PlayerState::WaitingForWhoIsAck){
+                p.state = PlayerState::SendingId;
+            }
 
             break;
         }
@@ -46,12 +66,11 @@ sf::Uint32 StageLobby::doRemoteEvent(TeamManager & teamMan,
             std::cout << "Got IdNack" << std::endl;
             p.state = PlayerState::New;
             break;
-        case MsgId::State:
-            std::cout << "Got State" << std::endl;
-            break;
         case MsgId::Start:
             std::cout << "Got Start" << std::endl;
+            ///////////////////////
             setSummary(1,0);
+            ///////////////////////
             break;
     }
     return 0;

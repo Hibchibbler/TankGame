@@ -3,13 +3,14 @@
 #include "Common\Messages.h"
 #include "Common\TeamManager.h"
 #include "Common\ArenaManager.h"
+#include "Common\AssetManager.h"
 
 using namespace tg;
 
 StageRun::StageRun()
     : GameStage()
 {
-
+    hasFocus = false;
 }
 
 sf::Uint32 StageRun::doRemoteEvent(TeamManager & teamMan, 
@@ -18,6 +19,49 @@ sf::Uint32 StageRun::doRemoteEvent(TeamManager & teamMan,
                             sf::Uint32 connId,
                             sf::Uint32 msgId)
 {
+    Player &player = teamMan.getPlayer(connId);
+    switch (msgId){
+    case MsgId::StateOfUnion:
+        //retrieve info on all teams
+        std::cout << "Got StateOfUnion" << std::endl;
+        sf::Uint32 teamSize;
+        sf::Uint32 slotNum;
+        sf::Uint32 hasHost;
+        sf::Uint32 cid;
+
+        cevent.packet >> teamSize;//-----------------team 1  
+        for (int u = 0;u < teamSize;u++){
+            cevent.packet >> slotNum;
+            Player & aPlayer = teamMan.getPlayerBySlot(1,slotNum);
+
+            cevent.packet >> aPlayer.hasHost;
+            cevent.packet >> aPlayer.tank.bodyAngle;
+            cevent.packet >> aPlayer.tank.turretAngle;
+            cevent.packet >> aPlayer.tank.position.x;
+            cevent.packet >> aPlayer.tank.position.y;
+            cevent.packet >> aPlayer.tank.velocity.x;
+            cevent.packet >> aPlayer.tank.velocity.y;
+
+
+        }
+
+
+        cevent.packet >> teamSize;//-----------------team 2  
+        for (int u = 0;u < teamSize;u++){
+            cevent.packet >> slotNum;
+            Player & aPlayer = teamMan.getPlayerBySlot(2,slotNum);
+
+            cevent.packet >> aPlayer.hasHost;
+            cevent.packet >> aPlayer.tank.bodyAngle;
+            cevent.packet >> aPlayer.tank.turretAngle;
+            cevent.packet >> aPlayer.tank.position.x;
+            cevent.packet >> aPlayer.tank.position.y;
+            cevent.packet >> aPlayer.tank.velocity.x;
+            cevent.packet >> aPlayer.tank.velocity.y;
+        }
+
+        break;
+    }
     return 0;
 }
 
@@ -29,35 +73,31 @@ sf::Uint32 StageRun::doWindowEvent(sf::RenderWindow & w,
     }else if (event.type == sf::Event::GainedFocus){
         hasFocus = true;
     }
+
+    sf::View aView;
+    aView.setCenter(0,0);
+    aView.setSize(600,600);
+    w.setView(aView);
     return 0;
 }
 
 sf::Uint32 StageRun::doLoop(Comm & comm, TeamManager & teamMan)
 {
-    sf::Uint32 scrWidth = getInput(0);
+    sf::Uint32 scrWidth  = getInput(0);
     sf::Uint32 scrHeight = getInput(1);
-    sf::Uint32 myCID = getInput(2);
-    sf::Uint32 myTeam = getInput(3);
-    sf::Uint32 mySlot = getInput(4);
+    sf::Uint32 myCID     = getInput(2);
+    sf::Uint32 myTeam    = getInput(3);
+    sf::Uint32 mySlot    = getInput(4);
+
+
     
     Player & p = teamMan.getPlayerBySlot(myTeam,mySlot);
     switch (p.state){
         case PlayerState::Ready:
             p.state = PlayerState::Running;
             break;
-        case PlayerState::SendingAction:
-            if (lastActionReg & 0x1)
-                Messages::sendAction(comm,teamMan, myCID,myTeam,mySlot,PlayerAction::ThrottleUp);
-            if (lastActionReg & 0x2)
-                Messages::sendAction(comm,teamMan, myCID,myTeam,mySlot,PlayerAction::ThrottleDown);
-            if (lastActionReg & 0x4)
-                Messages::sendAction(comm,teamMan, myCID,myTeam,mySlot,PlayerAction::BodyLeft);
-            if (lastActionReg & 0x8)
-                Messages::sendAction(comm,teamMan, myCID,myTeam,mySlot,PlayerAction::BodyRight);
-            if (lastActionReg & 0x10)
-                Messages::sendAction(comm,teamMan, myCID,myTeam,mySlot,PlayerAction::TurretMove);
-            if (lastActionReg & 0x20)
-                Messages::sendAction(comm,teamMan, myCID,myTeam,mySlot,PlayerAction::Attack);
+        case PlayerState::SendingStateOfPlayer:
+            Messages::sendStateOfPlayer(comm, teamMan, myCID, myTeam, mySlot, thisPlayer, attacking);
             p.state = PlayerState::Running;
             break;
 
@@ -74,43 +114,44 @@ sf::Uint32 StageRun::doLocalInput(sf::RenderWindow & window, TeamManager & teamM
 
 
     bool control = false;
-    lastActionReg = 0;
+    attacking = 0;
+    
+    if (!hasFocus)
+        return 0;
+    thisPlayer = teamMan.teams[myTeam].players[mySlot];
     //We poll keyboard instead of relying on bios keyboard rate
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)){
-        teamMan.teams[myTeam].players[mySlot].tank.throttle += 1;
-        if (teamMan.teams[myTeam].players[mySlot].tank.throttle > 25)
-            teamMan.teams[myTeam].players[mySlot].tank.throttle = 25;  
+        thisPlayer.tank.throttle += 1;
+        if (thisPlayer.tank.throttle > 25)
+            thisPlayer.tank.throttle = 25;  
         control = true;
-        lastActionReg = lastActionReg | 0x00000001;
     }
     
 
     //max speed lower in reverse
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::S)){
-        teamMan.teams[myTeam].players[mySlot].tank.throttle -= 1;
-        if (teamMan.teams[myTeam].players[mySlot].tank.throttle < -10)
-            teamMan.teams[myTeam].players[mySlot].tank.throttle = -10;  
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)){
+        thisPlayer.tank.throttle -= 1;
+        if (thisPlayer.tank.throttle < -25)
+            thisPlayer.tank.throttle = -25;  
         control = true;
-        lastActionReg = lastActionReg | 0x00000002;
     }
     
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::A)){
         //Rotating left
-        teamMan.teams[myTeam].players[mySlot].tank.bodyAngle = teamMan.teams[myTeam].players[mySlot].tank.bodyAngle -  5;
-        if (teamMan.teams[myTeam].players[mySlot].tank.bodyAngle >= 360.0f || teamMan.teams[myTeam].players[mySlot].tank.bodyAngle <= -360.0f ){
-            teamMan.teams[myTeam].players[mySlot].tank.bodyAngle = 0;
+
+        thisPlayer.tank.bodyAngle = thisPlayer.tank.bodyAngle -  5;
+        if (thisPlayer.tank.bodyAngle >= 360.0f || thisPlayer.tank.bodyAngle <= -360.0f ){
+            thisPlayer.tank.bodyAngle = 0;
         }
         control = true;
-        lastActionReg = lastActionReg | 0x00000004;
     }
     
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::D)){
         //Rotating right
-        teamMan.teams[myTeam].players[mySlot].tank.bodyAngle = teamMan.teams[myTeam].players[mySlot].tank.bodyAngle +  5;
-        if (teamMan.teams[myTeam].players[mySlot].tank.bodyAngle >= 360.0f || teamMan.teams[myTeam].players[mySlot].tank.bodyAngle <= -360.0f ){
-            teamMan.teams[myTeam].players[mySlot].tank.bodyAngle = 0;
+        thisPlayer.tank.bodyAngle = thisPlayer.tank.bodyAngle +  5;
+        if (thisPlayer.tank.bodyAngle >= 360.0f || thisPlayer.tank.bodyAngle <= -360.0f ){
+            thisPlayer.tank.bodyAngle = 0;
         }
-        lastActionReg = lastActionReg | 0x00000008;
     }
     
     lastMousePos = curMousePos;
@@ -123,33 +164,75 @@ sf::Uint32 StageRun::doLocalInput(sf::RenderWindow & window, TeamManager & teamM
         sf::Vector2f mouseCursorWorld;
 
         //Find turrent angle based on vector from tank origin to mouse.
-        centerOfTurretWorld = teamMan.teams[myTeam].players[mySlot].tank.position;
+        centerOfTurretWorld = thisPlayer.tank.position;
         mouseCursorWorld = window.convertCoords(mouseCursorScreen);
         dx = mouseCursorWorld.x - centerOfTurretWorld.x;
         dy = mouseCursorWorld.y - centerOfTurretWorld.y;
-        //teamMan.teams[myTeam].players[mySlot].tank.turretAngle =  (180.0f/3.14156f)*atan2(dy,dx);
-        float newTurretAngle =  (180.0f/3.14156f)*atan2(dy,dx);
+        
+        lastTurretAngle = curTurretAngle;
+        curTurretAngle = (180.0f/3.14156f)*atan2(dy,dx);
+        thisPlayer.tank.turretAngle = curTurretAngle;
+
         control = true;
-        lastActionReg = lastActionReg | 0x000000010;
     }
     //update player 1 velocity based on updated throttle and body angle.
-    /*teamMan.teams[my_team].players[0].tank.tankState.velocity.x =  teamMan.teams[my_team].players[0].tank.tankState.throttle * (float)cos(teamMan.teams[my_team].players[0].tank.tankState.bodyAngle / (180/3.14156));
-    teamMan.teams[my_team].players[0].tank.tankState.velocity.y =  teamMan.teams[my_team].players[0].tank.tankState.throttle * (float)sin(teamMan.teams[my_team].players[0].tank.tankState.bodyAngle / (180/3.14156));
-    */
-    bool attacking = false;
+    thisPlayer.tank.velocity.x =  thisPlayer.tank.throttle * (float)cos(thisPlayer.tank.bodyAngle / (180/3.14156));
+    thisPlayer.tank.velocity.y =  thisPlayer.tank.throttle * (float)sin(thisPlayer.tank.bodyAngle / (180/3.14156));
+    
     if (sf::Mouse::isButtonPressed(sf::Mouse::Left)){
         attacking = true;
-        lastActionReg = lastActionReg | 0x000000020;
         std::cout << "Bang!" << std::endl;
     }
 
-    if (lastActionReg != 0){
-        Player & p = teamMan.getPlayerBySlot(myTeam, mySlot);
-        p.state = PlayerState::SendingAction;
+    if (stateOfPlayerClock.getElapsedTime().asMilliseconds() > 100){
+        teamMan.teams[myTeam].players[mySlot].state = PlayerState::SendingStateOfPlayer;
     }
-
     return 0;
 }
+
+sf::Uint32 StageRun::doDraw(sf::RenderWindow & window, TeamManager & teamMan, AssetManager & assetMan, sf::Time ft)
+{
+    for (int y=1;y < 3;y++)
+    {
+        for (int h = 0;h < teamMan.teams[y].players.size();h++)
+        {
+            if (teamMan.teams[y].players[h].hasHost)
+            {
+                sf::Sprite b,t;
+                TankImage & ti = assetMan.getTankImage("BlueTank");
+            
+                b.setTexture(*ti.btex);
+                t.setTexture(*ti.ttex);
+
+                b.setOrigin(40,61);
+                t.setOrigin(27,90);
+
+                b.setRotation(-90);
+                t.setRotation(-90);
+
+                b.rotate(teamMan.teams[y].players[h].tank.bodyAngle);
+                t.rotate(teamMan.teams[y].players[h].tank.turretAngle);
+                
+                b.setPosition(teamMan.teams[y].players[h].tank.position);
+                t.setPosition(teamMan.teams[y].players[h].tank.position);
+
+                b.move   (teamMan.teams[y].players[h].tank.velocity.x*20*ft.asSeconds(),
+                          teamMan.teams[y].players[h].tank.velocity.y*20*ft.asSeconds());
+                t.move   (teamMan.teams[y].players[h].tank.velocity.x*20*ft.asSeconds(),
+                          teamMan.teams[y].players[h].tank.velocity.y*20*ft.asSeconds());
+
+                window.draw(b);
+                window.draw(t);
+            }
+        }
+    }
+    return 0;
+}
+
+
+
+
+
 
 
 

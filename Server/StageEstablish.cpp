@@ -72,7 +72,7 @@ sf::Uint32 StageEstablish::doRemoteEvent(TeamManager & teamMan,
             }
             
             break;
-        }case MsgId::Action:{
+        }case MsgId::StateOfPlayer:{
             std::cout << "Got Action" << std::endl;
             //These are from players when they change the state of the game via an input mechanism
             //After crunching this event, send a Result packet to each player.
@@ -108,6 +108,7 @@ sf::Uint32 StageEstablish::doLoop(Comm & comm, TeamManager & teamMan)
                 break;
             case PlayerState::SendingIdAck:
                 Messages::sendIdAck(comm, teamMan, pi->connectionId, pi->slotNum);
+                Messages::sendWhoIsAck(comm,teamMan,-1);
                 pi->state = PlayerState::WaitingForReady;
                 break;
             case PlayerState::SendingIdNack:

@@ -10,13 +10,22 @@ namespace tg
     class AssetManager
     {
     public:
-        
+        AssetManager();
+        ~AssetManager();
         int load();
+
+        sf::Font & getFont();
+        TankImage & getTankImage(std::string name);
+        FloorImage & getFloorImage(std::string name);
+        ProjectileImage & getProjectileImage(std::string name);
+        MinionImage & getMinionImage(std::string name);
     private:
+        sf::Font font;
         std::map<std::string, TankImage> tankImages;
         std::map<std::string, FloorImage> floorImages;
         std::map<std::string, ProjectileImage> projectileImages;
         std::map<std::string, MinionImage> minionImages;
+        
     };
 };
 #endif

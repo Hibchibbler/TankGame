@@ -18,6 +18,7 @@ namespace tg
         sf::Uint32 doLoop(Comm & comm, TeamManager & teamMan);
         sf::Uint32 doLocalInput(sf::RenderWindow & window, TeamManager & teamMan);
     private:
+        sf::Clock updateStateTimer;
     };
 
 };

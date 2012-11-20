@@ -25,21 +25,21 @@ namespace tg
             teams.back().players.push_back(Player());
 
             teams.push_back(Team());//Team 1
-            teams.back().players.push_back(Player());
-            teams.back().players.push_back(Player());
-            teams.back().players.push_back(Player());
-            teams.back().players.push_back(Player());
-            teams.back().players.push_back(Player());
+            teams.back().players.push_back(Player());teams.back().players.back().slotNum = 0;
+            teams.back().players.push_back(Player());teams.back().players.back().slotNum = 1;
+            teams.back().players.push_back(Player());teams.back().players.back().slotNum = 2;
+            teams.back().players.push_back(Player());teams.back().players.back().slotNum = 3;
+            teams.back().players.push_back(Player());teams.back().players.back().slotNum = 4;
 
             teams.push_back(Team());//Team 2
-            teams.back().players.push_back(Player());
-            teams.back().players.push_back(Player());
-            teams.back().players.push_back(Player());
-            teams.back().players.push_back(Player());
-            teams.back().players.push_back(Player());
+            teams.back().players.push_back(Player());teams.back().players.back().slotNum = 0;
+            teams.back().players.push_back(Player());teams.back().players.back().slotNum = 1;
+            teams.back().players.push_back(Player());teams.back().players.back().slotNum = 2;
+            teams.back().players.push_back(Player());teams.back().players.back().slotNum = 3;
+            teams.back().players.push_back(Player());teams.back().players.back().slotNum = 4;
         }
 
-        sf::Uint32 doInit()
+        sf::Uint32 load()
         {
             return 0;
         }
