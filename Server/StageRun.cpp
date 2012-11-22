@@ -50,30 +50,11 @@ sf::Uint32 StageRun::doRemoteEvent(TeamManager & teamMan,
             cevent.packet >> player.tank.velocity.y;
             cevent.packet >> attacking;
 
-            //if (playerAction & (0x1<<(PlayerAction::Throttle-1))){
-            //    //Throttle Action
-            //    std::cout << "Got PlayerAction::Throttle" << std::endl;
-            //    cevent.packet >> teamMan.getPlayer(connId).tank.throttle;
-            //}
-            //if (playerAction & (0x1<<(PlayerAction::Turn-1))){
-            //    //Turn Action
-            //    std::cout << "Got PlayerAction::Turn" << std::endl;
-            //    cevent.packet >> teamMan.getPlayer(connId).tank.bodyAngle;
-            //}
-            //if (playerAction & (0x1<<(PlayerAction::Turret-1))){
-            //    //Turrent Moved Action
-            //    std::cout << "Got PlayerAction::Turret" << std::endl;
-            //    cevent.packet >> teamMan.getPlayer(connId).tank.turretAngle;
-            //}    
-            //if (playerAction & (0x1<<(PlayerAction::Attack-1))){
-            //    //Attack Action
-            //    std::cout << "Got PlayerAction::Attack" << std::endl;
-            //    sf::Uint32 attacking = 0;
-            //    cevent.packet >> attacking;//?
-        
-            //}    
-            //teamMan.getPlayer(connId).
 
+            //update player 1 velocity based on updated throttle and body angle.
+            player.tank.position.x =  player.tank.position.x + player.tank.throttle * (float)cos(player.tank.bodyAngle / (180/3.14156));
+            player.tank.position.y =  player.tank.position.y + player.tank.throttle * (float)sin(player.tank.bodyAngle / (180/3.14156));
+            std::cout << player.tank.position.x << ", " << player.tank.position.y << std::endl;
             break;
         }
     }

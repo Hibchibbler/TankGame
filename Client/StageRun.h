@@ -21,6 +21,7 @@ namespace tg
         sf::Uint32 doDraw(sf::RenderWindow & window, TeamManager & teamMan, AssetManager & assetMan, sf::Time ft);
     private:
         Player thisPlayer;
+        
 
         sf::Uint32 attacking;
         sf::Vector2i curMousePos;

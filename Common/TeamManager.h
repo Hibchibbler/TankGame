@@ -47,10 +47,7 @@ namespace tg
         sf::Uint32 addPlayer(tg::Player & p, std::string name,  int team){
             for (int i = 0;i < 5;i++){
                 if (teams[team].players[i].hasHost == 0){
-
                     teams[team].players[i] = p;
-                    //teams[team].players[i].state = PlayerState::New;
-                    //teams[team].players[i].connectionId = 
                     teams[team].players[i].playerName = name;
                     teams[team].players[i].team = team;
                     teams[team].players[i].slotNum = i;
@@ -85,7 +82,7 @@ namespace tg
                 for (auto y = teams[i].players.begin();y != teams[i].players.end();y++){
                     if (y->hasHost == 1 && y->connectionId == cid){
                         y->hasHost = 0;
-                        y->playerName = "  -empty-  ";
+                        y->playerName = "-removed-";
                         return true;
                     }
                 }

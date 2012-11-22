@@ -36,13 +36,21 @@ int AssetManager::load(){
     font.loadFromFile("Assets\\digital-7mono.ttf");
     //Load Tanks
     TankImage ti;
-    ti.load("Assets\\BlueBody_red.png", "Assets\\BlueTurret.png");
+    ti.load("Assets\\BlueTankBody.png", "Assets\\BlueTankTurret.png");
     tankImages["BlueTank"] = ti;//.push_back(ti);
     LogFile::get()->log(0,0,"Loaded blue tank");
 
-    ti.load("Assets\\RedBody_red.png", "Assets\\RedTurret.png");
+    ti.load("Assets\\RedTankBody.png", "Assets\\RedTankTurret.png");
     tankImages["RedTank"] = ti;//.push_back(ti);
     LogFile::get()->log(0,0,"Loaded red tank");
+
+     ti.load("Assets\\GreenTankBody.png", "Assets\\GreenTankTurret.png");
+    tankImages["GreenTank"] = ti;//.push_back(ti);
+    LogFile::get()->log(0,0,"Loaded green tank");
+
+    ti.load("Assets\\YellowTankBody.png", "Assets\\YellowTankTurret.png");
+    tankImages["YellowTank"] = ti;//.push_back(ti);
+    LogFile::get()->log(0,0,"Loaded yellow tank");
 
     //Load projectiles
     ProjectileImage pi;

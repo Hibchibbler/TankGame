@@ -23,7 +23,7 @@ sf::Uint32 StageRun::doRemoteEvent(TeamManager & teamMan,
     switch (msgId){
     case MsgId::StateOfUnion:
         //retrieve info on all teams
-        std::cout << "Got StateOfUnion" << std::endl;
+        //std::cout << "Got StateOfUnion" << std::endl;
         sf::Uint32 teamSize;
         sf::Uint32 slotNum;
         sf::Uint32 hasHost;
@@ -74,10 +74,10 @@ sf::Uint32 StageRun::doWindowEvent(sf::RenderWindow & w,
         hasFocus = true;
     }
 
-    sf::View aView;
-    aView.setCenter(0,0);
-    aView.setSize(600,600);
-    w.setView(aView);
+    //sf::View aView;
+    //aView.setCenter(0,0);
+    //aView.setSize(600,600);
+    //w.setView(aView);
     return 0;
 }
 
@@ -129,7 +129,7 @@ sf::Uint32 StageRun::doLocalInput(sf::RenderWindow & window, TeamManager & teamM
     
 
     //max speed lower in reverse
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)){
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::S)){
         thisPlayer.tank.throttle -= 1;
         if (thisPlayer.tank.throttle < -25)
             thisPlayer.tank.throttle = -25;  
@@ -152,6 +152,7 @@ sf::Uint32 StageRun::doLocalInput(sf::RenderWindow & window, TeamManager & teamM
         if (thisPlayer.tank.bodyAngle >= 360.0f || thisPlayer.tank.bodyAngle <= -360.0f ){
             thisPlayer.tank.bodyAngle = 0;
         }
+        control = true;
     }
     
     lastMousePos = curMousePos;
@@ -175,31 +176,45 @@ sf::Uint32 StageRun::doLocalInput(sf::RenderWindow & window, TeamManager & teamM
 
         control = true;
     }
-    //update player 1 velocity based on updated throttle and body angle.
-    thisPlayer.tank.velocity.x =  thisPlayer.tank.throttle * (float)cos(thisPlayer.tank.bodyAngle / (180/3.14156));
-    thisPlayer.tank.velocity.y =  thisPlayer.tank.throttle * (float)sin(thisPlayer.tank.bodyAngle / (180/3.14156));
     
     if (sf::Mouse::isButtonPressed(sf::Mouse::Left)){
         attacking = true;
         std::cout << "Bang!" << std::endl;
     }
 
-    if (stateOfPlayerClock.getElapsedTime().asMilliseconds() > 100){
+    //TODO: 
+    if (stateOfPlayerClock.getElapsedTime().asMilliseconds() > 100 ||
+        control || attacking){
+        
         teamMan.teams[myTeam].players[mySlot].state = PlayerState::SendingStateOfPlayer;
+        stateOfPlayerClock.restart();
     }
     return 0;
 }
 
 sf::Uint32 StageRun::doDraw(sf::RenderWindow & window, TeamManager & teamMan, AssetManager & assetMan, sf::Time ft)
 {
+    sf::View v(sf::FloatRect(-300,-300,600,600));
+    window.setView(v);
     for (int y=1;y < 3;y++)
     {
         for (int h = 0;h < teamMan.teams[y].players.size();h++)
         {
             if (teamMan.teams[y].players[h].hasHost)
             {
+                std::string tankName;
                 sf::Sprite b,t;
-                TankImage & ti = assetMan.getTankImage("BlueTank");
+                //TODO: uh..
+                if (y==1 && h == 0)
+                    tankName = "BlueTank";
+                else if (y==1 && h==1)
+                    tankName = "RedTank";
+                else if (y==2 && h==0)
+                    tankName = "GreenTank";
+                else
+                    tankName = "YellowTank";
+
+                TankImage & ti = assetMan.getTankImage(tankName);
             
                 b.setTexture(*ti.btex);
                 t.setTexture(*ti.ttex);
@@ -212,14 +227,13 @@ sf::Uint32 StageRun::doDraw(sf::RenderWindow & window, TeamManager & teamMan, As
 
                 b.rotate(teamMan.teams[y].players[h].tank.bodyAngle);
                 t.rotate(teamMan.teams[y].players[h].tank.turretAngle);
-                
+
                 b.setPosition(teamMan.teams[y].players[h].tank.position);
                 t.setPosition(teamMan.teams[y].players[h].tank.position);
 
-                b.move   (teamMan.teams[y].players[h].tank.velocity.x*20*ft.asSeconds(),
-                          teamMan.teams[y].players[h].tank.velocity.y*20*ft.asSeconds());
-                t.move   (teamMan.teams[y].players[h].tank.velocity.x*20*ft.asSeconds(),
-                          teamMan.teams[y].players[h].tank.velocity.y*20*ft.asSeconds());
+                /*std::cout << teamMan.teams[y].players[h].tank.position.x << ", " << teamMan.teams[y].players[h].tank.position.y << std::endl;
+                std::cout << teamMan.teams[y].players[h].tank.velocity.x*20*ft.asSeconds() << ", " << teamMan.teams[y].players[h].tank.position.y*20*ft.asSeconds() << std::endl;*/
+                
 
                 window.draw(b);
                 window.draw(t);

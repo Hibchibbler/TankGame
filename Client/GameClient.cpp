@@ -82,6 +82,10 @@ sf::Uint32 GameClient::doLocalEvents()
     while (window.pollEvent(wevent))
     {
         curStage->doWindowEvent(window, wevent);
+        if (wevent.type == sf::Event::Resized)
+        {
+
+        }
     }
 
     curStage->doLocalInput(window, teamMan);
