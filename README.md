@@ -1,5 +1,11 @@
 TankGame - Redux
 ================
+
+Shows the typical message flow between client and server, when the client connects.
+Also note, the message flow is "designed" to allow us to create a lobby.
+![logo](https://raw.github.com/Hibchibbler/TankGame/master/Screenshots/network_establish_phase.png?login=Hibchibbler&token=1638ab91df6cd96b593ee2c65239dccd)
+
+
 Here we can see the intended structures appearing.
 --------------------------------------------------
 ![logo](https://raw.github.com/Hibchibbler/TankGame/master/master_architecture.png?login=Hibchibbler&token=ec3f2b6ab3f5e41ec5011b901e5e7eec)
