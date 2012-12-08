@@ -38,14 +38,11 @@ namespace tg
     class Player
     {
     public:
-        
-        
         Player(){
             playerName = "-empty-";
             connectionId = -1;
             team = -1;
             state = PlayerState::New;
-            health = 100;
             hasHost = false;
             slotNum = -1;
         }
@@ -58,7 +55,8 @@ namespace tg
         sf::Uint32 team;
         sf::Uint32 health;
         sf::Uint32 state;
-        
+        sf::Uint32 lmb;
+        sf::Uint32 rmb;
     };
 };
 

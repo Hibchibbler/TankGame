@@ -138,7 +138,8 @@ sf::Uint32 StageEstablish::doLocalInput(sf::RenderWindow & window, TeamManager &
                 for (;pi != teamMan.getTeam(y).end();pi++){
                     if  (pi->hasHost == 1){
                         if (pi->state != PlayerState::Ready){
-                            std::cout << "nostart";
+                            std::cout
+                                << "nostart";
                             someNotReady = true;
                         }
                     }

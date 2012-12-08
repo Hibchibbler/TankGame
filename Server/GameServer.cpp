@@ -89,8 +89,8 @@ sf::Uint32 GameServer::doLocalEvents()
 
 sf::Uint32 GameServer::doInit()
 {
-    stageEst.doInit(600,600);
-    stageRun.doInit(600,600);
+    stageEst.doInit();
+    stageRun.doInit();
 
     arenaMan.load("Assets\\map1.txt");
     teamMan.load();

@@ -17,6 +17,12 @@ GameStage::~GameStage()
 
 }
 
+sf::Uint32 GameStage::doInit()
+{
+    //LogFile::get()->log(0,0,"GameStage::doInit");
+    return 0;
+}
+
 sf::Uint32 GameStage::doRemoteEvent(TeamManager & teamMan, 
                                     ArenaManager & arenaMan,
                                     CommEvent & cevent,
@@ -33,11 +39,7 @@ sf::Uint32 GameStage::doWindowEvent(sf::RenderWindow & w, sf::Event & event)
     return 0;
 }
 
-sf::Uint32 GameStage::doInit(int w, int h)
-{
-    //LogFile::get()->log(0,0,"GameStage::doInit");
-    return 0;
-}
+
 
 sf::Uint32 GameStage::doLocalInput(sf::RenderWindow &window, TeamManager & teamMan)
 {
@@ -57,7 +59,7 @@ sf::Uint32 GameStage::doCleanup()
     return 0;
 }
 
-sf::Uint32 GameStage::doDraw(sf::RenderWindow &window, TeamManager & teamMan, AssetManager & assetMan, sf::Time ft)
+sf::Uint32 GameStage::doDraw(sf::RenderWindow &window, TeamManager & teamMan, ArenaManager & arenaMan, AssetManager & assetMan, sf::Time ft)
 {
     //LogFile::get()->log(0,0,"GameStage::doDraw");
     return 0;

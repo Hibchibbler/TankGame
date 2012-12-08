@@ -18,7 +18,7 @@ int main()
 
         gameServer.doLoop();
 
-        sf::sleep(sf::milliseconds(30));
+        sf::sleep(sf::milliseconds(10));
     }
 
     gameServer.doCleanup();

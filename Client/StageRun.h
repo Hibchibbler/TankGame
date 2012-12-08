@@ -3,12 +3,14 @@
 
 #include "Common\GameStage.h"
 #include "Common\Player.h"
+#include "Dashboard.h"
 namespace tg
 {
     class StageRun : public GameStage
     {
     public:
         StageRun();
+        sf::Uint32 doInit();
         sf::Uint32 doRemoteEvent(TeamManager & teamMan, 
                                  ArenaManager & arenaMan,
                                  CommEvent & cevent,
@@ -18,10 +20,15 @@ namespace tg
                                  sf::Event & event);
         sf::Uint32 doLoop(Comm & comm, TeamManager & teamMan);
         sf::Uint32 doLocalInput(sf::RenderWindow & window, TeamManager & teamMan);
-        sf::Uint32 doDraw(sf::RenderWindow & window, TeamManager & teamMan, AssetManager & assetMan, sf::Time ft);
+        sf::Uint32 doDraw(sf::RenderWindow & window, TeamManager & teamMan, ArenaManager & arenaMan, AssetManager & assetMan, sf::Time ft);
     private:
+        Dashboard dash;
         Player thisPlayer;
-        
+        sf::View arenaView;
+        sf::View dashView;
+
+        sf::Uint32 scrWidth;
+        sf::Uint32 scrHeight;
 
         sf::Uint32 attacking;
         sf::Vector2i curMousePos;
@@ -30,6 +37,7 @@ namespace tg
         float lastTurretAngle;
         sf::Clock stateOfPlayerClock;
 
+        bool hasRxStateOfUnion;
         bool hasFocus;
         
 

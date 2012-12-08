@@ -132,6 +132,9 @@ int Messages::sendStateOfUnion(Comm & comm, TeamManager & teamMan)
         for (auto y= teamMan.teams[t].players.begin();y != teamMan.teams[t].players.end();y++){
             event.packet << y->slotNum;
             event.packet << y->hasHost;
+            event.packet << y->tank.health;
+            event.packet << y->tank.power;
+            event.packet << y->tank.throttle;
             event.packet << y->tank.bodyAngle;
             event.packet << y->tank.turretAngle;
             event.packet << y->tank.position.x;

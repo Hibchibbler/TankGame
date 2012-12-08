@@ -1,9 +1,12 @@
 #include "GameClient.h"
 #include <SFML/Window.hpp>
 
+#define WINDOW_WIDTH 800
+#define WINDOW_HEIGHT 800
+
 int main()
 {
-    tg::GameClient gameClient;
+    tg::GameClient gameClient(WINDOW_WIDTH,WINDOW_HEIGHT);
     bool done = false;
 
     gameClient.doInit();
@@ -16,8 +19,6 @@ int main()
 
     sf::sleep(sf::milliseconds(500));
     while (!done){
-
-        
 
         gameClient.doRemoteEvents();
 
@@ -32,7 +33,7 @@ int main()
         
         gameClient.doDraw(frameTime);
 
-        sf::sleep(sf::milliseconds(30));
+        sf::sleep(sf::milliseconds(10));
     }
 
     gameClient.doCleanup();

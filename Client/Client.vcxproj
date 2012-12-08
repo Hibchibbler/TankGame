@@ -77,6 +77,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Dashboard.cpp" />
     <ClCompile Include="GameClient.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="StageLobby.cpp" />
@@ -84,6 +85,7 @@
     <ClCompile Include="StageStart.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Dashboard.h" />
     <ClInclude Include="GameClient.h" />
     <ClInclude Include="StageLobby.h" />
     <ClInclude Include="StageRun.h" />

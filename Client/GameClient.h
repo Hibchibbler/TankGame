@@ -22,7 +22,7 @@ namespace tg
     class GameClient
     {
     public:
-        GameClient();
+        GameClient(sf::Uint32 w, sf::Uint32 h);
         ~GameClient();
 
         sf::Uint32 doRemoteEvents();

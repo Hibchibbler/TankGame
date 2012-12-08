@@ -9,7 +9,7 @@
 
 using namespace tg;
 
-GameClient::GameClient()
+GameClient::GameClient(sf::Uint32 w, sf::Uint32 h)
 {
     //For Server, we want the Establish stage first.
     //
@@ -18,6 +18,13 @@ GameClient::GameClient()
     stageStart.setId(0);
     stageLobby.setId(1);
     stageRun.setId(2);
+
+    scrWidth = w;
+    scrHeight = h;
+
+    myTeam = -1;
+    myCID = -1;
+    mySlot = -1;
 
     curStage = &stageStart;
 }
@@ -57,14 +64,14 @@ sf::Uint32 GameClient::doRemoteEvents()
             }case CommEventType::Error:
                 break;
             case CommEventType::Data:{
-                sf::Uint32 mid;
+                sf::Uint32 msgId;
                 sf::Uint32 cid;
 
                 cid = event.connectionId;
 
-                tg::Player & p = teamMan.getPlayer(cid);
-                event.packet >> mid;
-                curStage->doRemoteEvent(teamMan, arenaMan, event, cid, mid);
+                //tg::Player & p = teamMan.getPlayer(cid);
+                event.packet >> msgId;
+                curStage->doRemoteEvent(teamMan, arenaMan, event, cid, msgId);
                 break;
             }
         }
@@ -84,7 +91,8 @@ sf::Uint32 GameClient::doLocalEvents()
         curStage->doWindowEvent(window, wevent);
         if (wevent.type == sf::Event::Resized)
         {
-
+            scrWidth = wevent.size.width;
+            scrHeight = wevent.size.height;
         }
     }
 
@@ -95,17 +103,37 @@ sf::Uint32 GameClient::doLocalEvents()
 
 sf::Uint32 GameClient::doInit()
 {
-    stageStart.doInit(600,600);
-    stageLobby.doInit(600,600);
-    stageRun.doInit(600,600);
+    //Initialize Start Stage
+    curStage = &stageStart;
+    curStage->setInput(scrWidth,    0);
+    curStage->setInput(scrHeight,   1);
+    curStage->doInit();
+
+    //Initialize Lobby Stage
+    curStage = &stageLobby;
+    curStage->setInput(scrWidth,    0);
+    curStage->setInput(scrHeight,   1);
+    curStage->doInit();
+
+    //Initialize Run Stage
+    curStage = &stageRun;
+    curStage->setInput(scrWidth,    0);
+    curStage->setInput(scrHeight,   1);
+    curStage->setInput(myCID,       2);
+    curStage->setInput(myTeam,      3);
+    curStage->setInput(mySlot,      4);
+    curStage->doInit();
+
+    //Set the start stage..
+    curStage = &stageStart;
+
 
     assetMan.load();
     arenaMan.load("Assets\\map1.txt");
     teamMan.load();
-    //assetMan.doInit(...);
-    window.create(sf::VideoMode(600,600,32),"Client");
-    client.StartClient(8280,"127.0.0.1");//.StartServer(8280);
     
+    window.create(sf::VideoMode(scrWidth, scrHeight,32),"Client");
+    client.StartClient(8280,"127.0.0.1");//.StartServer(8280);
 
     return 0;
 }
@@ -114,37 +142,52 @@ sf::Uint32 GameClient::doLoop()
 {
     if (curStage != NULL)
     {
+        curStage->setInput(scrWidth,    0);
+        curStage->setInput(scrHeight,   1);
+        curStage->setInput(myCID,       2);
+        curStage->setInput(myTeam,      3);
+        curStage->setInput(mySlot,      4);
+
         sf::Uint32 summary = curStage->doLoop(client, teamMan);
         //Id is set in GameServer constructor.
         switch (curStage->getId()){
         case 0://stageStart
             switch (summary){
             case 0x1:
+                //Stage Done
+                //Get summary details
+                //transition to next stage;
                 std::cout << "Switching to StageLobby" << std::endl;
                 curStage = &stageLobby;
+                break;
+            default:
+                //stage still running
                 break;
             }
             break;
         case 1://stageLobby
             switch (summary){
-            case 0x1:
+            case 0x1://Stage Done, transition to next stage;
                 myTeam = curStage->getSummary(1);
                 mySlot = curStage->getSummary(2);
 
                 std::cout << myCID << ", " << myTeam << ", " << mySlot << std::endl;
+
                 std::cout << "Switching to StageRun" << std::endl;
                 curStage = &stageRun;
-                curStage->setInput(600,0);
-                curStage->setInput(600,0);
-                curStage->setInput(myCID, 2);
-                curStage->setInput(myTeam,3);
-                curStage->setInput(mySlot,4);
+                
+                break;
+            default:
+                //stage still running
                 break;
             }
             break;
         case 2://stageRun
             switch (summary){
-            case 0x1:
+            case 0x1://Stage Done, transition to next stage;
+                break;
+            default:
+                //stage still running
                 break;
             }
             break;
@@ -167,7 +210,7 @@ sf::Uint32 GameClient::doDraw(sf::Time ft)
 {
     window.clear();
 
-    curStage->doDraw(window, teamMan, assetMan, ft);
+    curStage->doDraw(window, teamMan, arenaMan, assetMan, ft);
 
     window.display();
     return 0;

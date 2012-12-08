@@ -16,6 +16,8 @@ namespace tg
             turretAngle = 0.0f;
             mass = 5.0f;
         }
+        sf::Uint32 health;
+        sf::Uint32 power;
 
         sf::Vector2f position;
         sf::Vector2f velocity;

@@ -97,6 +97,12 @@ int AssetManager::load(){
     mi.load("Assets\\minion2.png");
     minionImages["Minion2"] = mi;//.push_back(mi);
     LogFile::get()->log(0,0,"Loaded minion2");
+
+
+    
+    dashboardImage.load("Assets\\dashboard1.png");
+    LogFile::get()->log(0,0,"Loaded dashboard1");
+
     return 0;
 }
 
@@ -121,3 +127,9 @@ sf::Font & AssetManager::getFont()
 {
     return font;
 }
+
+Image & AssetManager::getDashboardImage()
+{
+    return dashboardImage;
+}
+

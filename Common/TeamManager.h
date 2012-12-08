@@ -59,12 +59,8 @@ namespace tg
         }
         Player & getPlayerBySlot(int team, int slot){
             
-               /* for (auto y = teams[team].players.begin();y != teams[team].players.end();y++){
-                    if (y->hasHost == 1 && y->slotNum == slot)
-                        return *y;
-                }*/
             return teams[team].players[slot];
-            //std::cout << "WARNING: getPlayer() didnt' return anything; this function sucks" <<std::endl;
+            //"WARNING:  this function sucks"
         }
         tg::Player & getPlayer(int cid){
             for (int i = 0;i < 3;i++){

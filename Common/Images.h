@@ -16,7 +16,7 @@ namespace tg
     class TankImage
     {
     public:
-        int load(std::string bodyFn, std::string turretFn){
+        sf::Uint32 load(std::string bodyFn, std::string turretFn){
             bimg = new sf::Image();
             bimg->loadFromFile(bodyFn);
             bimg->createMaskFromColor(sf::Color::Cyan,0);
@@ -31,7 +31,7 @@ namespace tg
             return 0;
         }
 
-        int unload(){
+        sf::Uint32 unload(){
             delete btex;
             delete bimg;
 
@@ -65,7 +65,7 @@ namespace tg
     class ProjectileImage
     {
     public:
-        int load(std::string fn){
+        sf::Uint32 load(std::string fn){
             img = new sf::Image();
             img->loadFromFile(fn);
             img->createMaskFromColor(sf::Color::Cyan,0);
@@ -73,7 +73,26 @@ namespace tg
             tex->loadFromImage(*img);
             return 0;
         }
-        int unload(){
+        sf::Uint32 unload(){
+            delete tex;
+            delete img;
+        }
+        sf::Image* img;
+        sf::Texture* tex;
+    };
+
+    class Image
+    {
+    public:
+        sf::Uint32 load(std::string fn){
+            img = new sf::Image();
+            img->loadFromFile(fn);
+            img->createMaskFromColor(sf::Color::Cyan,0);
+            tex = new sf::Texture();
+            tex->loadFromImage(*img);
+            return 0;
+        }
+        sf::Uint32 unload(){
             delete tex;
             delete img;
         }
@@ -84,7 +103,7 @@ namespace tg
     class MinionImage
     {
     public:
-        int load(std::string fn){
+        sf::Uint32 load(std::string fn){
             img = new sf::Image();
             img->loadFromFile(fn);
             img->createMaskFromColor(sf::Color::Cyan,0);
@@ -95,6 +114,7 @@ namespace tg
         sf::Image* img;
         sf::Texture* tex;
     };
+
 
     class MinionSprite
     {
@@ -127,10 +147,11 @@ namespace tg
     class ImageAsset
     {
     public:
-        void load(std::string fn){
+        sf::Uint32 load(std::string fn){
             i.loadFromFile(fn);
             i.createMaskFromColor(sf::Color::Cyan,0);
             t.loadFromImage(i);
+            return 0;
         }
 
         sf::Texture & getTexture(){
