@@ -12,6 +12,7 @@ StageRun::StageRun()
 {
     hasRxStateOfUnion = false;
     hasFocus = false;
+    zoom = 1.0;
 }
 
 sf::Uint32 StageRun::doInit()
@@ -36,40 +37,37 @@ sf::Uint32 StageRun::doRemoteEvent(TeamManager & teamMan,
         sf::Uint32 slotNum;
         sf::Uint32 hasHost;
         sf::Uint32 cid;
+        for (int t= 1;t < 3;t++){
+            cevent.packet >> teamSize;//-----------------team 1 , then 2 
+            for (int u = 0;u < teamSize;u++){
+                cevent.packet >> slotNum;
+                Player & aPlayer = teamMan.getPlayerBySlot(t,slotNum);
 
-        cevent.packet >> teamSize;//-----------------team 1  
-        for (int u = 0;u < teamSize;u++){
-            cevent.packet >> slotNum;
-            Player & aPlayer = teamMan.getPlayerBySlot(1,slotNum);
-
-            cevent.packet >> aPlayer.hasHost;
-            cevent.packet >> aPlayer.tank.health;
-            cevent.packet >> aPlayer.tank.power;
-            cevent.packet >> aPlayer.tank.throttle;
-            cevent.packet >> aPlayer.tank.bodyAngle;
-            cevent.packet >> aPlayer.tank.turretAngle;
-            cevent.packet >> aPlayer.tank.position.x;
-            cevent.packet >> aPlayer.tank.position.y;
-            cevent.packet >> aPlayer.tank.velocity.x;
-            cevent.packet >> aPlayer.tank.velocity.y;
-        }
-
-
-        cevent.packet >> teamSize;//-----------------team 2  
-        for (int u = 0;u < teamSize;u++){
-            cevent.packet >> slotNum;
-            Player & aPlayer = teamMan.getPlayerBySlot(2,slotNum);
-
-            cevent.packet >> aPlayer.hasHost;
-            cevent.packet >> aPlayer.tank.health;
-            cevent.packet >> aPlayer.tank.power;
-            cevent.packet >> aPlayer.tank.throttle;
-            cevent.packet >> aPlayer.tank.bodyAngle;
-            cevent.packet >> aPlayer.tank.turretAngle;
-            cevent.packet >> aPlayer.tank.position.x;
-            cevent.packet >> aPlayer.tank.position.y;
-            cevent.packet >> aPlayer.tank.velocity.x;
-            cevent.packet >> aPlayer.tank.velocity.y;
+                cevent.packet >> aPlayer.hasHost;
+                cevent.packet >> aPlayer.tank.health;
+                cevent.packet >> aPlayer.tank.power;
+                cevent.packet >> aPlayer.tank.throttle;
+                cevent.packet >> aPlayer.tank.bodyAngle;
+                cevent.packet >> aPlayer.tank.turretAngle;
+                cevent.packet >> aPlayer.tank.position.x;
+                cevent.packet >> aPlayer.tank.position.y;
+                cevent.packet >> aPlayer.tank.velocity.x;
+                cevent.packet >> aPlayer.tank.velocity.y;
+                sf::Uint32 ps;
+                cevent.packet >> ps;
+                aPlayer.prjctls.clear();
+                for (int p = 0;p < ps;p++)
+                {
+                    Projectile projectile;
+                    cevent.packet >> projectile.position.x;
+                    cevent.packet >> projectile.position.y;
+                    /*cevent.packet >> projectile.velocity.x;
+                    cevent.packet >> projectile.velocity.y;
+                    cevent.packet >> projectile.angle;*/
+                
+                    aPlayer.prjctls.push_back(projectile);
+                }
+            }
         }
 
         break;
@@ -84,9 +82,14 @@ sf::Uint32 StageRun::doWindowEvent(sf::RenderWindow & w,
         hasFocus = false;
     }else if (event.type == sf::Event::GainedFocus){
         hasFocus = true;
+    }else if (event.type == sf::Event::MouseWheelMoved){
+        if (event.mouseWheel.delta  > 0)
+            zoom += 0.75;
+        else
+            zoom -= 0.25;
     }
     //we don't have to check for Resized here, because composing object will 
-    //provide updated metrics through setInput.
+    //provide updated sizes through setInput.
     return 0;
 }
 
@@ -196,18 +199,21 @@ sf::Uint32 StageRun::doLocalInput(sf::RenderWindow & window, TeamManager & teamM
         std::cout << "Bang!" << std::endl;
     }
 
-    //TODO: 
-    if (stateOfPlayerClock.getElapsedTime().asMilliseconds() > 100 ||
-        control || attacking){
-        
-        teamMan.teams[myTeam].players[mySlot].state = PlayerState::SendingStateOfPlayer;
-        stateOfPlayerClock.restart();
+    if (control || attacking)
+    {
+        if (stateOfPlayerClock.getElapsedTime().asMilliseconds() > 50)
+        {
+            teamMan.teams[myTeam].players[mySlot].state = PlayerState::SendingStateOfPlayer;
+            stateOfPlayerClock.restart();
+        }
     }
+
     return 0;
 }
 
 sf::Uint32 StageRun::doDraw(sf::RenderWindow & window, TeamManager & teamMan, ArenaManager & arenaMan, AssetManager & assetMan, sf::Time ft)
 {
+    //TODO: i don't like how you can get invalid CID, Team, and Slot
     sf::Uint32 scrWidth = getInput(0);
     sf::Uint32 scrHeight = getInput(1);
     sf::Uint32 myCID = getInput(2);
@@ -215,12 +221,15 @@ sf::Uint32 StageRun::doDraw(sf::RenderWindow & window, TeamManager & teamMan, Ar
     sf::Uint32 mySlot = getInput(4);
 
    //Set view on top of this player.
-    sf::Vector2f pos = thisPlayer.tank.position;
-    //For every 3 world pixels, there is 1 screen pixel
-    arenaView.reset(sf::FloatRect(pos.x-((scrWidth)/2),pos.y-((scrHeight)/2),scrWidth,scrHeight));
-    //arenaView.setViewport(sf::FloatRect(0,0,0.25,0.25));
-    window.setView(arenaView);
-
+    if ((int)myTeam != -1){//if == -1, then your team has not yet been established. i do not like this
+        sf::Vector2f pos = teamMan.teams[myTeam].players[mySlot].tank.position;
+        //For every 3 world pixels, there is 1 screen pixel
+        
+        arenaView.reset(sf::FloatRect(pos.x-((scrWidth)/2),pos.y-((scrHeight)/2),scrWidth,scrHeight));
+        arenaView.zoom(zoom);
+        //arenaView.setViewport(sf::FloatRect(0,0,0.25,0.25));
+        window.setView(arenaView);
+    }
     //Draw the floor tiles
     for (int i = 0;i < 900;i++){
         Tile &tile = arenaMan.getTile(i);
@@ -230,6 +239,22 @@ sf::Uint32 StageRun::doDraw(sf::RenderWindow & window, TeamManager & teamMan, Ar
         window.draw(ts);
     }
 
+    sf::Uint32 t1=0;
+    sf::Uint32 t2=0;
+     for (int t=1;t < 3;t++)
+    {
+        for (int s = 0;s < teamMan.teams[t].players.size();s++)
+        {
+            Player &p = teamMan.teams[t].players[s];
+          
+            if (p.hasHost)
+                if (t==1)
+                    t1++;
+                else
+                    t2++;
+        }
+     }
+    dash.setScore(t1, t2);
 
     //Draw the tanks
     for (int y=1;y < 3;y++)
@@ -240,7 +265,7 @@ sf::Uint32 StageRun::doDraw(sf::RenderWindow & window, TeamManager & teamMan, Ar
             {
                 std::string tankName;
                 sf::Sprite b,t;
-                //TODO: uh..
+                //TODO: uh.. i do not like this
                 if (y==1 && h == 0)
                     tankName = "BlueTank";
                 else if (y==1 && h==1)
@@ -269,7 +294,14 @@ sf::Uint32 StageRun::doDraw(sf::RenderWindow & window, TeamManager & teamMan, Ar
 
                 /*std::cout << teamMan.teams[y].players[h].tank.position.x << ", " << teamMan.teams[y].players[h].tank.position.y << std::endl;
                 std::cout << teamMan.teams[y].players[h].tank.velocity.x*20*ft.asSeconds() << ", " << teamMan.teams[y].players[h].tank.position.y*20*ft.asSeconds() << std::endl;*/
-
+                for (int k = 0;k < teamMan.teams[y].players[h].prjctls.size();k++)
+                {
+                    sf::Sprite prjctl;
+                    prjctl.setTexture(*assetMan.getProjectileImage("Projectile").tex);
+                    prjctl.setPosition(teamMan.teams[y].players[h].prjctls[k].position);
+                    //prjctl.setRotation(teamMan.teams[y].players[h].prjctls[k].angle);
+                    window.draw(prjctl);
+                }
 
                 window.draw(b);
                 window.draw(t);
@@ -279,10 +311,13 @@ sf::Uint32 StageRun::doDraw(sf::RenderWindow & window, TeamManager & teamMan, Ar
 
     //Draw the Dashboard
     dashView.reset(sf::FloatRect(0,0, scrWidth, scrHeight));
-    dashView.setCenter(scrWidth/2,-1.0f*(scrHeight/2)+65);
+    //dashView.setCenter(scrWidth/2,-1.0f*(scrHeight/2)+65);
    
     window.setView(dashView);
     
+    dash.dashPos.x = 0;
+    dash.dashPos.y = scrHeight-65;//65 is height of dashboard backdrop image.
+
     dash.backDrop.setTexture(*assetMan.getDashboardImage().tex);
     dash.backDrop.setPosition(dash.dashPos);
     
@@ -295,13 +330,18 @@ sf::Uint32 StageRun::doDraw(sf::RenderWindow & window, TeamManager & teamMan, Ar
     dash.speedText.setPosition(dash.dashPos.x, dash.dashPos.y+33);
 
     dash.powerText.setFont(assetMan.getFont());
-    dash.powerText.setScale(dash.powerTextScale);    
+    dash.powerText.setScale(dash.powerTextScale);
     dash.powerText.setPosition(dash.dashPos.x+135, dash.dashPos.y+8);
-    
+
+    dash.scoreText.setFont(assetMan.getFont());
+    dash.scoreText.setScale(dash.scoreTextScale);
+    dash.scoreText.setPosition(dash.dashPos.x+scrWidth/2,(dash.dashPos.y-scrHeight)+65);
+
     window.draw(dash.backDrop);
     window.draw(dash.healthText);
     window.draw(dash.speedText);
     window.draw(dash.powerText);
+    window.draw(dash.scoreText);
 
     return 0;
 }

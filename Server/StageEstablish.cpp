@@ -58,11 +58,11 @@ sf::Uint32 StageEstablish::doRemoteEvent(TeamManager & teamMan,
                 teamMan.removePlayer(player.connectionId);
                             
                 //add player to requested team
-                static float x = 10;
+               /* static float x = 10;
                 sf::Vector2f pos(x,20);
-                x+=20;
+                x+=20;*/
 
-                player.tank.position = pos;//arenaMan.getStartPosition(team);
+                player.tank.position = arenaMan.getStartPosition(team);
                 player.state = PlayerState::SendingIdAck;
                 std::cout << "Adding " << name << " to team " << team << std::endl;
                 sf::Uint32 slot = teamMan.addPlayer(player, name, team);

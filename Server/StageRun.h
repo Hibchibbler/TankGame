@@ -19,6 +19,11 @@ namespace tg
         sf::Uint32 doLocalInput(sf::RenderWindow & window, TeamManager & teamMan);
     private:
         sf::Clock updateStateTimer;
+        sf::Clock velocityClock;
+        sf::Time previousTime;
+        sf::Time currentTime;
+        sf::Time deltaTime;
+        sf::Time loopTime;
     };
 
 };

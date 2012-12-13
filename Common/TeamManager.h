@@ -49,7 +49,6 @@ namespace tg
                 if (teams[team].players[i].hasHost == 0){
                     teams[team].players[i] = p;
                     teams[team].players[i].playerName = name;
-                    teams[team].players[i].team = team;
                     teams[team].players[i].slotNum = i;
                     teams[team].players[i].hasHost = 1;
                     return i;
@@ -108,6 +107,8 @@ namespace tg
         }
         bool isTeamValid(int team)
         {
+            if (team < 1 || team > 2)
+                return false;
             for (int i = 0;i < 5;i++){
                 if (teams[team].players[i].hasHost == 0)
                     return true;

@@ -2,6 +2,7 @@
 #define Team_h_
 
 #include "Player.h"
+#include "Creep.h"
 #include <vector>
 
 
@@ -16,6 +17,7 @@ namespace tg
         }
         typedef std::vector<Player>::iterator PlayerIterator;
         std::vector<Player> players;
+        std::vector<Creep> creep;
     };
 };
 

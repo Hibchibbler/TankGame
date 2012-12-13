@@ -2,6 +2,7 @@
 #define Player_h_
 
 #include <SFML/Graphics.hpp>
+#include "Projectile.h"
 #include "Tank.h"
 
 namespace tg
@@ -30,7 +31,8 @@ namespace tg
             WaitingForMap,
             WaitingForStart,
             Running,/***********/
-            Paused/***********/
+            Paused,/***********/
+            EmitProjectile
         };
     };
 
@@ -41,19 +43,19 @@ namespace tg
         Player(){
             playerName = "-empty-";
             connectionId = -1;
-            team = -1;
+            //team = -1;
             state = PlayerState::New;
             hasHost = false;
             slotNum = -1;
         }
         Tank tank;
-        
+        std::vector<Projectile> prjctls;
         std::string playerName;
         sf::Uint32 connectionId;
         sf::Uint32 hasHost;//yes, like, in the alien sense.
         sf::Uint32 slotNum;
-        sf::Uint32 team;
-        sf::Uint32 health;
+        //sf::Uint32 team;
+        //sf::Uint32 health;
         sf::Uint32 state;
         sf::Uint32 lmb;
         sf::Uint32 rmb;

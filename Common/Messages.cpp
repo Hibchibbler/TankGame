@@ -31,10 +31,10 @@ int Messages::sendStateOfPlayer(Comm & comm, TeamManager & teamMan, int cid, int
     event.packet << player.tank.throttle;
     event.packet << player.tank.bodyAngle;
     event.packet << player.tank.turretAngle;
-    event.packet << player.tank.position.x;
-    event.packet << player.tank.position.y;
-    event.packet << player.tank.velocity.x;
-    event.packet << player.tank.velocity.y;
+    //event.packet << player.tank.position.x;
+    //event.packet << player.tank.position.y;
+    //event.packet << player.tank.velocity.x;
+    //event.packet << player.tank.velocity.y;
     event.packet << attacking;// ?
     comm.Send(event);
     return 0;
@@ -127,23 +127,45 @@ int Messages::sendStateOfUnion(Comm & comm, TeamManager & teamMan)
     event.packet << MsgId::StateOfUnion;
 
     //Team 1 & 2 - not 0 because we don't advertise our limbo'ers
-    for (int t = 1;t < 3;t++){
-        event.packet << (sf::Uint32)teamMan.teams[t].players.size();
+    int teamSize[3] =  { 0,0,0};
+
+    for (int t = 0;t < 3;t++){        
         for (auto y= teamMan.teams[t].players.begin();y != teamMan.teams[t].players.end();y++){
-            event.packet << y->slotNum;
-            event.packet << y->hasHost;
-            event.packet << y->tank.health;
-            event.packet << y->tank.power;
-            event.packet << y->tank.throttle;
-            event.packet << y->tank.bodyAngle;
-            event.packet << y->tank.turretAngle;
-            event.packet << y->tank.position.x;
-            event.packet << y->tank.position.y;
-            event.packet << y->tank.velocity.x;
-            event.packet << y->tank.velocity.y;
+            if (y->hasHost)
+                teamSize[t]++;
         }
     }
 
+    for (int t = 1;t < 3;t++){
+        event.packet << teamSize[t];
+        for (auto y= teamMan.teams[t].players.begin();y != teamMan.teams[t].players.end();y++){
+            if (y->hasHost){
+                event.packet << y->slotNum;
+                event.packet << y->hasHost;
+                event.packet << y->tank.health;
+                event.packet << y->tank.power;
+                event.packet << y->tank.throttle;
+                event.packet << y->tank.bodyAngle;
+                event.packet << y->tank.turretAngle;
+                event.packet << y->tank.position.x;
+                event.packet << y->tank.position.y;
+                event.packet << y->tank.velocity.x;
+                event.packet << y->tank.velocity.y;
+                event.packet << y->prjctls.size();
+                for (int p = 0;p < y->prjctls.size();p++)
+                {
+                    event.packet << y->prjctls[p].position.x;
+                    event.packet << y->prjctls[p].position.y;
+                    //event.packet << y->prjctls[p].velocity.x;
+                    //event.packet << y->prjctls[p].velocity.y;
+                    //event.packet << y->prjctls[p].angle;
+                }
+                
+            }
+        }
+    }
+
+   
     comm.Send(event);
 
     return 0;

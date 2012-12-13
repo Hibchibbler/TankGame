@@ -106,15 +106,17 @@ namespace tg
                     }
                     arenaData[index].setName(name);
                     
-                    if (index % horizTileNum == (horizTileNum-1))
-                        row++;
+                    
 
                     sf::Vector2f pos;
                     pos.x = (index % horizTileNum) * ARENAMAN_TILE_WIDTH;
                     pos.y = row * ARENAMAN_TILE_HEIGHT;
-
+                    
                     arenaData[index].setPosition(pos);
                     index++;
+
+                    if (index % horizTileNum == 0)
+                        row++;
                     //std::cout << index << std::endl;
                 }
             }else{
@@ -129,7 +131,15 @@ namespace tg
                 if (i->getId() == 3 && team == 1 ||
                     i->getId() == 4 && team == 2)
                 {
-                    return i->getPosition();
+                    sf::Vector2f p = i->getPosition();
+                    if (team == 1){
+                        p.x += 125;
+                        p.y += 125;
+                    }else if (team == 2){
+                        p.x -= 125;
+                        p.y -= 125;
+                    }
+                    return p;
                 }
             }
             return sf::Vector2f(0,0);

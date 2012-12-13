@@ -24,8 +24,12 @@ namespace tg
     private:
         Dashboard dash;
         Player thisPlayer;
+        sf::Vector2f targetPosition;
+
+        //float arenaViewZoom;
         sf::View arenaView;
         sf::View dashView;
+        float zoom;
 
         sf::Uint32 scrWidth;
         sf::Uint32 scrHeight;
@@ -36,6 +40,7 @@ namespace tg
         float curTurretAngle;
         float lastTurretAngle;
         sf::Clock stateOfPlayerClock;
+        
 
         bool hasRxStateOfUnion;
         bool hasFocus;

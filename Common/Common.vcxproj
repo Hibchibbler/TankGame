@@ -81,11 +81,13 @@
     <ClInclude Include="ArenaManager.h" />
     <ClInclude Include="AssetManager.h" />
     <ClInclude Include="Comm.h" />
+    <ClInclude Include="Creep.h" />
     <ClInclude Include="GameStage.h" />
     <ClInclude Include="Images.h" />
     <ClInclude Include="LogFile.h" />
     <ClInclude Include="Messages.h" />
     <ClInclude Include="Player.h" />
+    <ClInclude Include="Projectile.h" />
     <ClInclude Include="Tank.h" />
     <ClInclude Include="Team.h" />
     <ClInclude Include="TeamManager.h" />
