@@ -84,6 +84,8 @@ namespace tg
 
         std::vector<sf::Uint32> getConnectionIds();
     protected:
+        sf::IpAddress address;
+        sf::Uint16 port;
         sf::TcpListener Listener;
 
         static void CommLooper(Comm* comm);

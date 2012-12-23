@@ -8,10 +8,17 @@ namespace tg
     class Creep
     {
     public:
+        Creep(){
+            angle = 0;
+            health = 100;
+            totalDistance=0;
+        }
         float angle;
         sf::Vector2f position;
         sf::Vector2f velocity;
-        sf::Uint32 totalDistance;
+        float totalDistance;
+        sf::Uint32 health;
+        float creationTime;
     private:
     };
 

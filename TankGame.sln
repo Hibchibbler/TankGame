@@ -19,6 +19,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		README.md = README.md
 	EndProjectSection
 EndProject
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "TankGame", "TankGame\TankGame.vdproj", "{CC9404EE-76B2-42DF-BBE3-A362F33D9ECD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -37,6 +39,8 @@ Global
 		{FA63EFD1-BA8F-4F04-8C12-E39156141F52}.Debug|Win32.Build.0 = Debug|Win32
 		{FA63EFD1-BA8F-4F04-8C12-E39156141F52}.Release|Win32.ActiveCfg = Release|Win32
 		{FA63EFD1-BA8F-4F04-8C12-E39156141F52}.Release|Win32.Build.0 = Release|Win32
+		{CC9404EE-76B2-42DF-BBE3-A362F33D9ECD}.Debug|Win32.ActiveCfg = Debug
+		{CC9404EE-76B2-42DF-BBE3-A362F33D9ECD}.Release|Win32.ActiveCfg = Release
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

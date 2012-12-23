@@ -33,6 +33,9 @@
     <ClCompile Include="Dashboard.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="TextBox.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GameClient.h">
@@ -48,6 +51,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Dashboard.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TextBox.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

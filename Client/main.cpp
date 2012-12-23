@@ -33,7 +33,7 @@ int main()
         
         gameClient.doDraw(frameTime);
 
-        sf::sleep(sf::milliseconds(10));
+        sf::sleep(sf::milliseconds(0));
     }
 
     gameClient.doCleanup();

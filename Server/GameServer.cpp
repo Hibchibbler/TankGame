@@ -53,14 +53,14 @@ sf::Uint32 GameServer::doRemoteEvents()
             LogFile::get()->log(0,0,"Error");
                 break;
             case CommEventType::Data:{
-                LogFile::get()->log(0,0,"Data");
+                //LogFile::get()->log(0,0,"Data");
                 sf::Uint32 msgId;
                 sf::Uint32 connId;
                 //std::cout << "Got Data" << std::endl;
                 connId = event.connectionId;
 
                 event.packet >> msgId;
-                curStage->doRemoteEvent(teamMan, arenaMan, event, connId, msgId);
+                curStage->doRemoteEvent(*this, event, connId, msgId);
                 break;
             }case CommEventType::Sent:{
                 break;
@@ -82,15 +82,15 @@ sf::Uint32 GameServer::doLocalEvents()
         curStage->doWindowEvent(window, wevent);
     }
 
-    curStage->doLocalInput(window, teamMan);
+    curStage->doLocalInput(window, *this);
  
     return 0;
 }
 
 sf::Uint32 GameServer::doInit()
 {
-    stageEst.doInit();
-    stageRun.doInit();
+    stageEst.doInit(*this);
+    stageRun.doInit(*this);
 
     arenaMan.load("Assets\\map1.txt");
     teamMan.load();
@@ -104,7 +104,7 @@ sf::Uint32 GameServer::doLoop()
 {
     if (curStage != NULL)
     {
-        sf::Uint32 summary = curStage->doLoop(server, teamMan);
+        sf::Uint32 summary = curStage->doLoop(*this);
         //Id is set in GameServer constructor.
         switch (curStage->getId()){
         case 0://stageEst
@@ -127,8 +127,8 @@ sf::Uint32 GameServer::doLoop()
 sf::Uint32 GameServer::doCleanup()
 {
     LogFile::get()->log(0,0,"GameServer::doCleanup");
-    stageEst.doCleanup();
-    stageRun.doCleanup();
+    stageEst.doCleanup(*this);
+    stageRun.doCleanup(*this);
     return 0;
 }
 

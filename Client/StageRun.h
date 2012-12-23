@@ -11,16 +11,15 @@ namespace tg
     public:
         StageRun();
         sf::Uint32 doInit();
-        sf::Uint32 doRemoteEvent(TeamManager & teamMan, 
-                                 ArenaManager & arenaMan,
+        sf::Uint32 doRemoteEvent(Game & g,
                                  CommEvent & cevent,
                                  sf::Uint32 connId,
                                  sf::Uint32 msgId);
         sf::Uint32 doWindowEvent(sf::RenderWindow & w, 
                                  sf::Event & event);
-        sf::Uint32 doLoop(Comm & comm, TeamManager & teamMan);
-        sf::Uint32 doLocalInput(sf::RenderWindow & window, TeamManager & teamMan);
-        sf::Uint32 doDraw(sf::RenderWindow & window, TeamManager & teamMan, ArenaManager & arenaMan, AssetManager & assetMan, sf::Time ft);
+        sf::Uint32 doLoop(Game & g);
+        sf::Uint32 doLocalInput(sf::RenderWindow & window, Game & g);
+        sf::Uint32 doDraw(sf::RenderWindow & window, Game & g, sf::Time ft);
     private:
         Dashboard dash;
         Player thisPlayer;

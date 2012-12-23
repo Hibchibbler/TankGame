@@ -3,6 +3,7 @@
 #include "Common\Messages.h"
 #include "Common\TeamManager.h"
 #include "Common\ArenaManager.h"
+#include "GameServer.h"
 
 #include <iostream>
 #include "Common\LogFile.h"
@@ -15,15 +16,14 @@ StageEstablish::StageEstablish()
 
 }
 
-sf::Uint32 StageEstablish::doRemoteEvent(TeamManager & teamMan, 
-                                         ArenaManager & arenaMan,
+sf::Uint32 StageEstablish::doRemoteEvent(Game & g,
                                          CommEvent & cevent,
                                          sf::Uint32 connId,
                                          sf::Uint32 msgId)
 {
 
     //LogFile::get()->log(0,0,"StageEstablish::doRemoteEvents");
-    Player &player = teamMan.getPlayer(connId);
+    Player &player = g.teamMan.getPlayer(connId);
 
     switch (msgId){
         case MsgId::Ready:
@@ -51,21 +51,21 @@ sf::Uint32 StageEstablish::doRemoteEvent(TeamManager & teamMan,
             cevent.packet >> team;
             std::cout << "Got Id: " << name << ", " << team << std::endl;
             
-            if (teamMan.isIdValid(name, team))
+            if (g.teamMan.isIdValid(name, team))
             {
                 //the specified name and team are ok
                 //remove player form limbo
-                teamMan.removePlayer(player.connectionId);
+                g.teamMan.removePlayer(player.connectionId);
                             
                 //add player to requested team
                /* static float x = 10;
                 sf::Vector2f pos(x,20);
                 x+=20;*/
 
-                player.tank.position = arenaMan.getStartPosition(team);
+                player.tank.position = g.arenaMan.getStartPosition(team);
                 player.state = PlayerState::SendingIdAck;
                 std::cout << "Adding " << name << " to team " << team << std::endl;
-                sf::Uint32 slot = teamMan.addPlayer(player, name, team);
+                sf::Uint32 slot = g.teamMan.addPlayer(player, name, team);
                 
                 //tell player they are established
                 //Messages::sendIdAck(comm, teamMan, player.connectionId, slot);
@@ -89,13 +89,13 @@ sf::Uint32 StageEstablish::doRemoteEvent(TeamManager & teamMan,
 }
 
 
-sf::Uint32 StageEstablish::doLoop(Comm & comm, TeamManager & teamMan)
+sf::Uint32 StageEstablish::doLoop(Game & g)
 {
     //LogFile::get()->log(0,0,"StageEstablish::doLoop");
     for (int y = 0; y < 3 ; y++)
     {
-        tg::Team::PlayerIterator & pi = teamMan.getTeam(y).begin();
-        for (;pi != teamMan.getTeam(y).end();pi++){
+        tg::Team::PlayerIterator & pi = g.teamMan.getTeam(y).begin();
+        for (;pi != g.teamMan.getTeam(y).end();pi++){
         
             if (pi->hasHost == false)
                 continue;
@@ -107,16 +107,16 @@ sf::Uint32 StageEstablish::doLoop(Comm & comm, TeamManager & teamMan)
                 //at some point soon.
                 break;
             case PlayerState::SendingWhoIsAck:
-                Messages::sendWhoIsAck(comm, teamMan, pi->connectionId);
+                Messages::sendWhoIsAck(g.server, g.teamMan, pi->connectionId);
                 pi->state = PlayerState::New;
                 break;
             case PlayerState::SendingIdAck:
-                Messages::sendIdAck(comm, teamMan, pi->connectionId, pi->slotNum);
-                Messages::sendWhoIsAck(comm,teamMan,-1);
+                Messages::sendIdAck(g.server, g.teamMan, pi->connectionId, pi->slotNum);
+                Messages::sendWhoIsAck(g.server,g.teamMan,-1);
                 pi->state = PlayerState::WaitingForReady;
                 break;
             case PlayerState::SendingIdNack:
-                Messages::sendIdNack(comm, teamMan, pi->connectionId);
+                Messages::sendIdNack(g.server, g.teamMan, pi->connectionId);
                 pi->state = PlayerState::New;
                 break;
 
@@ -126,7 +126,7 @@ sf::Uint32 StageEstablish::doLoop(Comm & comm, TeamManager & teamMan)
     return getSummary(0);
 }
 
-sf::Uint32 StageEstablish::doLocalInput(sf::RenderWindow & window, TeamManager & teamMan)
+sf::Uint32 StageEstablish::doLocalInput(sf::RenderWindow & window, Game & g)
 {
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::T)){
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::X)){
@@ -134,8 +134,8 @@ sf::Uint32 StageEstablish::doLocalInput(sf::RenderWindow & window, TeamManager &
             bool someNotReady = false;
             for (int y = 1; y < 3 ; y++)
             {
-                tg::Team::PlayerIterator & pi = teamMan.getTeam(y).begin();
-                for (;pi != teamMan.getTeam(y).end();pi++){
+                tg::Team::PlayerIterator & pi = g.teamMan.getTeam(y).begin();
+                for (;pi != g.teamMan.getTeam(y).end();pi++){
                     if  (pi->hasHost == 1){
                         if (pi->state != PlayerState::Ready){
                             std::cout

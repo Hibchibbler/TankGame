@@ -17,14 +17,13 @@ GameStage::~GameStage()
 
 }
 
-sf::Uint32 GameStage::doInit()
+sf::Uint32 GameStage::doInit(Game & g)
 {
     //LogFile::get()->log(0,0,"GameStage::doInit");
     return 0;
 }
 
-sf::Uint32 GameStage::doRemoteEvent(TeamManager & teamMan, 
-                                    ArenaManager & arenaMan,
+sf::Uint32 GameStage::doRemoteEvent(Game & g,
                                     CommEvent & cevent,
                                     sf::Uint32 connId,
                                     sf::Uint32 msgId)
@@ -41,25 +40,25 @@ sf::Uint32 GameStage::doWindowEvent(sf::RenderWindow & w, sf::Event & event)
 
 
 
-sf::Uint32 GameStage::doLocalInput(sf::RenderWindow &window, TeamManager & teamMan)
+sf::Uint32 GameStage::doLocalInput(sf::RenderWindow &window, Game & g)
 {
     //LogFile::get()->log(0,0,"GameStage::doLocalInput");
     return 0;
 }
 
-sf::Uint32 GameStage::doLoop(Comm & comm, TeamManager & teamMan)
+sf::Uint32 GameStage::doLoop(Game & g)
 {
     //LogFile::get()->log(0,0,"GameStage::doLoop");
     return 0;
 }
 
-sf::Uint32 GameStage::doCleanup()
+sf::Uint32 GameStage::doCleanup(Game & g)
 {
     //LogFile::get()->log(0,0,"GameStage::doCleanup");
     return 0;
 }
 
-sf::Uint32 GameStage::doDraw(sf::RenderWindow &window, TeamManager & teamMan, ArenaManager & arenaMan, AssetManager & assetMan, sf::Time ft)
+sf::Uint32 GameStage::doDraw(sf::RenderWindow &window,Game & g, sf::Time ft)
 {
     //LogFile::get()->log(0,0,"GameStage::doDraw");
     return 0;
@@ -78,7 +77,7 @@ sf::Uint32 GameStage::getId()
 
 void GameStage::setSummary(sf::Uint32 s, sf::Uint16 i)
 {
-    LogFile::get()->log(0,0,"GameStage::setSummary");
+    //LogFile::get()->log(0,0,"GameStage::setSummary");
     summary[i] = s;
 }
 
@@ -91,7 +90,7 @@ sf::Uint32 GameStage::getSummary(sf::Uint16 i)
 
 void GameStage::setInput(sf::Uint32 s, sf::Uint16 i)
 {
-    LogFile::get()->log(0,0,"GameStage::setInput");
+    //LogFile::get()->log(0,0,"GameStage::setInput");
     inputs[i] = s;
 }
 

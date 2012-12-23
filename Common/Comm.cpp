@@ -18,6 +18,9 @@ Daniel Ferguson, Eddie Stranberg
 bool tg::Comm::StartClient(sf::Uint16 port, sf::IpAddress addr)
     
 {//We are creating a connecting client
+    this->address = addr;
+    this->port = port;
+
     NotDone = true;
     AddConnection(tg::Connection());
     std::cout << "StartClient" << std::endl;
@@ -154,7 +157,9 @@ void tg::Comm::CommLooper(Comm* comm)
                 comm->Established.push_back(newConnection);
 
                 //And add the client to the selector
+                comm->EstablishedMutex.lock();
                 comm->EstablishedSelector.add(*newConnection.Socket);
+                comm->EstablishedMutex.unlock();
                 comm->SendSystem(CommEventType::Acceptance, comm->TotalConnectCount, std::string("accepted Connection Request"));
                 comm->TotalConnectCount++;
             }else{
@@ -174,7 +179,7 @@ void tg::Comm::CommLooper(Comm* comm)
                     i->SendMutex = new sf::Mutex();
                     i->RecvMutex = new sf::Mutex();
                 }
-                sf::Socket::Status s = i->Socket->connect(sf::IpAddress("127.0.0.1"), 8280);//"192.168.2.110"
+                sf::Socket::Status s = i->Socket->connect(comm->address, comm->port);//"192.168.2.110"
                 if (s == sf::Socket::Done){
                 
                     i->connectionId = comm->TotalConnectCount;
@@ -189,9 +194,9 @@ void tg::Comm::CommLooper(Comm* comm)
                     i = comm->Connecting.erase(i);
                 }else {
                     if(s == sf::Socket::Disconnected)
-                        comm->SendSystem(CommEventType::Disconnect, comm->TotalConnectCount, std::string("Client disconnected"));
+                        comm->SendSystem(CommEventType::Disconnect, comm->TotalConnectCount, std::string("Failed to Connect to Remote Host"));
                     else
-                        comm->SendSystem(CommEventType::Error,  comm->TotalConnectCount, std::string("Error on receive"));
+                        comm->SendSystem(CommEventType::Error,  comm->TotalConnectCount, std::string("Error on connect"));
                     //we'd better remove the socket from the selector
                     delete i->Socket;
                     delete i->SendMutex;
@@ -291,7 +296,7 @@ void tg::Comm::CommLooper(Comm* comm)
       
 
         //Sleep little baby
-        sf::sleep(sf::milliseconds(10));
+        sf::sleep(sf::milliseconds(0));
     }
 }
 

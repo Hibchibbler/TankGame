@@ -8,20 +8,19 @@
 #define INPUT_ELEMENTS 16
 namespace tg
 {
-    class Comm;
+    //class Comm;
     class CommEvent;
-    class TeamManager;
-    class ArenaManager;
-    class GameServer;
-    class AssetManager;
+    //class TeamManager;
+    //class ArenaManager;
+    class Game;
+    //class AssetManager;
     //This may have to be server and client specific....
     class GameStage
     {
     public:
         GameStage();
         virtual ~GameStage();
-        virtual sf::Uint32 doRemoteEvent(TeamManager & teamMan, 
-                                         ArenaManager & arenaMan,
+        virtual sf::Uint32 doRemoteEvent(Game & g,
                                          CommEvent & cevent,
                                          sf::Uint32 connId,
                                          sf::Uint32 msgId);
@@ -29,11 +28,11 @@ namespace tg
         virtual sf::Uint32 doWindowEvent(sf::RenderWindow & w, 
                                           sf::Event & event);
 
-        virtual sf::Uint32 doInit();
-        virtual sf::Uint32 doLocalInput(sf::RenderWindow &window, TeamManager & teamMan);
-        virtual sf::Uint32 doLoop(Comm & comm, TeamManager & teamMan);
-        virtual sf::Uint32 doCleanup();
-        virtual sf::Uint32 doDraw(sf::RenderWindow &window, TeamManager & teamMan, ArenaManager & arenaMan, AssetManager & assetMan, sf::Time ft);
+        virtual sf::Uint32 doInit(Game & g);
+        virtual sf::Uint32 doLocalInput(sf::RenderWindow &window, Game & g);
+        virtual sf::Uint32 doLoop(Game & g);
+        virtual sf::Uint32 doCleanup(Game & g);
+        virtual sf::Uint32 doDraw(sf::RenderWindow &window,Game & g, sf::Time ft);//TODO: carry this inside. 
 
         void setId(sf::Uint32 id);
         sf::Uint32 getId();

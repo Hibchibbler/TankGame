@@ -3,6 +3,7 @@
 
 #include "StageEstablish.h"
 #include "StageRun.h"
+#include "Common\Game.h"
 #include "Common\Comm.h"
 #include "Common\ArenaManager.h"
 #include "Common\TeamManager.h"
@@ -23,7 +24,7 @@ namespace tg
         sf::RenderWindow * window;
     };*/
 
-    class GameServer
+    class GameServer : public Game
     {
     public:
         GameServer();
@@ -38,12 +39,12 @@ namespace tg
 
         TeamManager & getTeamMan();
         Comm & getComm();
-    private:
-        Comm                    server;
-        TeamManager             teamMan;
-        ArenaManager            arenaMan;
-        sf::RenderWindow        window;//don't know what's going to happen to this...
-
+    
+        //Comm                    server;
+        //TeamManager             teamMan;
+        //ArenaManager            arenaMan;
+        //sf::RenderWindow        window;//don't know what's going to happen to this...
+private:
         StageEstablish          stageEst;
         StageRun                stageRun;
         GameServerState::GSS    state;

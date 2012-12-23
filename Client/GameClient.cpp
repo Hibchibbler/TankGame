@@ -62,6 +62,10 @@ sf::Uint32 GameClient::doRemoteEvents()
                 std::cout << "Woah, Server Disconnected" <<std::endl;
                 break;
             }case CommEventType::Error:
+            
+                sf::Uint32 msgId;
+                event.packet >> msgId;
+                std::cout << "Error!" << msgId << std::endl;
                 break;
             case CommEventType::Data:{
                 sf::Uint32 msgId;
@@ -71,7 +75,7 @@ sf::Uint32 GameClient::doRemoteEvents()
 
                 //tg::Player & p = teamMan.getPlayer(cid);
                 event.packet >> msgId;
-                curStage->doRemoteEvent(teamMan, arenaMan, event, cid, msgId);
+                curStage->doRemoteEvent(*this, event, cid, msgId);
                 break;
             }
         }
@@ -96,7 +100,7 @@ sf::Uint32 GameClient::doLocalEvents()
         }
     }
 
-    curStage->doLocalInput(window, teamMan);
+    curStage->doLocalInput(window, *this);
  
     return 0;
 }
@@ -105,24 +109,15 @@ sf::Uint32 GameClient::doInit()
 {
     //Initialize Start Stage
     curStage = &stageStart;
-    curStage->setInput(scrWidth,    0);
-    curStage->setInput(scrHeight,   1);
-    curStage->doInit();
+    curStage->doInit(*this);
 
     //Initialize Lobby Stage
     curStage = &stageLobby;
-    curStage->setInput(scrWidth,    0);
-    curStage->setInput(scrHeight,   1);
-    curStage->doInit();
+    curStage->doInit(*this);
 
     //Initialize Run Stage
     curStage = &stageRun;
-    curStage->setInput(scrWidth,    0);
-    curStage->setInput(scrHeight,   1);
-    curStage->setInput(myCID,       2);
-    curStage->setInput(myTeam,      3);
-    curStage->setInput(mySlot,      4);
-    curStage->doInit();
+    curStage->doInit(*this);
 
     //Set the start stage..
     curStage = &stageStart;
@@ -131,9 +126,16 @@ sf::Uint32 GameClient::doInit()
     assetMan.load();
     arenaMan.load("Assets\\map1.txt");
     teamMan.load();
-    
-    window.create(sf::VideoMode(scrWidth, scrHeight,32),"Client");
-    client.StartClient(8280,"127.0.0.1");//.StartServer(8280);
+    //sf::VideoMode::getFullscreenModes().front().
+    window.create(sf::VideoMode(scrWidth, scrHeight,32),"Client");//(sf::VideoMode(800,600,32),  "TankGame Client",sf::Style::Fullscreen );
+    //window.setVerticalSyncEnabled(true);
+    char ip[64];
+    short port;
+    std::cout << "Enter IP to Connect to: ";
+    std::cin >> ip;
+    std::cout << "Enter Port to Connect to: ";
+    std::cin >> port;
+    client.StartClient(port,sf::IpAddress(ip));
 
     return 0;
 }
@@ -142,13 +144,8 @@ sf::Uint32 GameClient::doLoop()
 {
     if (curStage != NULL)
     {
-        curStage->setInput(scrWidth,    0);
-        curStage->setInput(scrHeight,   1);
-        curStage->setInput(myCID,       2);
-        curStage->setInput(myTeam,      3);
-        curStage->setInput(mySlot,      4);
 
-        sf::Uint32 summary = curStage->doLoop(client, teamMan);
+        sf::Uint32 summary = curStage->doLoop(*this);
         //Id is set in GameServer constructor.
         switch (curStage->getId()){
         case 0://stageStart
@@ -200,9 +197,9 @@ sf::Uint32 GameClient::doLoop()
 sf::Uint32 GameClient::doCleanup()
 {
     LogFile::get()->log(0,0,"GameClient::doCleanup");
-    stageStart.doCleanup();
-    stageLobby.doCleanup();
-    stageRun.doCleanup();
+    stageStart.doCleanup(*this);
+    stageLobby.doCleanup(*this);
+    stageRun.doCleanup(*this);
     return 0;
 }
 
@@ -210,7 +207,7 @@ sf::Uint32 GameClient::doDraw(sf::Time ft)
 {
     window.clear();
 
-    curStage->doDraw(window, teamMan, arenaMan, assetMan, ft);
+    curStage->doDraw(window, *this, ft);
 
     window.display();
     return 0;

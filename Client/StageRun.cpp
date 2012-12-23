@@ -1,4 +1,5 @@
 #include "StageRun.h"
+#include "Common\Game.h"
 #include "Common\Comm.h"
 #include "Common\Messages.h"
 #include "Common\TeamManager.h"
@@ -21,13 +22,12 @@ sf::Uint32 StageRun::doInit()
     return 0;
 }
 
-sf::Uint32 StageRun::doRemoteEvent(TeamManager & teamMan, 
-                            ArenaManager & arenaMan,
+sf::Uint32 StageRun::doRemoteEvent(Game & g,
                             CommEvent & cevent,
                             sf::Uint32 connId,
                             sf::Uint32 msgId)
 {
-    Player &player = teamMan.getPlayer(connId);
+    Player &player = g.teamMan.getPlayer(connId);
     switch (msgId){
     case MsgId::StateOfUnion:
         hasRxStateOfUnion = true;
@@ -38,10 +38,11 @@ sf::Uint32 StageRun::doRemoteEvent(TeamManager & teamMan,
         sf::Uint32 hasHost;
         sf::Uint32 cid;
         for (int t= 1;t < 3;t++){
+            //Players
             cevent.packet >> teamSize;//-----------------team 1 , then 2 
             for (int u = 0;u < teamSize;u++){
                 cevent.packet >> slotNum;
-                Player & aPlayer = teamMan.getPlayerBySlot(t,slotNum);
+                Player & aPlayer = g.teamMan.getPlayerBySlot(t,slotNum);
 
                 cevent.packet >> aPlayer.hasHost;
                 cevent.packet >> aPlayer.tank.health;
@@ -61,12 +62,19 @@ sf::Uint32 StageRun::doRemoteEvent(TeamManager & teamMan,
                     Projectile projectile;
                     cevent.packet >> projectile.position.x;
                     cevent.packet >> projectile.position.y;
-                    /*cevent.packet >> projectile.velocity.x;
-                    cevent.packet >> projectile.velocity.y;
-                    cevent.packet >> projectile.angle;*/
-                
                     aPlayer.prjctls.push_back(projectile);
                 }
+            }
+            //Teams
+            sf::Uint32 cc;
+            g.teamMan.teams[t].creep.clear();
+            cevent.packet >> cc;
+            for (int c = 0 ;c < cc ;c++)
+            {
+                Creep creep;
+                cevent.packet >> creep.position.x;
+                cevent.packet >> creep.position.y;
+                g.teamMan.teams[t].creep.push_back(creep);
             }
         }
 
@@ -76,7 +84,7 @@ sf::Uint32 StageRun::doRemoteEvent(TeamManager & teamMan,
 }
 
 sf::Uint32 StageRun::doWindowEvent(sf::RenderWindow & w, 
-                                          sf::Event & event)
+                                   sf::Event & event)
 {
     if (event.type == sf::Event::LostFocus){
         hasFocus = false;
@@ -84,24 +92,19 @@ sf::Uint32 StageRun::doWindowEvent(sf::RenderWindow & w,
         hasFocus = true;
     }else if (event.type == sf::Event::MouseWheelMoved){
         if (event.mouseWheel.delta  > 0)
-            zoom += 0.75;
+            zoom += 0.5;
         else
-            zoom -= 0.25;
+            zoom -= 0.5;
     }
     //we don't have to check for Resized here, because composing object will 
     //provide updated sizes through setInput.
     return 0;
 }
 
-sf::Uint32 StageRun::doLoop(Comm & comm, TeamManager & teamMan)
+sf::Uint32 StageRun::doLoop(Game & g)
 {
-    sf::Uint32 scrWidth  = getInput(0);
-    sf::Uint32 scrHeight = getInput(1);
-    sf::Uint32 myCID     = getInput(2);
-    sf::Uint32 myTeam    = getInput(3);
-    sf::Uint32 mySlot    = getInput(4);
-    
-    Player & p = teamMan.getPlayerBySlot(myTeam,mySlot);
+ 
+    Player & p = g.teamMan.getPlayerBySlot(g.myTeam,g.mySlot);
     
     dash.setDash(p);
 
@@ -110,34 +113,27 @@ sf::Uint32 StageRun::doLoop(Comm & comm, TeamManager & teamMan)
             p.state = PlayerState::Running;
             break;
         case PlayerState::SendingStateOfPlayer:
-            Messages::sendStateOfPlayer(comm, teamMan, myCID, myTeam, mySlot, thisPlayer, attacking);
+            Messages::sendStateOfPlayer(g.client, g.teamMan, g.myCID, g.myTeam, g.mySlot, thisPlayer, attacking);
             p.state = PlayerState::Running;
             break;
 
     }
     return getSummary(0);
 }
-sf::Uint32 StageRun::doLocalInput(sf::RenderWindow & window, TeamManager & teamMan)
+sf::Uint32 StageRun::doLocalInput(sf::RenderWindow & window, Game & g)
 {
-    sf::Uint32 scrWidth = getInput(0);
-    sf::Uint32 scrHeight = getInput(1);
-    sf::Uint32 myCID = getInput(2);
-    sf::Uint32 myTeam = getInput(3);
-    sf::Uint32 mySlot = getInput(4);
-
-
     bool control = false;
     attacking = 0;
     
     if (!hasFocus)
         return 0;
 
-    thisPlayer = teamMan.teams[myTeam].players[mySlot];
+    thisPlayer = g.teamMan.teams[g.myTeam].players[g.mySlot];
     //We poll keyboard 
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)){
         thisPlayer.tank.throttle += 5;
-        if (thisPlayer.tank.throttle > 25)
-            thisPlayer.tank.throttle = 25;  
+        if (thisPlayer.tank.throttle > 45)
+            thisPlayer.tank.throttle = 45;  
         control = true;
     }
     
@@ -145,8 +141,8 @@ sf::Uint32 StageRun::doLocalInput(sf::RenderWindow & window, TeamManager & teamM
     //max speed lower in reverse
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::S)){
         thisPlayer.tank.throttle += -5;
-        if (thisPlayer.tank.throttle < -25)
-            thisPlayer.tank.throttle = -25;  
+        if (thisPlayer.tank.throttle < -45)
+            thisPlayer.tank.throttle = -45;
         control = true;
     }
     
@@ -196,14 +192,14 @@ sf::Uint32 StageRun::doLocalInput(sf::RenderWindow & window, TeamManager & teamM
     if (sf::Mouse::isButtonPressed(sf::Mouse::Left)){
         attacking = true;
         //thisPlayer.tank.
-        std::cout << "Bang!" << std::endl;
+        //std::cout << "Bang!" << std::endl;
     }
 
     if (control || attacking)
     {
-        if (stateOfPlayerClock.getElapsedTime().asMilliseconds() > 50)
+        if (stateOfPlayerClock.getElapsedTime().asMilliseconds() > 90)
         {
-            teamMan.teams[myTeam].players[mySlot].state = PlayerState::SendingStateOfPlayer;
+            g.teamMan.teams[g.myTeam].players[g.mySlot].state = PlayerState::SendingStateOfPlayer;
             stateOfPlayerClock.restart();
         }
     }
@@ -211,30 +207,23 @@ sf::Uint32 StageRun::doLocalInput(sf::RenderWindow & window, TeamManager & teamM
     return 0;
 }
 
-sf::Uint32 StageRun::doDraw(sf::RenderWindow & window, TeamManager & teamMan, ArenaManager & arenaMan, AssetManager & assetMan, sf::Time ft)
+sf::Uint32 StageRun::doDraw(sf::RenderWindow & window, Game & g, sf::Time ft)
 {
-    //TODO: i don't like how you can get invalid CID, Team, and Slot
-    sf::Uint32 scrWidth = getInput(0);
-    sf::Uint32 scrHeight = getInput(1);
-    sf::Uint32 myCID = getInput(2);
-    sf::Uint32 myTeam = getInput(3);
-    sf::Uint32 mySlot = getInput(4);
-
    //Set view on top of this player.
-    if ((int)myTeam != -1){//if == -1, then your team has not yet been established. i do not like this
-        sf::Vector2f pos = teamMan.teams[myTeam].players[mySlot].tank.position;
+    if ((int)g.myTeam != -1){//if == -1, then your team has not yet been established. i do not like this
+        sf::Vector2f pos = g.teamMan.teams[g.myTeam].players[g.mySlot].tank.position;
         //For every 3 world pixels, there is 1 screen pixel
         
-        arenaView.reset(sf::FloatRect(pos.x-((scrWidth)/2),pos.y-((scrHeight)/2),scrWidth,scrHeight));
+        arenaView.reset(sf::FloatRect(pos.x-((g.scrWidth)/2),pos.y-((g.scrHeight)/2),g.scrWidth,g.scrHeight));
         arenaView.zoom(zoom);
         //arenaView.setViewport(sf::FloatRect(0,0,0.25,0.25));
         window.setView(arenaView);
     }
     //Draw the floor tiles
     for (int i = 0;i < 900;i++){
-        Tile &tile = arenaMan.getTile(i);
+        Tile &tile = g.arenaMan.getTile(i);
         sf::Sprite ts;
-        ts.setTexture(*assetMan.getFloorImage(tile.getName()).tex);
+        ts.setTexture(*g.assetMan.getFloorImage(tile.getName()).tex);
         ts.setPosition(tile.getPosition());
         window.draw(ts);
     }
@@ -243,11 +232,11 @@ sf::Uint32 StageRun::doDraw(sf::RenderWindow & window, TeamManager & teamMan, Ar
     sf::Uint32 t2=0;
      for (int t=1;t < 3;t++)
     {
-        for (int s = 0;s < teamMan.teams[t].players.size();s++)
+        for (int s = 0;s < g.teamMan.teams[t].players.size();s++)
         {
-            Player &p = teamMan.teams[t].players[s];
+            Player &p = g.teamMan.teams[t].players[s];
           
-            if (p.hasHost)
+            if (p.hasHost && p.tank.health > 0)
                 if (t==1)
                     t1++;
                 else
@@ -259,9 +248,9 @@ sf::Uint32 StageRun::doDraw(sf::RenderWindow & window, TeamManager & teamMan, Ar
     //Draw the tanks
     for (int y=1;y < 3;y++)
     {
-        for (int h = 0;h < teamMan.teams[y].players.size();h++)
+        for (int h = 0;h < g.teamMan.teams[y].players.size();h++)
         {
-            if (teamMan.teams[y].players[h].hasHost)
+            if (g.teamMan.teams[y].players[h].hasHost)
             {
                 std::string tankName;
                 sf::Sprite b,t;
@@ -275,7 +264,7 @@ sf::Uint32 StageRun::doDraw(sf::RenderWindow & window, TeamManager & teamMan, Ar
                 else
                     tankName = "YellowTank";
 
-                TankImage & ti = assetMan.getTankImage(tankName);
+                TankImage & ti = g.assetMan.getTankImage(tankName);
 
                 b.setTexture(*ti.btex);
                 t.setTexture(*ti.ttex);
@@ -286,56 +275,64 @@ sf::Uint32 StageRun::doDraw(sf::RenderWindow & window, TeamManager & teamMan, Ar
                 b.setRotation(-90);
                 t.setRotation(-90);
 
-                b.rotate(teamMan.teams[y].players[h].tank.bodyAngle);
-                t.rotate(teamMan.teams[y].players[h].tank.turretAngle);
+                b.rotate(g.teamMan.teams[y].players[h].tank.bodyAngle);
+                t.rotate(g.teamMan.teams[y].players[h].tank.turretAngle);
 
-                b.setPosition(teamMan.teams[y].players[h].tank.position);
-                t.setPosition(teamMan.teams[y].players[h].tank.position);
+                b.setPosition(g.teamMan.teams[y].players[h].tank.position);
+                t.setPosition(g.teamMan.teams[y].players[h].tank.position);
 
                 /*std::cout << teamMan.teams[y].players[h].tank.position.x << ", " << teamMan.teams[y].players[h].tank.position.y << std::endl;
                 std::cout << teamMan.teams[y].players[h].tank.velocity.x*20*ft.asSeconds() << ", " << teamMan.teams[y].players[h].tank.position.y*20*ft.asSeconds() << std::endl;*/
-                for (int k = 0;k < teamMan.teams[y].players[h].prjctls.size();k++)
+                for (int k = 0;k < g.teamMan.teams[y].players[h].prjctls.size();k++)
                 {
                     sf::Sprite prjctl;
-                    prjctl.setTexture(*assetMan.getProjectileImage("Projectile").tex);
-                    prjctl.setPosition(teamMan.teams[y].players[h].prjctls[k].position);
+                    prjctl.setTexture(*g.assetMan.getProjectileImage("Projectile").tex);
+                    prjctl.setPosition(g.teamMan.teams[y].players[h].prjctls[k].position);
                     //prjctl.setRotation(teamMan.teams[y].players[h].prjctls[k].angle);
                     window.draw(prjctl);
                 }
 
                 window.draw(b);
                 window.draw(t);
+
+                for (int lk = 0;lk < g.teamMan.teams[y].creep.size();lk++)
+                {
+                    sf::Sprite creep;
+                    creep.setTexture(*g.assetMan.getMinionImage((y==1 ?"Minion1":"Minion2")).tex);
+                    creep.setPosition(g.teamMan.teams[y].creep[lk].position);
+                    window.draw(creep);
+                }
             }
         }
     }
 
     //Draw the Dashboard
-    dashView.reset(sf::FloatRect(0,0, scrWidth, scrHeight));
+    dashView.reset(sf::FloatRect(0,0, g.scrWidth, g.scrHeight));
     //dashView.setCenter(scrWidth/2,-1.0f*(scrHeight/2)+65);
    
     window.setView(dashView);
     
     dash.dashPos.x = 0;
-    dash.dashPos.y = scrHeight-65;//65 is height of dashboard backdrop image.
+    dash.dashPos.y = g.scrHeight-65;//65 is height of dashboard backdrop image.
 
-    dash.backDrop.setTexture(*assetMan.getDashboardImage().tex);
+    dash.backDrop.setTexture(*g.assetMan.getDashboardImage().tex);
     dash.backDrop.setPosition(dash.dashPos);
     
-    dash.healthText.setFont(assetMan.getFont());
+    dash.healthText.setFont(g.assetMan.getFont());
     dash.healthText.setScale(dash.healthTextScale);
     dash.healthText.setPosition(dash.dashPos.x, dash.dashPos.y+8);
     
-    dash.speedText.setFont(assetMan.getFont());
+    dash.speedText.setFont(g.assetMan.getFont());
     dash.speedText.setScale(dash.speedTextScale);
     dash.speedText.setPosition(dash.dashPos.x, dash.dashPos.y+33);
 
-    dash.powerText.setFont(assetMan.getFont());
+    dash.powerText.setFont(g.assetMan.getFont());
     dash.powerText.setScale(dash.powerTextScale);
     dash.powerText.setPosition(dash.dashPos.x+135, dash.dashPos.y+8);
 
-    dash.scoreText.setFont(assetMan.getFont());
+    dash.scoreText.setFont(g.assetMan.getFont());
     dash.scoreText.setScale(dash.scoreTextScale);
-    dash.scoreText.setPosition(dash.dashPos.x+scrWidth/2,(dash.dashPos.y-scrHeight)+65);
+    dash.scoreText.setPosition(dash.dashPos.x+g.scrWidth/2,(dash.dashPos.y-g.scrHeight)+65);
 
     window.draw(dash.backDrop);
     window.draw(dash.healthText);

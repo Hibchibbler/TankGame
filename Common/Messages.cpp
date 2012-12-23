@@ -129,7 +129,7 @@ int Messages::sendStateOfUnion(Comm & comm, TeamManager & teamMan)
     //Team 1 & 2 - not 0 because we don't advertise our limbo'ers
     int teamSize[3] =  { 0,0,0};
 
-    for (int t = 0;t < 3;t++){        
+    for (int t = 0;t < 3;t++){
         for (auto y= teamMan.teams[t].players.begin();y != teamMan.teams[t].players.end();y++){
             if (y->hasHost)
                 teamSize[t]++;
@@ -156,12 +156,15 @@ int Messages::sendStateOfUnion(Comm & comm, TeamManager & teamMan)
                 {
                     event.packet << y->prjctls[p].position.x;
                     event.packet << y->prjctls[p].position.y;
-                    //event.packet << y->prjctls[p].velocity.x;
-                    //event.packet << y->prjctls[p].velocity.y;
-                    //event.packet << y->prjctls[p].angle;
                 }
-                
             }
+        }
+        //creep
+        event.packet << teamMan.teams[t].creep.size();
+        for (auto y= teamMan.teams[t].creep.begin();y != teamMan.teams[t].creep.end();y++)
+        {
+            event.packet << y->position.x;
+            event.packet << y->position.y;
         }
     }
 

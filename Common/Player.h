@@ -11,30 +11,30 @@ namespace tg
     //to identify state. so, some states don't make sense from a client
     //perspective, and likewise for server.
     //None the less, the state is specific to a Player
-    struct PlayerState{
-    enum pstate{
-            New,/***********/
-            SendingWhoIs,
-            SendingWhoIsAck,
-            WaitingForWhoIsAck,
-            SendingId,
-            SendingIdAck,
-            SendingIdNack,
-            WaitingForIdAck,
-            SendingStateOfPlayer,
-            WaitingForStateOfPlayer,
-            SendingStateOfUnion,
-            WaitingForStateOfUnion,
-            SendingReady,
-            WaitingForReady,
-            Ready,/***********/
-            WaitingForMap,
-            WaitingForStart,
-            Running,/***********/
-            Paused,/***********/
-            EmitProjectile
-        };
+struct PlayerState{
+enum pstate{
+        New,/***********/
+        SendingWhoIs,
+        SendingWhoIsAck,
+        WaitingForWhoIsAck,
+        SendingId,
+        SendingIdAck,
+        SendingIdNack,
+        WaitingForIdAck,
+        SendingStateOfPlayer,
+        WaitingForStateOfPlayer,
+        SendingStateOfUnion,
+        WaitingForStateOfUnion,
+        SendingReady,
+        WaitingForReady,
+        Ready,/***********/
+        WaitingForMap,
+        WaitingForStart,
+        Running,/***********/
+        Paused,/***********/
+        EmitProjectile
     };
+};
 
 
     class Player

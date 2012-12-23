@@ -4,6 +4,7 @@
 #include "StageStart.h"
 #include "StageLobby.h"
 #include "StageRun.h"
+#include "Common\Game.h"
 #include "Common\Comm.h"
 #include "Common\ArenaManager.h"
 #include "Common\TeamManager.h"
@@ -19,7 +20,7 @@ namespace tg
             Run
         };
     };
-    class GameClient
+    class GameClient : public Game
     {
     public:
         GameClient(sf::Uint32 w, sf::Uint32 h);
@@ -35,22 +36,22 @@ namespace tg
         TeamManager & getTeamMan();
         Comm & getComm();
     private:
-        Comm client;
-        TeamManager teamMan;
-        ArenaManager arenaMan;
-        AssetManager assetMan;
-        sf::RenderWindow window;
+        //Comm client;
+        //TeamManager teamMan;
+        //ArenaManager arenaMan;
+        //AssetManager assetMan;
+        //sf::RenderWindow window;
 
         StageStart stageStart;
         StageLobby stageLobby;
         StageRun   stageRun;
 
-        sf::Uint32 myCID;
-        sf::Uint32 mySlot;
-        sf::Uint32 myTeam;
+        //sf::Uint32 myCID;
+        //sf::Uint32 mySlot;
+        //sf::Uint32 myTeam;
 
-        sf::Uint32 scrWidth;
-        sf::Uint32 scrHeight;
+        //sf::Uint32 scrWidth;
+        //sf::Uint32 scrHeight;
 
         GameClientState::GCS state;
         GameStage * curStage;

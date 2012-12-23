@@ -3,6 +3,7 @@
 #include "Common\Messages.h"
 #include "Common\TeamManager.h"
 #include "Common\ArenaManager.h"
+#include "GameServer.h"
 using namespace tg;
 
 #define PROJECTILE_DISTANCE 10
@@ -10,16 +11,15 @@ using namespace tg;
 StageRun::StageRun()
     : GameStage()
 {
-
+    loopTime = sf::Time();
 }
 
-sf::Uint32 StageRun::doRemoteEvent(TeamManager & teamMan, 
-                                   ArenaManager & arenaMan,
+sf::Uint32 StageRun::doRemoteEvent(Game & g,
                                    CommEvent & cevent,
                                    sf::Uint32 connId,
                                    sf::Uint32 msgId)
 {
-    Player &player = teamMan.getPlayer(connId);
+    Player &player = g.teamMan.getPlayer(connId);
 
     switch (msgId){
        
@@ -69,12 +69,15 @@ sf::Uint32 StageRun::doRemoteEvent(TeamManager & teamMan,
     return 0;
 }
 
-bool isTankCollision(sf::Vector2f projPos, TeamManager & teamMan)
+bool isTankCollision(sf::Vector2f projPos, Game & g, sf::Uint32 damage, sf::Uint32 team=-1)
 {
     for (int y = 1; y < 3 ; y++)
     {
-        tg::Team::PlayerIterator tp = teamMan.getTeam(y).begin();
-        for (;tp != teamMan.getTeam(y).end();tp++){
+        //skip doing collision if a safe team is specified
+        if (y != -1 && team == y)
+            continue;
+        tg::Team::PlayerIterator tp = g.teamMan.getTeam(y).begin();
+        for (;tp != g.teamMan.getTeam(y).end();tp++){
             //tp->tank.position
             if (tp->hasHost)
             {
@@ -83,7 +86,9 @@ bool isTankCollision(sf::Vector2f projPos, TeamManager & teamMan)
                     projPos.y > tp->tank.position.y && 
                     projPos.y < tp->tank.position.y+30 )
                 {
-                    tp->tank.health--;
+                    if (tp->tank.health>0)
+                        tp->tank.health-=damage;
+                    
                     return true;
                 }
             }
@@ -93,39 +98,71 @@ bool isTankCollision(sf::Vector2f projPos, TeamManager & teamMan)
     return false;
 
     ////TODO: assumes size of tank.
-
-    //    return true;
-    //}
-    //return false;
 }
 
-sf::Uint32 StageRun::doLoop(Comm & comm, TeamManager & teamMan)
+int isCreepCollision(sf::Vector2f projPos, Game & g, sf::Uint32 damage, sf::Uint32 team=-1)
+{
+    for (int y = 1; y < 3 ; y++)
+    {
+        //skip doing collision if a safe team is specified
+        if (y != -1 && team == y)
+            continue;
+        
+        for (auto c = g.teamMan.teams[y].creep.begin();c != g.teamMan.teams[y].creep.end();)
+        {
+            //tp->tank.position
+         
+                if (projPos.x > c->position.x &&
+                    projPos.x < c->position.x+60 &&
+                    projPos.y > c->position.y && 
+                    projPos.y < c->position.y+30 )
+                {
+                    c->health--;
+                    if (c->health <= 0)
+                    {
+                        c = g.teamMan.teams[y].creep.erase(c);
+                        return 2;
+                    }
+                    return 1;
+                }else
+                    c++;
+            
+        }
+    }
+
+    return 0;
+
+    ////TODO: assumes size of tank.
+}
+
+sf::Uint32 StageRun::doLoop(Game & g)
 {
     previousTime = currentTime;
     currentTime = velocityClock.restart();
     deltaTime = currentTime - previousTime;
     loopTime += deltaTime;
-    
-    //Player Update
+    //std::cout << currentTime.asSeconds() << std::endl;
+    //Players, teams, and global Update
     for (int y = 1; y < 3 ; y++)
     {
-        tg::Team::PlayerIterator pi = teamMan.getTeam(y).begin();
-        for (;pi != teamMan.getTeam(y).end();pi++){
+        //Players update
+        tg::Team::PlayerIterator pi = g.teamMan.getTeam(y).begin();
+        for (;pi != g.teamMan.getTeam(y).end();pi++){
         
             if (pi->hasHost == false)
                 continue;
     
             switch (pi->state){
                 case PlayerState::SendingWhoIsAck:
-                    Messages::sendWhoIsAck(comm, teamMan, pi->connectionId);
+                    Messages::sendWhoIsAck(g.server, g.teamMan, pi->connectionId);
                     pi->state = PlayerState::Running; 
                     break;
                 case PlayerState::SendingIdNack:
-                    Messages::sendIdNack(comm, teamMan, pi->connectionId);
+                    Messages::sendIdNack(g.server, g.teamMan, pi->connectionId);
                     pi->state = PlayerState::Running;
                     break;
                 case PlayerState::Ready:
-                    Messages::sendStart(comm, teamMan, pi->connectionId);
+                    Messages::sendStart(g.server, g.teamMan, pi->connectionId);
                     pi->state = PlayerState::Running;
                     break;
                 case PlayerState::EmitProjectile:
@@ -145,16 +182,24 @@ sf::Uint32 StageRun::doLoop(Comm & comm, TeamManager & teamMan)
                      //Remove projectiles who have run out of power.
                     for (auto i = pi->prjctls.begin();i != pi->prjctls.end();)
                     {
-                        if (i->totalDistance > PROJECTILE_DISTANCE*pi->tank.power*30)
+                        if (i->totalDistance > (PROJECTILE_DISTANCE*500)+(pi->tank.power*25))
                         {
                             i = pi->prjctls.erase(i);
-                        }else{
+                        }else
+                        {
                             i->position.x = i->position.x + i->velocity.x * loopTime.asSeconds()*20;
                             i->position.y = i->position.y + i->velocity.y * loopTime.asSeconds()*20;
                             i->totalDistance+=1;
-                            bool yes = isTankCollision(i->position,teamMan);
-                            if (yes)
+
+                            ////Remove projectile that has hit a tank or creep
+                            bool yes1 = isTankCollision(i->position,g,1,y);
+                            int yes2 = isCreepCollision(i->position,g,1,y);
+                            if (yes1!=0 || yes2)
+                            {
                                 i = pi->prjctls.erase(i);
+                                if (yes2==2)
+                                    pi->tank.power++;
+                            }
                             else
                                 i++;
                         }
@@ -178,19 +223,57 @@ sf::Uint32 StageRun::doLoop(Comm & comm, TeamManager & teamMan)
                     break;
             }
         }
-        //Game Update
+        //Teams Update
+        float accumulatedClock = accumulatingClock.getElapsedTime().asSeconds();
+        if (minionAddClock.getElapsedTime().asMilliseconds() > 1000)
+        {
+            int r=0;
+            Creep newCreep;
+            newCreep.position = g.arenaMan.getGeneratorPosition(y);
+            newCreep.health = 7;
+            newCreep.creationTime = accumulatedClock;
+            if (y==1)
+                r = rand()%90;
+            else
+                r = (rand()%90)+180;
 
+            newCreep.velocity.x = cos(r*3.14156/180.0);
+            newCreep.velocity.y = sin(r*3.14156/180.0);
+
+            g.teamMan.teams[y].creep.push_back(newCreep);
+        }
+        
+#define GANG 80
+        ////Remove creep that is hit a tank
+        for (auto c = g.teamMan.teams[y].creep.begin();c != g.teamMan.teams[y].creep.end();)
+        {
+            c->position.x = c->position.x + c->velocity.x * loopTime.asSeconds()*GANG;
+            c->position.y = c->position.y + c->velocity.y * loopTime.asSeconds()*GANG;
+            
+            bool yes = isTankCollision(c->position,g, 5, y);
+            int yes2 = isCreepCollision(c->position,g,5,y);
+            if (yes || (yes2 && rand()%2==1) || c->creationTime + 50.0f < accumulatedClock )
+            {
+                c = g.teamMan.teams[y].creep.erase(c);
+            }else
+                c++;
+
+        }
+        
     }
     
-
-    if (updateStateTimer.getElapsedTime().asMilliseconds() > 75){
+    //Global update
+    if (updateStateTimer.getElapsedTime().asMilliseconds() > 30){
         //std::cout << "SS ";
-        Messages::sendStateOfUnion(comm, teamMan);
+        Messages::sendStateOfUnion(g.server, g.teamMan);
         updateStateTimer.restart();
     }
+    if (minionAddClock.getElapsedTime().asMilliseconds() > 1000)
+        minionAddClock.restart();
+    //sf::sleep(sf::milliseconds(10));
     return getSummary(0);
 }
-sf::Uint32 StageRun::doLocalInput(sf::RenderWindow & window, TeamManager & teamMan)
+sf::Uint32 StageRun::doLocalInput(sf::RenderWindow & window, Game & g)
 {
 
     return 0;

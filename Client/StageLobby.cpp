@@ -1,4 +1,5 @@
 #include "StageLobby.h"
+#include "Common\Game.h"
 #include "Common\Comm.h"
 #include "Common\Messages.h"
 #include "Common\TeamManager.h"
@@ -11,13 +12,12 @@ StageLobby::StageLobby()
 {
 }
 
-sf::Uint32 StageLobby::doRemoteEvent(TeamManager & teamMan, 
-                                     ArenaManager & arenaMan,
+sf::Uint32 StageLobby::doRemoteEvent(Game & g,
                                      CommEvent & cevent,
                                      sf::Uint32 connId,
                                      sf::Uint32 msgId)
 {
-    tg::Player & p = teamMan.getPlayer(connId);
+    tg::Player & p = g.teamMan.getPlayer(connId);
 
     switch (msgId){
     case MsgId::WhoIsAck:
@@ -76,7 +76,7 @@ sf::Uint32 StageLobby::doRemoteEvent(TeamManager & teamMan,
     return 0;
 }
 
-sf::Uint32 StageLobby::doLoop(Comm & comm, TeamManager & teamMan)
+sf::Uint32 StageLobby::doLoop(Game & g)
 {
     //    //Get myself onto a team...
     //1. Have to see how many & who are on each team
@@ -91,8 +91,8 @@ sf::Uint32 StageLobby::doLoop(Comm & comm, TeamManager & teamMan)
    
         //for (int y = 0;y < 3;y++){
 
-    tg::Team::PlayerIterator & pi = teamMan.teams[0].players.begin();        
-    for (;pi != teamMan.teams[0].players.end();pi++){
+    tg::Team::PlayerIterator & pi = g.teamMan.teams[0].players.begin();        
+    for (;pi != g.teamMan.teams[0].players.end();pi++){
         
         if (pi->hasHost == false)
             continue;
@@ -102,7 +102,7 @@ sf::Uint32 StageLobby::doLoop(Comm & comm, TeamManager & teamMan)
                 pi->state = PlayerState::SendingWhoIs;
                 break;
             case PlayerState::SendingWhoIs:
-                tg::Messages::sendWhoIs(comm, teamMan, pi->connectionId);
+                tg::Messages::sendWhoIs(g.client,g.teamMan, pi->connectionId);
                 pi->state = PlayerState::WaitingForWhoIsAck;
                 break;
             case PlayerState::WaitingForWhoIsAck:
@@ -122,7 +122,7 @@ sf::Uint32 StageLobby::doLoop(Comm & comm, TeamManager & teamMan)
                 setSummary(myTeam,1);
                 ///////////////////////
                 
-                tg::Messages::sendId(comm, teamMan, pi->connectionId, myName, myTeam);
+                tg::Messages::sendId(g.client, g.teamMan, pi->connectionId, myName, myTeam);
                 pi->state = PlayerState::WaitingForIdAck;
                 break;
             }
@@ -132,7 +132,7 @@ sf::Uint32 StageLobby::doLoop(Comm & comm, TeamManager & teamMan)
                 break;
             
             case PlayerState::Ready:
-                tg::Messages::sendReady(comm, teamMan, pi->connectionId);
+                tg::Messages::sendReady(g.client, g.teamMan, pi->connectionId);
                 pi->state = PlayerState::WaitingForStart;
                 break;
            
@@ -142,7 +142,7 @@ sf::Uint32 StageLobby::doLoop(Comm & comm, TeamManager & teamMan)
     
     return getSummary(0);
 }
-sf::Uint32 StageLobby::doLocalInput(sf::RenderWindow & window, TeamManager & teamMan)
+sf::Uint32 StageLobby::doLocalInput(sf::RenderWindow & window, Game & g)
 {
     return 0;
 }
