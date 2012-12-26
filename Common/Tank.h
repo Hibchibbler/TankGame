@@ -18,7 +18,7 @@ namespace tg
             turretAngle = 0.0f;
             mass = 5.0f;
         }
-        sf::Uint32 health;
+        sf::Int32 health;
         sf::Uint32 power;
 
         sf::Vector2f position;
@@ -27,6 +27,9 @@ namespace tg
         float bodyAngle;
         float turretAngle;
         float mass;
+
+        sf::Vector2f shadowPos;
+        sf::Vector2f shadowVel;
     };
 
 };

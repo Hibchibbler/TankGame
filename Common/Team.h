@@ -8,6 +8,28 @@
 
 namespace tg
 {
+    class Base
+    {
+    public:
+        Base()
+        {
+            health = 100;
+        }
+        sf::Int32 health;
+    private:
+    };
+
+
+    class Generator
+    {
+    public:
+        Generator(){
+            health = 100;
+        }
+        sf::Int32 health;
+    private:
+    };
+
 
     class Team
     {
@@ -18,6 +40,7 @@ namespace tg
         typedef std::vector<Player>::iterator PlayerIterator;
         std::vector<Player> players;
         std::vector<Creep> creep;
+        Generator gen1;
     };
 };
 

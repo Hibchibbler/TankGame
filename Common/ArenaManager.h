@@ -117,7 +117,11 @@ namespace tg
 
                     if (index % horizTileNum == 0)
                         row++;
-                    //std::cout << index << std::endl;
+
+                  /*  int a=0;
+                    int b=0;
+                    indexToRC(index-1,a,b);
+                    std::cout << a << ", " << b << std::endl;*/
                 }
             }else{
                 std::cout << "ArenaManager::load unable to open map" << std::endl;
@@ -125,6 +129,25 @@ namespace tg
             }
             return 0;
         }
+
+        bool indexToRC(int index, int & r, int & c)
+        {
+            sf::Vector2f pos;
+
+            int row = index / horizTileNum;
+
+            r = (index % horizTileNum) * ARENAMAN_TILE_WIDTH;
+            c = row * ARENAMAN_TILE_HEIGHT;
+
+            return true;
+        }
+
+        bool posToIndex(sf::Vector2f pos, int & index)
+        {
+            index = (pos.x / horizTileNum) * (pos.y / vertTileNum);
+            return true;
+        }
+
         sf::Uint32 setSprites(AssetManager & am, int screenWidth, int screenHeight);
         sf::Vector2f getStartPosition(int team){
             for (auto i = arenaData.begin();i != arenaData.end();i++){
@@ -159,9 +182,10 @@ namespace tg
         Tile & getTile(sf::Uint32 index){
             return arenaData[index];
         }
-    private:
+    
         sf::Uint32 horizTileNum;
         sf::Uint32 vertTileNum;
+private:
         std::vector<Tile>  arenaData;
         
     };

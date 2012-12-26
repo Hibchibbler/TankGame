@@ -49,6 +49,7 @@ private:
         StageRun                stageRun;
         GameServerState::GSS    state;
         GameStage *             curStage;
+        int numConnects;
     private:
 
     };

@@ -124,7 +124,7 @@ sf::Uint32 GameClient::doInit()
 
 
     assetMan.load();
-    arenaMan.load("Assets\\map1.txt");
+    arenaMan.load("Assets\\map2.txt");
     teamMan.load();
     //sf::VideoMode::getFullscreenModes().front().
     window.create(sf::VideoMode(scrWidth, scrHeight,32),"Client");//(sf::VideoMode(800,600,32),  "TankGame Client",sf::Style::Fullscreen );
@@ -133,9 +133,9 @@ sf::Uint32 GameClient::doInit()
     short port;
     std::cout << "Enter IP to Connect to: ";
     std::cin >> ip;
-    std::cout << "Enter Port to Connect to: ";
-    std::cin >> port;
-    client.StartClient(port,sf::IpAddress(ip));
+    /*std::cout << "Enter Port to Connect to: ";
+    std::cin >> port;*/
+    client.StartClient(8280,sf::IpAddress(ip));
 
     return 0;
 }
@@ -144,7 +144,6 @@ sf::Uint32 GameClient::doLoop()
 {
     if (curStage != NULL)
     {
-
         sf::Uint32 summary = curStage->doLoop(*this);
         //Id is set in GameServer constructor.
         switch (curStage->getId()){

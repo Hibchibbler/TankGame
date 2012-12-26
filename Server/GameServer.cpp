@@ -10,6 +10,7 @@ GameServer::GameServer()
 {
     //For Server, we want the Establish stage first.
     //
+    numConnects=0;
     state = GameServerState::Establish;
     curStage = NULL;
     stageEst.setId(0);
@@ -39,7 +40,7 @@ sf::Uint32 GameServer::doRemoteEvents()
                 p.connectionId = cid;
 
                 teamMan.addPlayer(p,"New Guy", 0);
-
+                numConnects++;
                 break;
             }case CommEventType::Disconnect:{
                 LogFile::get()->log(0,0,"Disconnect");
@@ -48,6 +49,12 @@ sf::Uint32 GameServer::doRemoteEvents()
                 //remove player from either team0/1/2
                 teamMan.removePlayer(cid);
                 std::cout << "Player " << cid << " Disconnected" << std::endl;
+                numConnects--;
+                if (numConnects==0)
+                {
+                    curStage = &stageEst;
+                    state = GameServerState::Establish;
+                }
                 break;
             }case CommEventType::Error:
             LogFile::get()->log(0,0,"Error");
@@ -92,7 +99,7 @@ sf::Uint32 GameServer::doInit()
     stageEst.doInit(*this);
     stageRun.doInit(*this);
 
-    arenaMan.load("Assets\\map1.txt");
+    arenaMan.load("Assets\\map2.txt");
     teamMan.load();
     
     server.StartServer(8280);

@@ -17,7 +17,7 @@ namespace tg
         sf::Vector2f position;
         sf::Vector2f velocity;
         float totalDistance;
-        sf::Uint32 health;
+        sf::Int32 health;
         float creationTime;
     private:
     };
