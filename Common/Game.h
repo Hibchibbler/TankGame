@@ -1,7 +1,10 @@
 #ifndef Game_h_
 #define Game_h_
 
-#include <SFML/Graphics.hpp>
+
+#include <SFML\Graphics.hpp>
+#include <SFGUI\SFGUI.hpp>
+
 #include "Comm.h"
 #include "TeamManager.h"
 #include "ArenaManager.h"
@@ -28,6 +31,8 @@ namespace tg
         sf::Uint32 myTeam;
         sf::Uint32 scrWidth;
         sf::Uint32 scrHeight;
+
+        sfg::SFGUI sfGui;
     };
 
 };

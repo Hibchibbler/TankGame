@@ -23,7 +23,7 @@ int Messages::sendReady(Comm & comm, TeamManager & teamMan, int cid)
 
 int Messages::sendStateOfPlayer(Comm & comm, TeamManager & teamMan, int cid, int team, int slot,Player & player, sf::Uint32 attacking)
 {
-    std::cout << "Sent StateOfPlayer" << std::endl;
+    //std::cout << "Sent StateOfPlayer" << std::endl;
     tg::CommEvent event;
     event.connectionId = cid;
     event.packet << CommEventType::Data;
@@ -182,6 +182,6 @@ int Messages::sendStart(Comm & comm, TeamManager & teamMan, int cid)
     event.packet << CommEventType::Data;
     event.packet << MsgId::Start;
     comm.Send(event);
-    return 0;
+
     return 0;
 }

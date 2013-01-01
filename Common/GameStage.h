@@ -3,18 +3,21 @@
 
 
 #include <SFML/Graphics.hpp>
+#include <string>
 
 #define SUMMARY_ELEMENTS 16
 #define INPUT_ELEMENTS 16
 namespace tg
 {
-    //class Comm;
     class CommEvent;
-    //class TeamManager;
-    //class ArenaManager;
     class Game;
-    //class AssetManager;
-    //This may have to be server and client specific....
+    
+    class Element{
+    public:
+        sf::Uint32 a;
+        std::string b;
+    };
+
     class GameStage
     {
     public:
@@ -36,17 +39,17 @@ namespace tg
 
         void setId(sf::Uint32 id);
         sf::Uint32 getId();
-        
-        sf::Uint32 getSummary(sf::Uint16 i);
-        void setInput(sf::Uint32 s, sf::Uint16 i);
+
+        Element getSummary(sf::Uint16 i);
+        void setInput(Element e, sf::Uint16 i);
         
     protected:
-        void setSummary(sf::Uint32 s, sf::Uint16 i);
-        sf::Uint32 getInput(sf::Uint16 i);
+        void setSummary(Element e, sf::Uint16 i);
+        Element getInput(sf::Uint16 i);
     private:    
         sf::Uint32 id;
-        sf::Uint32 summary[SUMMARY_ELEMENTS];
-        sf::Uint32 inputs[INPUT_ELEMENTS];
+        Element summary[SUMMARY_ELEMENTS];
+        Element inputs[INPUT_ELEMENTS];
     };
 
 };

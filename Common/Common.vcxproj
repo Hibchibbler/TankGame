@@ -39,14 +39,14 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>C:\SFML\LaurentGomila-SFML-4c04a0c\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\SFML\SFML2\lib\Debug;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\SFML\SFGUI\include;C:\SFML\LaurentGomila-SFML-4c04a0c\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\SFML\SFGUI\lib;C:\SFML\SFML2\lib\Debug;$(LibraryPath)</LibraryPath>
     <CodeAnalysisIgnoreGeneratedCode>true</CodeAnalysisIgnoreGeneratedCode>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>C:\SFML\LaurentGomila-SFML-4c04a0c\include;$(SolutionDir);$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSdkDir)include;$(FrameworkSDKDir)\include;</IncludePath>
-    <LibraryPath>C:\SFML\SFML2\lib\MinSizeRel;$(SolutionDir)\Release;$(VCInstallDir)lib;$(VCInstallDir)atlmfc\lib;$(WindowsSdkDir)lib;$(FrameworkSDKDir)\lib</LibraryPath>
+    <IncludePath>C:\SFML\SFGUI\include;C:\SFML\LaurentGomila-SFML-4c04a0c\include;$(SolutionDir);$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSdkDir)include;$(FrameworkSDKDir)\include</IncludePath>
+    <LibraryPath>C:\SFML\SFML2\lib\MinSizeRel;C:\SFML\SFGUI\lib;$(SolutionDir)\Release;$(VCInstallDir)lib;$(VCInstallDir)atlmfc\lib;$(WindowsSdkDir)lib;$(FrameworkSDKDir)\lib</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -97,6 +97,7 @@
     <ClInclude Include="TeamManager.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\Client\TextBox.cpp" />
     <ClCompile Include="ArenaManager.cpp" />
     <ClCompile Include="AssetManager.cpp" />
     <ClCompile Include="Comm.cpp" />

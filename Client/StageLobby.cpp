@@ -11,6 +11,47 @@ StageLobby::StageLobby()
     : GameStage()
 {
 }
+sf::Uint32 StageLobby::doInit(Game & g)
+{
+    sfg::Box::Ptr box( sfg::Box::Create( sfg::Box::VERTICAL, 5.0f ) );
+    
+    for (int i = 0;i < 5;i++){
+        sfg::Box::Ptr row = sfg::Box::Create( sfg::Box::HORIZONTAL, 5.0f );
+        team1[i] = sfg::Entry::Create("");    
+        row->Pack(team1[i],true,true);   
+        team2[i] = sfg::Entry::Create("");    
+        row->Pack(team2[i],true,true);   
+        box->Pack(row);
+    }
+
+    sfg::Box::Ptr row = sfg::Box::Create( sfg::Box::HORIZONTAL, 5.0f );
+    sfg::Button::Ptr joinTeam1Button;
+    joinTeam1Button = sfg::Button::Create("Join Team 1");
+    row->Pack(joinTeam1Button);
+    sfg::Button::Ptr joinTeam2Button;
+    joinTeam2Button = sfg::Button::Create("Join Team 2");
+    row->Pack(joinTeam2Button);
+    box->Pack(row);
+
+    //joinButton->GetSignal( sfg::Widget::OnLeftClick ).Connect( &StageStart::doJoin, this );
+
+
+    sfg::Window::Ptr mywindow;
+    mywindow = sfg::Window::Create();
+
+    mywindow->SetTitle("Lobby");
+    mywindow->Add(box);
+
+    desk.Add(mywindow);
+    return 0;
+}
+
+
+sf::Uint32 StageLobby::doWindowEvent(sf::RenderWindow & window, sf::Event & event)
+{
+    desk.HandleEvent(event);
+    return 0;
+}
 
 sf::Uint32 StageLobby::doRemoteEvent(Game & g,
                                      CommEvent & cevent,
@@ -55,7 +96,9 @@ sf::Uint32 StageLobby::doRemoteEvent(Game & g,
             cevent.packet >> mySlot;
             
             //////////////////////
-            setSummary(mySlot,2);
+            Element e1;
+            e1.a = mySlot;
+            setSummary(e1,2);
             ///////////////////////
 
             std::cout << "Got IdAck. We're slot " << mySlot <<   std::endl;
@@ -69,15 +112,21 @@ sf::Uint32 StageLobby::doRemoteEvent(Game & g,
         case MsgId::Start:
             std::cout << "Got Start" << std::endl;
             ///////////////////////
-            setSummary(1,0);
+            Element e1;
+            e1.a = 1;
+            setSummary(e1,0);
             ///////////////////////
             break;
     }
     return 0;
 }
 
+
+
 sf::Uint32 StageLobby::doLoop(Game & g)
 {
+    if (deskUpdateClock.getElapsedTime().asSeconds() >= 0.1f)
+        desk.Update(deskUpdateClock.restart().asSeconds());
     //    //Get myself onto a team...
     //1. Have to see how many & who are on each team
     //1.1 send WhoIs
@@ -119,7 +168,9 @@ sf::Uint32 StageLobby::doLoop(Game & g)
                 std::cin >> myTeam;
 
                 ///////////////////////
-                setSummary(myTeam,1);
+                Element e1;
+                e1.a = myTeam;
+                setSummary(e1,1);
                 ///////////////////////
                 
                 tg::Messages::sendId(g.client, g.teamMan, pi->connectionId, myName, myTeam);
@@ -135,12 +186,10 @@ sf::Uint32 StageLobby::doLoop(Game & g)
                 tg::Messages::sendReady(g.client, g.teamMan, pi->connectionId);
                 pi->state = PlayerState::WaitingForStart;
                 break;
-           
         }
     }
-        //}
-    
-    return getSummary(0);
+
+    return getSummary(0).a;
 }
 sf::Uint32 StageLobby::doLocalInput(sf::RenderWindow & window, Game & g)
 {
@@ -148,7 +197,12 @@ sf::Uint32 StageLobby::doLocalInput(sf::RenderWindow & window, Game & g)
 }
 
 
-
+sf::Uint32 StageLobby::doDraw(sf::RenderWindow &window,Game & g, sf::Time ft)
+{
+    window.resetGLStates();
+    g.sfGui.Display(window);
+    return 0;
+}
 
 
 

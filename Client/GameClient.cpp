@@ -27,6 +27,7 @@ GameClient::GameClient(sf::Uint32 w, sf::Uint32 h)
     mySlot = -1;
 
     curStage = &stageStart;
+
 }
 GameClient::~GameClient()
 {
@@ -92,6 +93,7 @@ sf::Uint32 GameClient::doLocalEvents()
     sf::Event wevent;
     while (window.pollEvent(wevent))
     {
+        
         curStage->doWindowEvent(window, wevent);
         if (wevent.type == sf::Event::Resized)
         {
@@ -131,11 +133,11 @@ sf::Uint32 GameClient::doInit()
     //window.setVerticalSyncEnabled(true);
     char ip[64];
     short port;
-    std::cout << "Enter IP to Connect to: ";
-    std::cin >> ip;
+    //std::cout << "Enter IP to Connect to: ";
+    //std::cin >> ip;
     /*std::cout << "Enter Port to Connect to: ";
     std::cin >> port;*/
-    client.StartClient(8280,sf::IpAddress(ip));
+    client.StartClient(8280,"192.168.1.9");//sf::IpAddress(ip));
 
     return 0;
 }
@@ -153,6 +155,10 @@ sf::Uint32 GameClient::doLoop()
                 //Stage Done
                 //Get summary details
                 //transition to next stage;
+
+                std::cout << "User specified join: " << curStage->getSummary(1).b << std::endl;
+                std::cout << "                   @ " << curStage->getSummary(2).a << std::endl;
+
                 std::cout << "Switching to StageLobby" << std::endl;
                 curStage = &stageLobby;
                 break;
@@ -164,8 +170,8 @@ sf::Uint32 GameClient::doLoop()
         case 1://stageLobby
             switch (summary){
             case 0x1://Stage Done, transition to next stage;
-                myTeam = curStage->getSummary(1);
-                mySlot = curStage->getSummary(2);
+                myTeam = curStage->getSummary(1).a;
+                mySlot = curStage->getSummary(2).a;
 
                 std::cout << myCID << ", " << myTeam << ", " << mySlot << std::endl;
 
@@ -204,11 +210,15 @@ sf::Uint32 GameClient::doCleanup()
 
 sf::Uint32 GameClient::doDraw(sf::Time ft)
 {
-    window.clear();
+    if (updateStateClock.getElapsedTime().asMilliseconds() > 50)
+    {
+        window.clear();
 
-    curStage->doDraw(window, *this, ft);
+        curStage->doDraw(window, *this, ft);
 
-    window.display();
+        window.display();
+        updateStateClock.restart();
+    }
     return 0;
 }
 

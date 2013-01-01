@@ -2,8 +2,7 @@
 #define StageStart_h_
 
 #include "Common\GameStage.h"
-//wann go to da sto wid me?
-//want go to the store with me?
+#include <SFGUI/SFGUI.hpp>
 
 namespace tg
 {
@@ -11,6 +10,8 @@ namespace tg
     {
     public:
         StageStart();
+        sf::Uint32 doInit(Game & g);
+        sf::Uint32 doWindowEvent(sf::RenderWindow & window, sf::Event & event);
         sf::Uint32 doRemoteEvent(Game & g,
                                  CommEvent & cevent,
                                  sf::Uint32 connId,
@@ -18,7 +19,13 @@ namespace tg
 
         sf::Uint32 doLoop(Game & g);
         sf::Uint32 doLocalInput(sf::RenderWindow & window, Game & g);
+        sf::Uint32 doDraw(sf::RenderWindow &window,Game & g, sf::Time ft);
     private:
+        void doJoin();
+        sf::Clock deskUpdateClock;
+        sfg::Desktop desk;
+        sfg::Entry::Ptr ipEntry;
+        sfg::Entry::Ptr portEntry;
     };
 };
 

@@ -14,6 +14,7 @@ StageRun::StageRun()
     hasRxStateOfUnion = false;
     hasFocus = false;
     zoom = 1.0;
+    
 }
 
 sf::Uint32 StageRun::doInit()
@@ -43,7 +44,7 @@ sf::Uint32 StageRun::doRemoteEvent(Game & g,
             for (int u = 0;u < teamSize;u++){
                 cevent.packet >> slotNum;
                 Player & aPlayer = g.teamMan.getPlayerBySlot(t,slotNum);
-
+                
                 cevent.packet >> aPlayer.hasHost;
                 cevent.packet >> aPlayer.tank.health;
                 cevent.packet >> aPlayer.tank.power;
@@ -55,6 +56,10 @@ sf::Uint32 StageRun::doRemoteEvent(Game & g,
                 cevent.packet >> aPlayer.tank.velocity.x;
                 cevent.packet >> aPlayer.tank.velocity.y;
 
+                //aPlayer.tank.shadowPos.x = (float)((sf::Int32)aPlayer.tank.shadowPos.x);
+                //aPlayer.tank.shadowPos.y = (float)((sf::Int32)aPlayer.tank.shadowPos.y);
+                
+                aPlayer.tank.shadowUpdated = true;
                 if (!hasRxStateOfUnion)
                 {
                     aPlayer.tank.position = aPlayer.tank.shadowPos;
@@ -73,6 +78,7 @@ sf::Uint32 StageRun::doRemoteEvent(Game & g,
                     //dx = cos(aPlayer.tank.turretAngle* (180.0f/3.14156f))*10;
                     cevent.packet >> projectile.position.x;
                     cevent.packet >> projectile.position.y;
+
                     //projectile.position.x -= dx;
                     //projectile.position.y -= dy;
                     aPlayer.prjctls.push_back(projectile);
@@ -134,7 +140,7 @@ sf::Uint32 StageRun::doLoop(Game & g)
             break;
 
     }
-    return getSummary(0);
+    return getSummary(0).a;
 }
 sf::Uint32 StageRun::doLocalInput(sf::RenderWindow & window, Game & g)
 {
@@ -226,168 +232,171 @@ sf::Uint32 StageRun::doLocalInput(sf::RenderWindow & window, Game & g)
 
     return 0;
 }
-
+#define LINEAR_SMOOTH 10.0f
 sf::Uint32 StageRun::doDraw(sf::RenderWindow & window, Game & g, sf::Time ft)
 {
-   //Set view on top of this player.
-    if ((int)g.myTeam != -1){//if == -1, then your team has not yet been established. i do not like this
-        sf::Vector2f pos = g.teamMan.teams[g.myTeam].players[g.mySlot].tank.position;
-        //For every 3 world pixels, there is 1 screen pixel
-        
-        arenaView.reset(sf::FloatRect(pos.x-((g.scrWidth)/2),pos.y-((g.scrHeight)/2),g.scrWidth,g.scrHeight));
-        arenaView.zoom(zoom);
-        //arenaView.setViewport(sf::FloatRect(0,0,0.25,0.25));
-        window.setView(arenaView);
-    }
-    //Draw the floor tiles
-    for (int i = 0;i < 900;i++){
-        Tile &tile = g.arenaMan.getTile(i);
-        sf::Sprite ts;
-        ts.setTexture(*g.assetMan.getFloorImage(tile.getName()).tex);
-        ts.setPosition(tile.getPosition());
-        window.draw(ts);
-    }
+    
+       //Set view on top of this player.
+        if ((int)g.myTeam != -1){//if == -1, then your team has not yet been established. i do not like this
 
-    sf::Uint32 t1=0;
-    sf::Uint32 t2=0;
-     for (int t=1;t < 3;t++)
-    {
-        for (int s = 0;s < g.teamMan.teams[t].players.size();s++)
+            sf::Vector2f pos = g.teamMan.teams[g.myTeam].players[g.mySlot].tank.position;
+
+            arenaView.reset(sf::FloatRect(pos.x-((g.scrWidth)/2),pos.y-((g.scrHeight)/2),g.scrWidth,g.scrHeight));//sf::FloatRect(0,0,g.scrWidth,g.scrHeight));//
+            arenaView.zoom(zoom);
+            //arenaView.setViewport(sf::FloatRect(0,0,0.25,0.25));
+            window.setView(arenaView);
+        }
+        //Draw the floor tiles
+        for (int i = 0;i < 900;i++){
+            Tile &tile = g.arenaMan.getTile(i);
+            sf::Sprite ts;
+            ts.setTexture(*g.assetMan.getFloorImage(tile.getName()).tex);
+            ts.setPosition(tile.getPosition());
+            window.draw(ts);
+        }
+
+        sf::Uint32 t1=0;
+        sf::Uint32 t2=0;
+         for (int t=1;t < 3;t++)
         {
-            Player &p = g.teamMan.teams[t].players[s];
+            for (int s = 0;s < g.teamMan.teams[t].players.size();s++)
+            {
+                Player &p = g.teamMan.teams[t].players[s];
           
-            if (p.hasHost && p.tank.health > 0)
-                if (t==1)
-                    t1++;
-                else
-                    t2++;
-        }
-     }
-    dash.setScore(t1, t2);
+                if (p.hasHost && p.tank.health > 0)
+                    if (t==1)
+                        t1++;
+                    else
+                        t2++;
+            }
+         }
+        dash.setScore(t1, t2);
 
-    //Draw the tanks
-    for (int y=1;y < 3;y++)
-    {
-        for (int h = 0;h < g.teamMan.teams[y].players.size();h++)
+        //Draw the tanks
+        for (int y=1;y < 3;y++)
         {
-            if (g.teamMan.teams[y].players[h].hasHost)
+            for (int h = 0;h < g.teamMan.teams[y].players.size();h++)
             {
-                std::string tankName;
-                sf::Sprite b,t;
-                //TODO: uh.. i do not like this
-                if (y==1 && h == 0)
-                    tankName = "BlueTank";
-                else if (y==1 && h==1)
-                    tankName = "RedTank";
-                else if (y==2 && h==0)
-                    tankName = "GreenTank";
-                else
-                    tankName = "YellowTank";
-
-                TankImage & ti = g.assetMan.getTankImage(tankName);
-
-                b.setTexture(*ti.btex);
-                t.setTexture(*ti.ttex);
-
-                b.setOrigin(40,61);
-                t.setOrigin(27,90);
-                
-                b.setRotation(-90);
-                t.setRotation(-90);
-
-                b.rotate(g.teamMan.teams[y].players[h].tank.bodyAngle);
-                t.rotate(g.teamMan.teams[y].players[h].tank.turretAngle);
-
-                float dx, dy;
-                //std::cout << g.teamMan.teams[y].players[h].tank.shadowPos.x << ", " << g.teamMan.teams[y].players[h].tank.position.x << std::endl;
-                dx = g.teamMan.teams[y].players[h].tank.shadowPos.x - g.teamMan.teams[y].players[h].tank.position.x;
-                dy = g.teamMan.teams[y].players[h].tank.shadowPos.y - g.teamMan.teams[y].players[h].tank.position.y;
-               /* float angle;
-                angle = atan2(dy,dx);
-                float vx,vy;
-                vx = cos(angle);
-                vy = sin(angle);*/
-                g.teamMan.teams[y].players[h].tank.position.x +=(dx/10.0f);
-                g.teamMan.teams[y].players[h].tank.position.y +=(dy/10.0f);
-                b.setPosition(g.teamMan.teams[y].players[h].tank.position);
-                t.setPosition(g.teamMan.teams[y].players[h].tank.position);
-
-
-                /*std::cout << teamMan.teams[y].players[h].tank.position.x << ", " << teamMan.teams[y].players[h].tank.position.y << std::endl;
-                std::cout << teamMan.teams[y].players[h].tank.velocity.x*20*ft.asSeconds() << ", " << teamMan.teams[y].players[h].tank.position.y*20*ft.asSeconds() << std::endl;*/
-                for (int k = 0;k < g.teamMan.teams[y].players[h].prjctls.size();k++)
+                if (g.teamMan.teams[y].players[h].hasHost)
                 {
-                    sf::Sprite prjctl;
-                    prjctl.setTexture(*g.assetMan.getProjectileImage("Projectile").tex);
-                    prjctl.setPosition(g.teamMan.teams[y].players[h].prjctls[k].position);
-                   /* prjctl.setOrigin(27,180);
-                    prjctl.setRotation(-90);
-                    prjctl.rotate(g.teamMan.teams[y].players[h].tank.turretAngle);*/
-                   /* prjctl.setOrigin(50,0);
-                    prjctl.setRotation(g.teamMan.teams[y].players[h].tank.turretAngle);*/
-                    //prjctl.setRotation(teamMan.teams[y].players[h].prjctls[k].angle);
-                    window.draw(prjctl);
+
+                    //if (g.teamMan.teams[y].players[h].tank.shadowUpdated)
+                    //{
+                        g.teamMan.teams[y].players[h].tank.dx = g.teamMan.teams[y].players[h].tank.shadowPos.x - g.teamMan.teams[y].players[h].tank.position.x;
+                        g.teamMan.teams[y].players[h].tank.dy = g.teamMan.teams[y].players[h].tank.shadowPos.y - g.teamMan.teams[y].players[h].tank.position.y;
+                        g.teamMan.teams[y].players[h].tank.shadowUpdated = false;
+                   // }
+               
+                    g.teamMan.teams[y].players[h].tank.position.x +=(g.teamMan.teams[y].players[h].tank.dx*ft.asSeconds()*12.0);
+                    g.teamMan.teams[y].players[h].tank.position.y +=(g.teamMan.teams[y].players[h].tank.dy*ft.asSeconds()*12.0);
+
+                    std::string tankName;
+                    sf::Sprite b,t;
+                    //TODO: uh.. i do not like this
+                    if (y==1 && h == 0)
+                        tankName = "BlueTank";
+                    else if (y==1 && h==1)
+                        tankName = "RedTank";
+                    else if (y==2 && h==0)
+                        tankName = "GreenTank";
+                    else
+                        tankName = "YellowTank";
+
+                    TankImage & ti = g.assetMan.getTankImage(tankName);
+
+                    b.setTexture(*ti.btex);
+                    t.setTexture(*ti.ttex);
+
+                    b.setOrigin(40,61);
+                    t.setOrigin(27,90);
+                
+                    b.setRotation(-90);
+                    t.setRotation(-90);
+
+                    b.rotate(g.teamMan.teams[y].players[h].tank.bodyAngle);
+                    t.rotate(g.teamMan.teams[y].players[h].tank.turretAngle);
+
+               
+                    b.setPosition(g.teamMan.teams[y].players[h].tank.position);
+                    t.setPosition(g.teamMan.teams[y].players[h].tank.position);
+
+
+                    /*std::cout << teamMan.teams[y].players[h].tank.position.x << ", " << teamMan.teams[y].players[h].tank.position.y << std::endl;
+                    std::cout << teamMan.teams[y].players[h].tank.velocity.x*20*ft.asSeconds() << ", " << teamMan.teams[y].players[h].tank.position.y*20*ft.asSeconds() << std::endl;*/
+                    for (int k = 0;k < g.teamMan.teams[y].players[h].prjctls.size();k++)
+                    {
+                        sf::Sprite prjctl;
+                        prjctl.setTexture(*g.assetMan.getProjectileImage("Projectile").tex);
+                        prjctl.setPosition(g.teamMan.teams[y].players[h].prjctls[k].position);
+                       /* prjctl.setOrigin(27,180);
+                        prjctl.setRotation(-90);
+                        prjctl.rotate(g.teamMan.teams[y].players[h].tank.turretAngle);*/
+                       /* prjctl.setOrigin(50,0);
+                        prjctl.setRotation(g.teamMan.teams[y].players[h].tank.turretAngle);*/
+                        //prjctl.setRotation(teamMan.teams[y].players[h].prjctls[k].angle);
+                        window.draw(prjctl);
+                    }
+
+                    window.draw(b);
+                    window.draw(t);
+
+                    sf::Text stat;
+                    std::stringstream ss;
+                    ss << y << "/" << g.teamMan.teams[y].players[h].tank.health << "/" << g.teamMan.teams[y].players[h].tank.power;
+                    stat.setString(ss.str());
+                    stat.setFont(g.assetMan.getFont());
+                    stat.setScale(1.0,1.0);
+                    stat.setColor(sf::Color::Green);
+                    stat.setPosition(g.teamMan.teams[y].players[h].tank.position.x-33,g.teamMan.teams[y].players[h].tank.position.y-90);
+                    window.draw(stat);
                 }
-
-                window.draw(b);
-                window.draw(t);
-
-                sf::Text stat;
-                std::stringstream ss;
-                ss << y << "/" << g.teamMan.teams[y].players[h].tank.health << "/" << g.teamMan.teams[y].players[h].tank.power;
-                stat.setString(ss.str());
-                stat.setFont(g.assetMan.getFont());
-                stat.setScale(1.0,1.0);
-                stat.setColor(sf::Color::Green);
-                stat.setPosition(g.teamMan.teams[y].players[h].tank.position.x-33,g.teamMan.teams[y].players[h].tank.position.y-90);
-                window.draw(stat);
-            }
             
-            for (int lk = 0;lk < g.teamMan.teams[y].creep.size();lk++)
-            {
-                sf::Sprite creep;
-                creep.setTexture(*g.assetMan.getMinionImage((y==1 ?"Minion1":"Minion2")).tex);
-                creep.setPosition(g.teamMan.teams[y].creep[lk].position);
-                window.draw(creep);
-            }
+                for (int lk = 0;lk < g.teamMan.teams[y].creep.size();lk++)
+                {
+                    sf::Sprite creep;
+                    creep.setTexture(*g.assetMan.getMinionImage((y==1 ?"Minion1":"Minion2")).tex);
+                    creep.setScale(1.5,1.5);
+                    creep.setPosition(g.teamMan.teams[y].creep[lk].position);
+                    window.draw(creep);
+                }
             
+            }
         }
-    }
 
-    //Draw the Dashboard
-    dashView.reset(sf::FloatRect(0,0, g.scrWidth, g.scrHeight));
-    //dashView.setCenter(scrWidth/2,-1.0f*(scrHeight/2)+65);
+        //Draw the Dashboard
+        dashView.reset(sf::FloatRect(0,0, g.scrWidth, g.scrHeight));
+        //dashView.setCenter(scrWidth/2,-1.0f*(scrHeight/2)+65);
    
-    window.setView(dashView);
+        window.setView(dashView);
     
-    dash.dashPos.x = 0;
-    dash.dashPos.y = g.scrHeight-65;//65 is height of dashboard backdrop image.
+        dash.dashPos.x = 0;
+        dash.dashPos.y = g.scrHeight-65;//65 is height of dashboard backdrop image.
 
-    dash.backDrop.setTexture(*g.assetMan.getDashboardImage().tex);
-    dash.backDrop.setPosition(dash.dashPos);
+        dash.backDrop.setTexture(*g.assetMan.getDashboardImage().tex);
+        dash.backDrop.setPosition(dash.dashPos);
     
-    dash.healthText.setFont(g.assetMan.getFont());
-    dash.healthText.setScale(dash.healthTextScale);
-    dash.healthText.setPosition(dash.dashPos.x, dash.dashPos.y+8);
+        dash.healthText.setFont(g.assetMan.getFont());
+        dash.healthText.setScale(dash.healthTextScale);
+        dash.healthText.setPosition(dash.dashPos.x, dash.dashPos.y+8);
     
-    dash.speedText.setFont(g.assetMan.getFont());
-    dash.speedText.setScale(dash.speedTextScale);
-    dash.speedText.setPosition(dash.dashPos.x, dash.dashPos.y+33);
+        dash.speedText.setFont(g.assetMan.getFont());
+        dash.speedText.setScale(dash.speedTextScale);
+        dash.speedText.setPosition(dash.dashPos.x, dash.dashPos.y+33);
 
-    dash.powerText.setFont(g.assetMan.getFont());
-    dash.powerText.setScale(dash.powerTextScale);
-    dash.powerText.setPosition(dash.dashPos.x+135, dash.dashPos.y+8);
+        dash.powerText.setFont(g.assetMan.getFont());
+        dash.powerText.setScale(dash.powerTextScale);
+        dash.powerText.setPosition(dash.dashPos.x+135, dash.dashPos.y+8);
 
-    dash.scoreText.setFont(g.assetMan.getFont());
-    dash.scoreText.setScale(dash.scoreTextScale);
-    dash.scoreText.setPosition(dash.dashPos.x+g.scrWidth/2,(dash.dashPos.y-g.scrHeight)+65);
+        dash.scoreText.setFont(g.assetMan.getFont());
+        dash.scoreText.setScale(dash.scoreTextScale);
+        dash.scoreText.setPosition(dash.dashPos.x+g.scrWidth/2,(dash.dashPos.y-g.scrHeight)+65);
 
-    window.draw(dash.backDrop);
-    window.draw(dash.healthText);
-    window.draw(dash.speedText);
-    window.draw(dash.powerText);
-    window.draw(dash.scoreText);
-
+        window.draw(dash.backDrop);
+        window.draw(dash.healthText);
+        window.draw(dash.speedText);
+        window.draw(dash.powerText);
+        window.draw(dash.scoreText);
+    
     return 0;
 }
 

@@ -11,6 +11,8 @@
 #include "Common\AssetManager.h"
 #include <SFML/Graphics.hpp>
 
+#include <SFGUI/SFGUI.hpp>
+
 namespace tg
 {
     struct GameClientState{
@@ -45,7 +47,7 @@ namespace tg
         StageStart stageStart;
         StageLobby stageLobby;
         StageRun   stageRun;
-
+        sf::Clock updateStateClock;
         //sf::Uint32 myCID;
         //sf::Uint32 mySlot;
         //sf::Uint32 myTeam;
@@ -55,6 +57,8 @@ namespace tg
 
         GameClientState::GCS state;
         GameStage * curStage;
+
+
     };
 
 };

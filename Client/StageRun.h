@@ -39,11 +39,13 @@ namespace tg
         float curTurretAngle;
         float lastTurretAngle;
         sf::Clock stateOfPlayerClock;
+        sf::Clock updateStateClock;
         
-
+        float timeCurUpdate;
+        float timePrevUpdate;
         bool hasRxStateOfUnion;
         bool hasFocus;
-        
+
 
     };
 };

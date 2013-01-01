@@ -151,15 +151,15 @@ void tg::Comm::CommLooper(Comm* comm)
             if (s == sf::Socket::Done){
                 std::cout << "Client connected from " << newConnection.Socket->getRemoteAddress().toString() << std::endl;
 
-                // Add the client to our internal list
+                // Add the client to our internal list, and add the client to the selector
                 newConnection.connectionId = comm->TotalConnectCount;
                 newConnection.IsConnected = true;
-                comm->Established.push_back(newConnection);
-
-                //And add the client to the selector
+                
                 comm->EstablishedMutex.lock();
+                comm->Established.push_back(newConnection);
                 comm->EstablishedSelector.add(*newConnection.Socket);
                 comm->EstablishedMutex.unlock();
+
                 comm->SendSystem(CommEventType::Acceptance, comm->TotalConnectCount, std::string("accepted Connection Request"));
                 comm->TotalConnectCount++;
             }else{

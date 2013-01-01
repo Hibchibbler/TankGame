@@ -18,9 +18,13 @@ namespace tg
         sf::Uint32 doLocalInput(sf::RenderWindow & window, Game & g);
     private:
         sf::Clock updateStateTimer;
+        sf::Clock sendStateTimer;
         sf::Clock velocityClock;
         sf::Clock minionAddClock;
         sf::Clock accumulatingClock;
+
+        bool stateUpdated;
+
         
         sf::Time previousTime;
         sf::Time currentTime;

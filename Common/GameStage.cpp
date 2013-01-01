@@ -10,7 +10,9 @@ using namespace tg;
 
 GameStage::GameStage()
 {
-    setSummary(0,0);
+    Element e;
+    e.a = 0;
+    setSummary(e,0);
 }
 GameStage::~GameStage()
 {
@@ -75,26 +77,26 @@ sf::Uint32 GameStage::getId()
     return id; 
 }
 
-void GameStage::setSummary(sf::Uint32 s, sf::Uint16 i)
+void GameStage::setSummary(Element e, sf::Uint16 i)
 {
     //LogFile::get()->log(0,0,"GameStage::setSummary");
-    summary[i] = s;
+    summary[i] = e;
 }
 
-sf::Uint32 GameStage::getSummary(sf::Uint16 i)
+Element GameStage::getSummary(sf::Uint16 i)
 {
     //LogFile::get()->log(0,0,"GameStage::getSummary");
     return summary[i];
 }
 
 
-void GameStage::setInput(sf::Uint32 s, sf::Uint16 i)
+void GameStage::setInput(Element e, sf::Uint16 i)
 {
     //LogFile::get()->log(0,0,"GameStage::setInput");
-    inputs[i] = s;
+    inputs[i] = e;
 }
 
-sf::Uint32 GameStage::getInput(sf::Uint16 i)
+Element GameStage::getInput(sf::Uint16 i)
 {
     //LogFile::get()->log(0,0,"GameStage::getSummary");
     return inputs[i];

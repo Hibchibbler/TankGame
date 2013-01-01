@@ -18,6 +18,7 @@ namespace tg
         }
         float angle;
         sf::Vector2f position;
+        sf::Vector2f shadowPos;
         sf::Vector2f velocity;
         sf::Uint32 totalDistance;
         float creationTime;

@@ -123,7 +123,7 @@ sf::Uint32 StageEstablish::doLoop(Game & g)
             }
         }
     }
-    return getSummary(0);
+    return getSummary(0).a;
 }
 
 sf::Uint32 StageEstablish::doLocalInput(sf::RenderWindow & window, Game & g)
@@ -146,7 +146,9 @@ sf::Uint32 StageEstablish::doLocalInput(sf::RenderWindow & window, Game & g)
                 }
             }
             if (!someNotReady){
-                setSummary(1,0);
+                Element e1;
+                e1.a = 1;
+                setSummary(e1,0);
                 std::cout << "@";
             }
             //serverState = Running;

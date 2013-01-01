@@ -12,6 +12,7 @@ StageRun::StageRun()
     : GameStage()
 {
     loopTime = sf::Time();
+    stateUpdated = false;
 }
 
 sf::Uint32 StageRun::doRemoteEvent(Game & g,
@@ -146,219 +147,226 @@ int isCreepCollision(sf::Vector2f projPos, Game & g, sf::Uint32 damage, sf::Uint
 
     ////TODO: assumes size of tank.
 }
-#define CREEP_LIFE_MS 1000
-
+#define CREEP_SPEED 10
+#define CREEP_SPAWN_MS 1400
+#define UPDATE_STATE_MS 50
+#define SEND_STATE_MS 110
+#define PIXELS_PER_SECOND 10
+//STATE_OF_UNION_MS
 sf::Uint32 StageRun::doLoop(Game & g)
 {
-    previousTime = currentTime;
-    currentTime = velocityClock.restart();
-    deltaTime = currentTime - previousTime;
-    loopTime += deltaTime;
+    
     //std::cout << currentTime.asSeconds() << std::endl;
     //Players, teams, and global Update
-    for (int y = 1; y < 3 ; y++)
+    if (updateStateTimer.getElapsedTime().asMilliseconds() > UPDATE_STATE_MS)
     {
-        //Players update
-        tg::Team::PlayerIterator pi = g.teamMan.getTeam(y).begin();
-        for (;pi != g.teamMan.getTeam(y).end();pi++){
+        stateUpdated = true;
+        previousTime = currentTime;
+        currentTime = velocityClock.restart();
+        deltaTime = currentTime - previousTime;
+        loopTime += deltaTime;
+        for (int y = 1; y < 3 ; y++)
+        {
+            //Players update
+            tg::Team::PlayerIterator pi = g.teamMan.getTeam(y).begin();
+            for (;pi != g.teamMan.getTeam(y).end();pi++){
         
-            if (pi->hasHost == false)
-                continue;
+                if (pi->hasHost == false)
+                    continue;
     
-            switch (pi->state){
-                case PlayerState::SendingWhoIsAck:
-                    Messages::sendWhoIsAck(g.server, g.teamMan, pi->connectionId);
-                    pi->state = PlayerState::Running; 
-                    break;
-                case PlayerState::SendingIdNack:
-                    Messages::sendIdNack(g.server, g.teamMan, pi->connectionId);
-                    pi->state = PlayerState::Running;
-                    break;
-                case PlayerState::Ready:
-                    Messages::sendStart(g.server, g.teamMan, pi->connectionId);
-                    pi->state = PlayerState::Running;
-                    break;
-                case PlayerState::EmitProjectile:
+                switch (pi->state){
+                    case PlayerState::SendingWhoIsAck:
+                        Messages::sendWhoIsAck(g.server, g.teamMan, pi->connectionId);
+                        pi->state = PlayerState::Running; 
+                        break;
+                    case PlayerState::SendingIdNack:
+                        Messages::sendIdNack(g.server, g.teamMan, pi->connectionId);
+                        pi->state = PlayerState::Running;
+                        break;
+                    case PlayerState::Ready:
+                        Messages::sendStart(g.server, g.teamMan, pi->connectionId);
+                        pi->state = PlayerState::Running;
+                        break;
+                    case PlayerState::EmitProjectile:
                     
-                    pi->prjctls.push_back(Projectile());
-                    //TODO: THINK: do you want projectile to inherit the tanks' velocity?
+                        pi->prjctls.push_back(Projectile());
+                        //TODO: THINK: do you want projectile to inherit the tanks' velocity?
                     
-                    pi->prjctls.back().velocity.x = 100.0f*((float)cos(pi->tank.turretAngle/(180/3.14156)));
-                    pi->prjctls.back().velocity.y = 100.0f*((float)sin(pi->tank.turretAngle/(180/3.14156)));
-                    
-                    /////////////////////////
-                    /*float dx, dy;
-                    dx = pi->tank.shadowPos.x - pi->tank.position.x;
-                    dy = pi->tank.shadowPos.y - pi->tank.position.y;*/
-                    //std::cout << << ", " << << std::endl;
-                    //std::cout << pi->tank.position.x << ", " << pi->tank.shadowPos.x << std::endl;
-                    /////////////////////////
-                    pi->prjctls.back().position.x = pi->tank.position.x + pi->prjctls.back().velocity.x*1.2f;
-                    pi->prjctls.back().position.y = pi->tank.position.y + pi->prjctls.back().velocity.y*1.2f;
-                    
-                    //std::cout << pi->prjctls.back().position.x << ", " << pi->prjctls.back().position.y << std::endl;
-                    pi->prjctls.back().creationTime = accumulatingClock.getElapsedTime().asSeconds();
-                    pi->prjctls.back().angle = pi->tank.turretAngle;
-                    pi->prjctls.back().damage = 1+pi->tank.power/10.0f;
-                    pi->state = PlayerState::Running;
-                    break;
-                case PlayerState::Running:
-                     //Remove projectiles who have run out of power.
-                    for (auto i = pi->prjctls.begin();i != pi->prjctls.end();)
-                    {
-                        float accTime = accumulatingClock.getElapsedTime().asSeconds();
-                        if ( ((i->creationTime + 0.5f) + (pi->tank.power/20.0f))  < accTime )// (PROJECTILE_DISTANCE*500)+(pi->tank.power*25))
-                        {
-                            i = pi->prjctls.erase(i);
-                        }else
-                        {
-                            if ((i->position.x + i->velocity.x *  loopTime.asSeconds()*10 < (15*125) &&
-                                i->position.x + i->velocity.x *  loopTime.asSeconds()*10 > (14*125) &&
-                                i->position.y + i->velocity.y *  loopTime.asSeconds()*10 > (12*125) &&
-                                i->position.y + i->velocity.y *  loopTime.asSeconds()*10 < (19*125)) ||
-                                (i->position.x + i->velocity.x *  loopTime.asSeconds()*10 < (18*125) &&
-                                i->position.x + i->velocity.x *  loopTime.asSeconds()*10 > (11*125) &&
-                                i->position.y + i->velocity.y *  loopTime.asSeconds()*10 > (15*125) &&
-                                i->position.y + i->velocity.y *  loopTime.asSeconds()*10 < (16*125)))
-                            {
-                                i->velocity.x = 0;
-                                i->velocity.y = 0;
-                            }
+                        pi->prjctls.back().velocity.x = 75.0f*((float)cos(pi->tank.turretAngle/(180/3.14156)));
+                        pi->prjctls.back().velocity.y = 75.0f*((float)sin(pi->tank.turretAngle/(180/3.14156)));
 
-                            i->position.x = i->position.x + i->velocity.x * loopTime.asSeconds()*10;
-                            i->position.y = i->position.y + i->velocity.y * loopTime.asSeconds()*10;
-                            i->totalDistance+=1;
-
-                            ////Remove projectile that has hit a tank or creep
-                            bool yes1 = isTankCollision(i->position,g,i->damage,y);
-                            int yes2 = isCreepCollision(i->position,g,i->damage,y);
-                            
-                            if (yes1!=0 || yes2)
+                        pi->prjctls.back().position.x = pi->tank.position.x + pi->prjctls.back().velocity.x*1.2f;
+                        pi->prjctls.back().position.y = pi->tank.position.y + pi->prjctls.back().velocity.y*1.2f;
+                    
+                        //std::cout << pi->prjctls.back().position.x << ", " << pi->prjctls.back().position.y << std::endl;
+                        pi->prjctls.back().creationTime = accumulatingClock.getElapsedTime().asSeconds();
+                        pi->prjctls.back().angle = pi->tank.turretAngle;
+                        pi->prjctls.back().damage = 1+pi->tank.power/10.0f;
+                        pi->state = PlayerState::Running;
+                        //break;
+                    case PlayerState::Running:
+                         //Remove projectiles who have run out of power.
+                        for (auto i = pi->prjctls.begin();i != pi->prjctls.end();)
+                        {
+                            float accTime = accumulatingClock.getElapsedTime().asSeconds();
+                            if ( ((i->creationTime + 0.5f) + (pi->tank.power/20.0f))  < accTime )// (PROJECTILE_DISTANCE*500)+(pi->tank.power*25))
                             {
                                 i = pi->prjctls.erase(i);
-                                if (yes2==2)
-                                    pi->tank.power++;
+                            }else
+                            {
+                                if ((i->position.x + i->velocity.x *  loopTime.asSeconds()*PIXELS_PER_SECOND < (15*125) &&
+                                    i->position.x + i->velocity.x *  loopTime.asSeconds()*PIXELS_PER_SECOND > (14*125) &&
+                                    i->position.y + i->velocity.y *  loopTime.asSeconds()*PIXELS_PER_SECOND > (12*125) &&
+                                    i->position.y + i->velocity.y *  loopTime.asSeconds()*PIXELS_PER_SECOND < (19*125)) ||
+                                    (i->position.x + i->velocity.x *  loopTime.asSeconds()*PIXELS_PER_SECOND < (18*125) &&
+                                    i->position.x + i->velocity.x *  loopTime.asSeconds()*PIXELS_PER_SECOND > (11*125) &&
+                                    i->position.y + i->velocity.y *  loopTime.asSeconds()*PIXELS_PER_SECOND > (15*125) &&
+                                    i->position.y + i->velocity.y *  loopTime.asSeconds()*PIXELS_PER_SECOND < (16*125)))
+                                {
+                                    i->velocity.x = 0;
+                                    i->velocity.y = 0;
+                                }
+
+                                i->position.x = i->position.x + i->velocity.x * loopTime.asSeconds()*PIXELS_PER_SECOND;
+                                i->position.y = i->position.y + i->velocity.y * loopTime.asSeconds()*PIXELS_PER_SECOND;
+                                i->totalDistance+=1;
+
+                                ////Remove projectile that has hit a tank or creep
+                                bool yes1 = isTankCollision(i->position,g,i->damage,y);
+                                int yes2 = isCreepCollision(i->position,g,i->damage,y);
+                            
+                                if (yes1!=0 || yes2)
+                                {
+                                    i = pi->prjctls.erase(i);
+                                    if (yes2==2)
+                                        pi->tank.power++;
+                                }
+                                else
+                                    i++;
                             }
-                            else
-                                i++;
                         }
-                    }
 
-                    //TODO: HACK: hardcoded arena boundaries based on debug map and a 125px wide floor tile.
-                    if (pi->tank.position.x + pi->tank.velocity.x *  loopTime.asSeconds()*20 < (125) ||
-                        pi->tank.position.x + pi->tank.velocity.x *  loopTime.asSeconds()*20 > (29*125) )
-                    {
-                        pi->tank.velocity.x = 0;
-                    }
+                        //TODO: HACK: hardcoded arena boundaries based on debug map and a 125px wide floor tile.
+                        if (pi->tank.position.x + pi->tank.velocity.x *  loopTime.asSeconds()*PIXELS_PER_SECOND < (125) ||
+                            pi->tank.position.x + pi->tank.velocity.x *  loopTime.asSeconds()*PIXELS_PER_SECOND > (29*125) )
+                        {
+                            pi->tank.velocity.x = 0;
+                        }
 
-                    if (pi->tank.position.y + pi->tank.velocity.y *  loopTime.asSeconds()*20 < (125) ||
-                        pi->tank.position.y + pi->tank.velocity.y *  loopTime.asSeconds()*20 > (29*125) )
-                    {
-                        pi->tank.velocity.y = 0;
-                    }
+                        if (pi->tank.position.y + pi->tank.velocity.y *  loopTime.asSeconds()*PIXELS_PER_SECOND < (125) ||
+                            pi->tank.position.y + pi->tank.velocity.y *  loopTime.asSeconds()*PIXELS_PER_SECOND > (29*125) )
+                        {
+                            pi->tank.velocity.y = 0;
+                        }
 
                    
 
-                    pi->tank.position.x = pi->tank.position.x + pi->tank.velocity.x *  loopTime.asSeconds()*20;
-                    pi->tank.position.y = pi->tank.position.y + pi->tank.velocity.y *  loopTime.asSeconds()*20;
+                        pi->tank.position.x = pi->tank.position.x + pi->tank.velocity.x *  loopTime.asSeconds()*PIXELS_PER_SECOND;
+                        pi->tank.position.y = pi->tank.position.y + pi->tank.velocity.y *  loopTime.asSeconds()*PIXELS_PER_SECOND;
             
-                    break;
-            }
-        }
-        //Teams Update
-        float accumulatedClock = accumulatingClock.getElapsedTime().asSeconds();
-        if (minionAddClock.getElapsedTime().asMilliseconds() > CREEP_LIFE_MS)
-        {
-            int r=0;
-            Creep newCreep;
-            newCreep.position = g.arenaMan.getGeneratorPosition(y);
-            newCreep.health = 8;
-            newCreep.creationTime = accumulatedClock;
-            if (y==1)
-            {
-                int q = rand()%2;
-                if (q == 0)
-                {
-                    r = (rand()%30)+60;
-                }else if (q==1)
-                {
-                    r = rand()%30;
-                }
-            }else if (y ==2)
-            {
-               int q = rand()%2;
-                if (q == 0)
-                {
-                    r = ((rand()%30)+60)+180;
-                }else if (q==1)
-                {
-                    r = (rand()%30)+180;
+                        break;
                 }
             }
-            newCreep.velocity.x = cos(r*3.14156/180.0);
-            newCreep.velocity.y = sin(r*3.14156/180.0);
-
-            g.teamMan.teams[y].creep.push_back(newCreep);
-        }
-        
-#define GANG 80
-        //For each creep
-        for (auto c = g.teamMan.teams[y].creep.begin();c != g.teamMan.teams[y].creep.end();)
-        {
-            //Move this creep
-            c->position.x = c->position.x + c->velocity.x * loopTime.asSeconds()*GANG;
-            c->position.y = c->position.y + c->velocity.y * loopTime.asSeconds()*GANG;
-            
-            //If
-            
-            /*for (auto teami = 1; teami < 3 ;teami++)
-            {*/
-                int teami = (y==1?2:1);
-                for (auto tanki = 0;tanki < g.teamMan.teams[teami].players.size();tanki++)
+            //Teams Update
+            float accumulatedClock = accumulatingClock.getElapsedTime().asSeconds();
+            if (minionAddClock.getElapsedTime().asMilliseconds() > CREEP_SPAWN_MS)
+            {
+                int r=0;
+                Creep newCreep;
+                newCreep.position = g.arenaMan.getGeneratorPosition(y);
+                newCreep.health = 8;
+                newCreep.creationTime = accumulatedClock;
+                if (y==1)
                 {
-                    if (g.teamMan.teams[teami].players[tanki].hasHost)
+                    int q = rand()%2;
+                    if (q == 0)
                     {
-                        //sf::FloatRect tankR(g.teamMan.teams[teami].players[tanki].tank.position,
-                        float dx = c->position.x - g.teamMan.teams[teami].players[tanki].tank.position.x;
-                        float dy = c->position.y - g.teamMan.teams[teami].players[tanki].tank.position.y;
-                    
-                    
-                        if (sqrt(dx*dx+dy*dy) < 800)
-                        {
-                            float ang =  (180.0f/3.14156f)*atan2(dy,dx);
-                        
-                            c->velocity.x = -cos(ang * (3.14156/180.0));
-                            c->velocity.y = -sin(ang * (3.14156/180.0));
-                        
-                        }
+                        r = (rand()%30)+60;
+                    }else if (q==1)
+                    {
+                        r = rand()%30;
                     }
-                    
+                }else if (y ==2)
+                {
+                   int q = rand()%2;
+                    if (q == 0)
+                    {
+                        r = ((rand()%30)+60)+180;
+                    }else if (q==1)
+                    {
+                        r = (rand()%30)+180;
+                    }
                 }
-            /*}*/
+                newCreep.velocity.x = CREEP_SPEED*cos(r*3.14156/180.0);
+                newCreep.velocity.y = CREEP_SPEED*sin(r*3.14156/180.0);
 
-            ////Remove creep that is hit a tank or another creep
-            bool yes = isTankCollision(c->position,g, 5, y);
-            int yes2 = isCreepCollision(c->position,g,5,y);
-            if (yes || (yes2 && rand()%2==1) || c->creationTime + 50.0f < accumulatedClock )
-            {
-                c = g.teamMan.teams[y].creep.erase(c);
-            }else
-                c++;
-
-        }
+                g.teamMan.teams[y].creep.push_back(newCreep);
+            }
         
-    }
+            //For each creep
+            for (auto c = g.teamMan.teams[y].creep.begin();c != g.teamMan.teams[y].creep.end();)
+            {
+                //Move this creep
+                c->position.x = c->position.x + c->velocity.x * loopTime.asSeconds()*PIXELS_PER_SECOND;
+                c->position.y = c->position.y + c->velocity.y * loopTime.asSeconds()*PIXELS_PER_SECOND;
+            
+                //If
+            
+                /*for (auto teami = 1; teami < 3 ;teami++)
+                {*/
+                    int teami = (y==1?2:1);
+                    for (auto tanki = 0;tanki < g.teamMan.teams[teami].players.size();tanki++)
+                    {
+                        if (g.teamMan.teams[teami].players[tanki].hasHost)
+                        {
+                            //sf::FloatRect tankR(g.teamMan.teams[teami].players[tanki].tank.position,
+                            float dx = c->position.x - g.teamMan.teams[teami].players[tanki].tank.position.x;
+                            float dy = c->position.y - g.teamMan.teams[teami].players[tanki].tank.position.y;
+                    
+                    
+                            if (sqrt(dx*dx+dy*dy) < 700)
+                            {
+                                float ang =  (180.0f/3.14156f)*atan2(dy,dx);
+                        
+                                c->velocity.x = -CREEP_SPEED*cos(ang * (3.14156/180.0));
+                                c->velocity.y = -CREEP_SPEED*sin(ang * (3.14156/180.0));
+                        
+                            }
+                        }
+                    
+                    }
+                /*}*/
+
+                ////Remove creep that is hit a tank or another creep
+                bool yes = isTankCollision(c->position,g, 5, y);
+                int yes2 = isCreepCollision(c->position,g,5,y);
+                if (yes || (yes2 && rand()%2==1) || c->creationTime + 40.0f < accumulatedClock )
+                {
+                    c = g.teamMan.teams[y].creep.erase(c);
+                }else
+                    c++;
+
+            }
+        
+        }
     
+        if (minionAddClock.getElapsedTime().asMilliseconds() > CREEP_SPAWN_MS)
+            minionAddClock.restart();
     //Global update
-    if (updateStateTimer.getElapsedTime().asMilliseconds() > 50){
+   /* if (updateStateTimer.getElapsedTime().asMilliseconds() > STATE_OF_UNION_MS){*/
         //std::cout << "SS ";
-        Messages::sendStateOfUnion(g.server, g.teamMan);
+        
         updateStateTimer.restart();
+    }else{//not time to update state.
+        sf::sleep(sf::milliseconds(0));
     }
-    if (minionAddClock.getElapsedTime().asMilliseconds() > CREEP_LIFE_MS)
-        minionAddClock.restart();
-    sf::sleep(sf::milliseconds(0));
-    return getSummary(0);
+
+    if (sendStateTimer.getElapsedTime().asMilliseconds() > SEND_STATE_MS && stateUpdated)
+    {
+        Messages::sendStateOfUnion(g.server, g.teamMan);
+        sendStateTimer.restart();
+    }
+    return getSummary(0).a;
 }
 sf::Uint32 StageRun::doLocalInput(sf::RenderWindow & window, Game & g)
 {
