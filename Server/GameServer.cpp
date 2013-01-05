@@ -7,6 +7,8 @@
 using namespace tg;
 
 GameServer::GameServer()
+    : stageEst(*this),
+      stageRun(*this)
 {
     //For Server, we want the Establish stage first.
     //

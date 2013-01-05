@@ -8,8 +8,8 @@ using namespace tg;
 
 #define PROJECTILE_DISTANCE 10
 
-StageRun::StageRun()
-    : GameStage()
+StageRun::StageRun(Game & g)
+    : GameStage(g)
 {
     loopTime = sf::Time();
     stateUpdated = false;

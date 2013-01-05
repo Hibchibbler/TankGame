@@ -8,49 +8,46 @@
 
 using namespace tg;
 
-StageStart::StageStart()
-    : GameStage()
+StageStart::StageStart(Game & g)
+    : GameStage(g)
 {
 
 }
 
 sf::Uint32 StageStart::doInit(Game & g)
 {
-    sfg::Box::Ptr box( sfg::Box::Create( sfg::Box::VERTICAL, 5.0f ) );
+    sfg::Table::Ptr table( sfg::Table::Create(  ) );
 
-    sfg::Box::Ptr row = sfg::Box::Create( sfg::Box::HORIZONTAL, 5.0f );
+    sfg::Label::Ptr nameLabel;
+    nameLabel = sfg::Label::Create("Name");    
+    nameEntry = sfg::Entry::Create("Anon");
+    table->Attach(nameLabel,sf::Rect<sf::Uint32>(0,0,1,1), 0);
+    table->Attach(nameEntry,sf::Rect<sf::Uint32>(1,0,1,1), 3);
+
     sfg::Label::Ptr ipLabel;
     ipLabel = sfg::Label::Create("Address");    
-    row->Pack(ipLabel,true,true);   
-    
     ipEntry = sfg::Entry::Create("192.168.1.9");
-    row->Pack(ipEntry,true,true);
-    box->Pack(row);
-
-
-    row = sfg::Box::Create( sfg::Box::HORIZONTAL, 5.0f );
-    sfg::Label::Ptr portLabel;
-    portLabel = sfg::Label::Create("Port");    
-    row->Pack(portLabel,true,true);   
+    table->Attach(ipLabel, sf::Rect<sf::Uint32>(0,1,1,1), 0);
+    table->Attach(ipEntry, sf::Rect<sf::Uint32>(1,1,1,1), 3);
     
+    sfg::Label::Ptr portLabel;
+    portLabel = sfg::Label::Create("Port");
     portEntry = sfg::Entry::Create("8280");
-    row->Pack(portEntry,true,true);
-    box->Pack(row);
+    table->Attach(portLabel, sf::Rect<sf::Uint32>(0,2,1,1), 0);
+    table->Attach(portEntry, sf::Rect<sf::Uint32>(1,2,1,1), 3);
 
-    row = sfg::Box::Create( sfg::Box::HORIZONTAL, 5.0f );
     sfg::Button::Ptr joinButton;
     joinButton = sfg::Button::Create("Join");
-    row->Pack(joinButton);
-    box->Pack(row);
-
     joinButton->GetSignal( sfg::Widget::OnLeftClick ).Connect( &StageStart::doJoin, this );
+    table->Attach(joinButton, sf::Rect<sf::Uint32>(0,3,2,1), 3);
 
 
     sfg::Window::Ptr mywindow;
     mywindow = sfg::Window::Create();
 
     mywindow->SetTitle("Mega Blaster Client");
-    mywindow->Add(box);
+    mywindow->SetPosition(sf::Vector2f(100.0f,100.0f));
+    mywindow->Add(table);
 
     desk.Add(mywindow);
     return 0;
@@ -96,17 +93,24 @@ void StageStart::doJoin()
     e1.a = 1;
     setSummary(e1,0);
 
+
     //And these are the summaries that the client will inspect.
     Element e2;
-    e2.b = ipEntry->GetText().toAnsiString();
+    e2.b = nameEntry->GetText().toAnsiString();
     setSummary(e2,1);
 
-    
     Element e3;
-    e2.a = atoi(portEntry->GetText().toAnsiString().c_str());//"8280";
+    e3.b = ipEntry->GetText().toAnsiString();
     setSummary(e3,2);
+
+    
+    Element e4;
+    e4.a = atoi(portEntry->GetText().toAnsiString().c_str());//"8280";
+    setSummary(e4,3);
 
     desk.RemoveAll();
     ipEntry.reset();
     portEntry.reset();
+    nameEntry.reset();
 }
+

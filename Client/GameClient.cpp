@@ -10,6 +10,9 @@
 using namespace tg;
 
 GameClient::GameClient(sf::Uint32 w, sf::Uint32 h)
+    : stageStart(*this),
+      stageLobby(*this),
+      stageRun(*this)
 {
     //For Server, we want the Establish stage first.
     //
@@ -156,8 +159,13 @@ sf::Uint32 GameClient::doLoop()
                 //Get summary details
                 //transition to next stage;
 
-                std::cout << "User specified join: " << curStage->getSummary(1).b << std::endl;
-                std::cout << "                   @ " << curStage->getSummary(2).a << std::endl;
+                std::cout << "Start summary: " << stageStart.getSummary(1).b << std::endl;
+                std::cout << "               " << stageStart.getSummary(2).b << std::endl;
+                std::cout << "             @ " << stageStart.getSummary(3).a << std::endl;
+
+                myName = stageStart.getSummary(1).b;
+                myServerIp = stageStart.getSummary(2).b;
+                myServerPort = stageStart.getSummary(3).a;
 
                 std::cout << "Switching to StageLobby" << std::endl;
                 curStage = &stageLobby;

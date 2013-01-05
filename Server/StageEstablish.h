@@ -17,7 +17,7 @@ namespace tg
     class StageEstablish : public GameStage
     {
     public:
-        StageEstablish();
+        StageEstablish(Game & g);
         sf::Uint32 doRemoteEvent(Game & g,
                                  CommEvent & cevent,
                                  sf::Uint32 connId,

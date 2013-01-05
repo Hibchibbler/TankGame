@@ -8,8 +8,8 @@
 #include <sstream>
 using namespace tg;
 
-StageRun::StageRun()
-    : GameStage()
+StageRun::StageRun(Game & g)
+    : GameStage(g)
 {
     hasRxStateOfUnion = false;
     hasFocus = false;
@@ -232,7 +232,7 @@ sf::Uint32 StageRun::doLocalInput(sf::RenderWindow & window, Game & g)
 
     return 0;
 }
-#define LINEAR_SMOOTH 10.0f
+#define LINEAR_SMOOTH 3.0f
 sf::Uint32 StageRun::doDraw(sf::RenderWindow & window, Game & g, sf::Time ft)
 {
     
@@ -280,15 +280,17 @@ sf::Uint32 StageRun::doDraw(sf::RenderWindow & window, Game & g, sf::Time ft)
                 if (g.teamMan.teams[y].players[h].hasHost)
                 {
 
-                    //if (g.teamMan.teams[y].players[h].tank.shadowUpdated)
-                    //{
+                    if (g.teamMan.teams[y].players[h].tank.shadowUpdated)
+                    {
                         g.teamMan.teams[y].players[h].tank.dx = g.teamMan.teams[y].players[h].tank.shadowPos.x - g.teamMan.teams[y].players[h].tank.position.x;
                         g.teamMan.teams[y].players[h].tank.dy = g.teamMan.teams[y].players[h].tank.shadowPos.y - g.teamMan.teams[y].players[h].tank.position.y;
                         g.teamMan.teams[y].players[h].tank.shadowUpdated = false;
-                   // }
+                    }
                
-                    g.teamMan.teams[y].players[h].tank.position.x +=(g.teamMan.teams[y].players[h].tank.dx*ft.asSeconds()*12.0);
-                    g.teamMan.teams[y].players[h].tank.position.y +=(g.teamMan.teams[y].players[h].tank.dy*ft.asSeconds()*12.0);
+                    //g.teamMan.teams[y].players[h].tank.position.x +=(g.teamMan.teams[y].players[h].tank.dx*g.teamMan.teams[y].players[h].tank.velocity.x*ft.asSeconds()*20);
+                    //g.teamMan.teams[y].players[h].tank.position.y +=(g.teamMan.teams[y].players[h].tank.dy*g.teamMan.teams[y].players[h].tank.velocity.y*ft.asSeconds()*20);
+                    g.teamMan.teams[y].players[h].tank.position.x += g.teamMan.teams[y].players[h].tank.dx/LINEAR_SMOOTH;
+                    g.teamMan.teams[y].players[h].tank.position.y += g.teamMan.teams[y].players[h].tank.dy/LINEAR_SMOOTH;
 
                     std::string tankName;
                     sf::Sprite b,t;

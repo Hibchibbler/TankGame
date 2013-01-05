@@ -6,10 +6,14 @@
 
 namespace tg
 {
+    //This stage steers the local player to connecting to the server,
+    //and manages the state associated with that.
+    //It uses team 0, and assumes only the local player
+    //will be found in team 0.
     class StageLobby : public GameStage
     {
     public:
-        StageLobby();
+        StageLobby(Game & g);
         sf::Uint32 doInit(Game & g);
         sf::Uint32 doWindowEvent(sf::RenderWindow & window, sf::Event & event);
         sf::Uint32 doRemoteEvent(Game & g,
@@ -21,10 +25,28 @@ namespace tg
         sf::Uint32 doLoop(Game & g);
         sf::Uint32 doLocalInput(sf::RenderWindow & window, Game & g);
         sf::Uint32 doDraw(sf::RenderWindow &window,Game & g, sf::Time ft);
-    private:
+    
+        void doJoinTeam1();
+        void doJoinTeam2();
+        void doNameOk();
+
+        struct LobbyState{
+            enum{
+                
+            };
+        };
+  private:
+        sf::Clock whoIsPollClock;
+
+        sfg::Window::Ptr nameWindow;
+        sfg::Window::Ptr createNameDialog();
         sf::Clock deskUpdateClock;
         sfg::Desktop desk;
+        sfg::Button::Ptr joinTeam1Button;
+        sfg::Button::Ptr joinTeam2Button;
         
+        sf::Uint32 myTeam;
+        sfg::Entry::Ptr yourName;
         sfg::Entry::Ptr team1[5];
         sfg::Entry::Ptr team2[5];
     };

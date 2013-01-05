@@ -9,7 +9,7 @@ namespace tg
     class StageRun : public GameStage
     {
     public:
-        StageRun();
+        StageRun(Game & g);
         sf::Uint32 doInit();
         sf::Uint32 doRemoteEvent(Game & g,
                                  CommEvent & cevent,

@@ -9,7 +9,7 @@ namespace tg
     class StageStart : public GameStage
     {
     public:
-        StageStart();
+        StageStart(Game & g);
         sf::Uint32 doInit(Game & g);
         sf::Uint32 doWindowEvent(sf::RenderWindow & window, sf::Event & event);
         sf::Uint32 doRemoteEvent(Game & g,
@@ -26,6 +26,7 @@ namespace tg
         sfg::Desktop desk;
         sfg::Entry::Ptr ipEntry;
         sfg::Entry::Ptr portEntry;
+        sfg::Entry::Ptr nameEntry;
     };
 };
 

@@ -10,8 +10,8 @@
 
 using namespace tg;
 
-StageEstablish::StageEstablish()
-    : GameStage()
+StageEstablish::StageEstablish(Game & g)
+    : GameStage(g)
 {
 
 }
@@ -23,7 +23,7 @@ sf::Uint32 StageEstablish::doRemoteEvent(Game & g,
 {
 
     //LogFile::get()->log(0,0,"StageEstablish::doRemoteEvents");
-    Player &player = g.teamMan.getPlayer(connId);
+    Player & player = g.teamMan.getPlayer(connId);
 
     switch (msgId){
         case MsgId::Ready:
@@ -38,8 +38,8 @@ sf::Uint32 StageEstablish::doRemoteEvent(Game & g,
         }
         case MsgId::WhoIs:
             std::cout << "Got WhoIs" << std::endl;
-            //Messages::sendWhoIsAck(comm, teamMan, player.connectionId);
-            player.state = PlayerState::SendingWhoIsAck;
+            Messages::sendWhoIsAck(g.server, g.teamMan, player.connectionId);
+            //player.state = PlayerState::SendingWhoIsAck;
             break;
         case MsgId::Id:{
                         
@@ -54,14 +54,10 @@ sf::Uint32 StageEstablish::doRemoteEvent(Game & g,
             if (g.teamMan.isIdValid(name, team))
             {
                 //the specified name and team are ok
-                //remove player form limbo
+                //remove player from limbo
                 g.teamMan.removePlayer(player.connectionId);
-                            
-                //add player to requested team
-               /* static float x = 10;
-                sf::Vector2f pos(x,20);
-                x+=20;*/
 
+                //and add it to its respective team list.
                 player.tank.position = g.arenaMan.getStartPosition(team);
                 player.state = PlayerState::SendingIdAck;
                 std::cout << "Adding " << name << " to team " << team << std::endl;
@@ -94,8 +90,9 @@ sf::Uint32 StageEstablish::doLoop(Game & g)
     //LogFile::get()->log(0,0,"StageEstablish::doLoop");
     for (int y = 0; y < 3 ; y++)
     {
-        tg::Team::PlayerIterator & pi = g.teamMan.getTeam(y).begin();
-        for (;pi != g.teamMan.getTeam(y).end();pi++){
+         
+        for (auto pi = g.teamMan.teams[y].players.begin();
+             pi != g.teamMan.teams[y].players.end(); pi++){
         
             if (pi->hasHost == false)
                 continue;
@@ -128,30 +125,33 @@ sf::Uint32 StageEstablish::doLoop(Game & g)
 
 sf::Uint32 StageEstablish::doLocalInput(sf::RenderWindow & window, Game & g)
 {
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::T)){
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::X)){
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::E)){
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::F)){
             std::cout << "!";
-            bool someNotReady = false;
-            for (int y = 1; y < 3 ; y++)
-            {
-                tg::Team::PlayerIterator & pi = g.teamMan.getTeam(y).begin();
-                for (;pi != g.teamMan.getTeam(y).end();pi++){
-                    if  (pi->hasHost == 1){
-                        if (pi->state != PlayerState::Ready){
-                            std::cout
-                                << "nostart";
-                            someNotReady = true;
-                        }
-                    }
-                }
-            }
-            if (!someNotReady){
-                Element e1;
-                e1.a = 1;
-                setSummary(e1,0);
-                std::cout << "@";
-            }
-            //serverState = Running;
+            Element e1;
+            e1.a = 1;
+            setSummary(e1,0);
+            //bool someNotReady = false;
+            //for (int y = 1; y < 3 ; y++)
+            //{
+            //    tg::Team::PlayerIterator & pi = g.teamMan.getTeam(y).begin();
+            //    for (;pi != g.teamMan.getTeam(y).end();pi++){
+            //        if  (pi->hasHost == 1){
+            //            if (pi->state != PlayerState::Ready){
+            //                std::cout
+            //                    << "Players not ready!";
+            //                //someNotReady = true;
+            //            }
+            //        }
+            //    }
+            //}
+            //if (!someNotReady){
+            //    Element e1;
+            //    e1.a = 1;
+            //    setSummary(e1,0);
+            //    std::cout << "@";
+            //}
+            ////serverState = Running;
         }
     }
 

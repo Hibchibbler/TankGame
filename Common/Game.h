@@ -29,6 +29,9 @@ namespace tg
         sf::Uint32 myCID;
         sf::Uint32 mySlot;
         sf::Uint32 myTeam;
+        std::string myName;
+        std::string myServerIp;
+        sf::Uint16 myServerPort;
         sf::Uint32 scrWidth;
         sf::Uint32 scrHeight;
 

@@ -7,16 +7,22 @@
 
 using namespace tg;
 
-StageLobby::StageLobby()
-    : GameStage()
+StageLobby::StageLobby(Game & game)
+    : GameStage(game)
 {
+    
 }
 sf::Uint32 StageLobby::doInit(Game & g)
 {
     sfg::Box::Ptr box( sfg::Box::Create( sfg::Box::VERTICAL, 5.0f ) );
     
+    sfg::Box::Ptr row = sfg::Box::Create( sfg::Box::HORIZONTAL, 5.0f );
+    row->Pack(sfg::Label::Create("Team 1"));
+    row->Pack(sfg::Label::Create("Team 2"));
+    box->Pack(row);
+
     for (int i = 0;i < 5;i++){
-        sfg::Box::Ptr row = sfg::Box::Create( sfg::Box::HORIZONTAL, 5.0f );
+        row = sfg::Box::Create( sfg::Box::HORIZONTAL, 5.0f );
         team1[i] = sfg::Entry::Create("");    
         row->Pack(team1[i],true,true);   
         team2[i] = sfg::Entry::Create("");    
@@ -24,12 +30,14 @@ sf::Uint32 StageLobby::doInit(Game & g)
         box->Pack(row);
     }
 
-    sfg::Box::Ptr row = sfg::Box::Create( sfg::Box::HORIZONTAL, 5.0f );
-    sfg::Button::Ptr joinTeam1Button;
+    row = sfg::Box::Create( sfg::Box::HORIZONTAL, 5.0f );
+    
     joinTeam1Button = sfg::Button::Create("Join Team 1");
+    joinTeam1Button->GetSignal( sfg::Widget::OnLeftClick ).Connect( &StageLobby::doJoinTeam1, this );
     row->Pack(joinTeam1Button);
-    sfg::Button::Ptr joinTeam2Button;
+    
     joinTeam2Button = sfg::Button::Create("Join Team 2");
+    joinTeam2Button->GetSignal( sfg::Widget::OnLeftClick ).Connect( &StageLobby::doJoinTeam2, this );
     row->Pack(joinTeam2Button);
     box->Pack(row);
 
@@ -40,10 +48,46 @@ sf::Uint32 StageLobby::doInit(Game & g)
     mywindow = sfg::Window::Create();
 
     mywindow->SetTitle("Lobby");
+    mywindow->SetPosition(sf::Vector2f(100.0f,100.0f));
     mywindow->Add(box);
 
     desk.Add(mywindow);
     return 0;
+}
+
+//sfg::Window::Ptr createNameDialog();
+void StageLobby::doJoinTeam1()
+{
+    //Send Id
+    
+    tg::Team::PlayerIterator & pi = g.teamMan.teams[0].players.begin();        
+    for (;pi != g.teamMan.teams[0].players.end();pi++){
+        
+        if (pi->hasHost == false)
+            continue;
+        pi->state = PlayerState::SendingId;
+        g.myTeam = 1;
+        break;
+    }
+    joinTeam1Button->Show(false);
+    joinTeam2Button->Show(false);
+    //desk.Remove(joinTeam1Button);
+    //desk.Remove(joinTeam2Button);
+}
+
+void StageLobby::doJoinTeam2()
+{
+    tg::Team::PlayerIterator & pi = g.teamMan.teams[0].players.begin();        
+    for (;pi != g.teamMan.teams[0].players.end();pi++){
+        
+        if (pi->hasHost == false)
+            continue;
+        pi->state = PlayerState::SendingId;
+        g.myTeam = 2;
+        break;
+    }
+    joinTeam1Button->Show(false);
+    joinTeam2Button->Show(false);
 }
 
 
@@ -64,30 +108,28 @@ sf::Uint32 StageLobby::doRemoteEvent(Game & g,
     case MsgId::WhoIsAck:
         {
             std::cout << "Got WhoIsAck" << std::endl;
-            //printWhoIsAck(event);
             ////////////////////////////////////////
             sf::Uint32 teamSize;
             std::string name;
             cevent.packet >> teamSize;//Team 1
-            std::cout << "Team 1" << std::endl;
+            //std::cout << "Team 1" << std::endl;
             for (int k = 0;k < teamSize;k++){
                 cevent.packet >> name;
-                std::cout << name << ", ";
-            }std::cout << std::endl;
+                team1[k]->SetText(name);
+                //std::cout << name << ", ";
+            }//std::cout << std::endl;
 
             cevent.packet >> teamSize;//Team 2
-            std::cout << "Team 2" << std::endl;
+            //std::cout << "Team 2" << std::endl;
             for (int k = 0;k < teamSize;k++){
                 cevent.packet >> name;
-                std::cout << name << ", ";
-            }std::cout << std::endl;
+                team2[k]->SetText(name);
+                //std::cout << name << ", ";
+            }//std::cout << std::endl;
 
-            ////////////////////////////////////////
+            //////////////////////////////////////////
 
-            if (p.state == PlayerState::WaitingForWhoIsAck){
-                p.state = PlayerState::SendingId;
-            }
-
+          
             break;
         }
         case MsgId::IdAck:
@@ -137,8 +179,6 @@ sf::Uint32 StageLobby::doLoop(Game & g)
     //3.1. if server Ack's, i move myself to my desired team.
     //3.1.1 and move my Player object to the appropriate team container.
     //3.2. if server Nack's, i change my name, or desired team. goto 2.
-   
-        //for (int y = 0;y < 3;y++){
 
     tg::Team::PlayerIterator & pi = g.teamMan.teams[0].players.begin();        
     for (;pi != g.teamMan.teams[0].players.end();pi++){
@@ -148,6 +188,7 @@ sf::Uint32 StageLobby::doLoop(Game & g)
 
         switch (pi->state){
             case PlayerState::New:
+                //tg::Messages::sendWhoIs(g.client,g.teamMan, pi->connectionId);
                 pi->state = PlayerState::SendingWhoIs;
                 break;
             case PlayerState::SendingWhoIs:
@@ -155,33 +196,21 @@ sf::Uint32 StageLobby::doLoop(Game & g)
                 pi->state = PlayerState::WaitingForWhoIsAck;
                 break;
             case PlayerState::WaitingForWhoIsAck:
-                std::cout << ".";//WaitingForWhoIsAck" << std::endl;
+                //std::cout << ".";//WaitingForWhoIsAck" << std::endl;
                 break;
             case PlayerState::SendingId:
             {
-                std::string myName;
-                sf::Uint32 myTeam;
-
-                std::cout << "enter name:" << std::endl;
-                std::cin >> myName;
-                std::cout << "enter team:" << std::endl;
-                std::cin >> myTeam;
-
-                ///////////////////////
                 Element e1;
-                e1.a = myTeam;
+                e1.a = g.myTeam;
                 setSummary(e1,1);
-                ///////////////////////
-                
-                tg::Messages::sendId(g.client, g.teamMan, pi->connectionId, myName, myTeam);
+
+                tg::Messages::sendId(g.client, g.teamMan, pi->connectionId, g.myName, g.myTeam);
                 pi->state = PlayerState::WaitingForIdAck;
                 break;
             }
             case PlayerState::WaitingForIdAck:
-            
                 std::cout << "," << std::endl;
                 break;
-            
             case PlayerState::Ready:
                 tg::Messages::sendReady(g.client, g.teamMan, pi->connectionId);
                 pi->state = PlayerState::WaitingForStart;

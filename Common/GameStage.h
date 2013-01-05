@@ -21,7 +21,7 @@ namespace tg
     class GameStage
     {
     public:
-        GameStage();
+        GameStage(Game & game);
         virtual ~GameStage();
         virtual sf::Uint32 doRemoteEvent(Game & g,
                                          CommEvent & cevent,
@@ -46,6 +46,7 @@ namespace tg
     protected:
         void setSummary(Element e, sf::Uint16 i);
         Element getInput(sf::Uint16 i);
+        Game & g;
     private:    
         sf::Uint32 id;
         Element summary[SUMMARY_ELEMENTS];

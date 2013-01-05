@@ -5,11 +5,13 @@
 #include "TeamManager.h"
 #include "ArenaManager.h"
 #include "AssetManager.h"
-
+//#include "Game.h"
 using namespace tg;
 
-GameStage::GameStage()
+GameStage::GameStage(Game & game)
+    : g(game)
 {
+    
     Element e;
     e.a = 0;
     setSummary(e,0);
