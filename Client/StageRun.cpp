@@ -36,8 +36,7 @@ sf::Uint32 StageRun::doRemoteEvent(Game & g,
         //std::cout << "Got StateOfUnion" << std::endl;
         sf::Uint32 teamSize;
         sf::Uint32 slotNum;
-        sf::Uint32 hasHost;
-        sf::Uint32 cid;
+
         for (int t= 1;t < 3;t++){
             //Players
             cevent.packet >> teamSize;//-----------------team 1 , then 2 
@@ -56,14 +55,11 @@ sf::Uint32 StageRun::doRemoteEvent(Game & g,
                 cevent.packet >> aPlayer.tank.velocity.x;
                 cevent.packet >> aPlayer.tank.velocity.y;
 
-                //aPlayer.tank.shadowPos.x = (float)((sf::Int32)aPlayer.tank.shadowPos.x);
-                //aPlayer.tank.shadowPos.y = (float)((sf::Int32)aPlayer.tank.shadowPos.y);
                 
                 aPlayer.tank.shadowUpdated = true;
                 if (!hasRxStateOfUnion)
                 {
                     aPlayer.tank.position = aPlayer.tank.shadowPos;
-                    //aPlayer.tank.velocity = aPlayer.tank.shadowVel;
                 }
                  
                 sf::Uint32 ps;
@@ -72,19 +68,13 @@ sf::Uint32 StageRun::doRemoteEvent(Game & g,
                 for (int p = 0;p < ps;p++)
                 {
                     Projectile projectile;
-                    float dx, dy;
-                    //dx = aPlayer.tank.shadowPos.x - aPlayer.tank.position.x;
-                    //dy = aPlayer.tank.shadowPos.y - aPlayer.tank.position.y;
-                    //dx = cos(aPlayer.tank.turretAngle* (180.0f/3.14156f))*10;
                     cevent.packet >> projectile.position.x;
                     cevent.packet >> projectile.position.y;
-
-                    //projectile.position.x -= dx;
-                    //projectile.position.y -= dy;
                     aPlayer.prjctls.push_back(projectile);
                 }
             }
             //Teams
+            //  Creep
             sf::Uint32 cc;
             g.teamMan.teams[t].creep.clear();
             cevent.packet >> cc;
@@ -94,6 +84,29 @@ sf::Uint32 StageRun::doRemoteEvent(Game & g,
                 cevent.packet >> creep.position.x;
                 cevent.packet >> creep.position.y;
                 g.teamMan.teams[t].creep.push_back(creep);
+            }
+            //  Generator Death Laser
+            g.teamMan.teams[t].gen1.prjctls.clear();
+            cevent.packet >> cc;
+            for (int b = 0;b < cc;b++)
+            {
+                Projectile proj;
+                cevent.packet >> proj.position.x;
+                cevent.packet >> proj.position.y;
+                cevent.packet >> proj.angle;
+                g.teamMan.teams[t].gen1.prjctls.push_back(proj);
+            }
+
+            //  Base Heal Laser
+            g.teamMan.teams[t].base1.prjctls.clear();
+            cevent.packet >> cc;
+            for (int b = 0;b < cc;b++)
+            {
+                Projectile proj;
+                cevent.packet >> proj.position.x;
+                cevent.packet >> proj.position.y;
+                cevent.packet >> proj.angle;
+                g.teamMan.teams[t].base1.prjctls.push_back(proj);
             }
         }
         hasRxStateOfUnion = true;
@@ -150,7 +163,6 @@ sf::Uint32 StageRun::doLocalInput(sf::RenderWindow & window, Game & g)
     
     if (!hasFocus)
         return 0;
-    //prevControl = curControl;
 
     thisPlayer = g.teamMan.teams[g.myTeam].players[g.mySlot];
     //We poll keyboard 
@@ -191,7 +203,6 @@ sf::Uint32 StageRun::doLocalInput(sf::RenderWindow & window, Game & g)
     
     if (sf::Mouse::isButtonPressed(sf::Mouse::Left)){
         attacking = true;
-        //thisPlayer.tank.
         //std::cout << "Bang!" << std::endl;
     }
 
@@ -218,36 +229,41 @@ sf::Uint32 StageRun::doLocalInput(sf::RenderWindow & window, Game & g)
 
         curControl = true;
     }
-    
-   
 
-    if (true)//curControl || attacking)
+    if (stateOfPlayerClock.getElapsedTime().asMilliseconds() > 100)
     {
-        if (stateOfPlayerClock.getElapsedTime().asMilliseconds() > 100)
-        {
-            g.teamMan.teams[g.myTeam].players[g.mySlot].state = PlayerState::SendingStateOfPlayer;
-            stateOfPlayerClock.restart();
-        }
+        g.teamMan.teams[g.myTeam].players[g.mySlot].state = PlayerState::SendingStateOfPlayer;
+        stateOfPlayerClock.restart();
     }
 
     return 0;
 }
-#define LINEAR_SMOOTH 3.0f
+#define LINEAR_SMOOTH 20.0f
+static std::vector<sf::Vector2f> posTrack;
 sf::Uint32 StageRun::doDraw(sf::RenderWindow & window, Game & g, sf::Time ft)
 {
-    
+       
        //Set view on top of this player.
-        if ((int)g.myTeam != -1){//if == -1, then your team has not yet been established. i do not like this
-
+        if ((int)g.myTeam != -1){//if == -1, then your team has not yet been established. TODO: i do not like this
+            
             sf::Vector2f pos = g.teamMan.teams[g.myTeam].players[g.mySlot].tank.position;
+            posTrack.push_back(pos);
+            if (posTrack.size() > 70)
+                posTrack.erase(posTrack.begin());
 
-            arenaView.reset(sf::FloatRect(pos.x-((g.scrWidth)/2),pos.y-((g.scrHeight)/2),g.scrWidth,g.scrHeight));//sf::FloatRect(0,0,g.scrWidth,g.scrHeight));//
+            pos = sf::Vector2f(0,0);
+            for (auto m = 0;m < posTrack.size();m++){
+                pos += posTrack[m];
+            }
+            pos.x  = pos.x / 70.0f;
+            pos.y  = pos.y / 70.0f;
+
+            arenaView.reset(sf::FloatRect(pos.x-((g.scrWidth)/2.0f),pos.y-((g.scrHeight)/2.0f),g.scrWidth,g.scrHeight));//sf::FloatRect(0,0,g.scrWidth,g.scrHeight));//
             arenaView.zoom(zoom);
-            //arenaView.setViewport(sf::FloatRect(0,0,0.25,0.25));
             window.setView(arenaView);
         }
         //Draw the floor tiles
-        for (int i = 0;i < 900;i++){
+        for (int i = 0;i < g.arenaMan.getMapHorizTileNum()*g.arenaMan.getMapVertTileNum();i++){
             Tile &tile = g.arenaMan.getTile(i);
             sf::Sprite ts;
             ts.setTexture(*g.assetMan.getFloorImage(tile.getName()).tex);
@@ -287,10 +303,50 @@ sf::Uint32 StageRun::doDraw(sf::RenderWindow & window, Game & g, sf::Time ft)
                         g.teamMan.teams[y].players[h].tank.shadowUpdated = false;
                     }
                
-                    //g.teamMan.teams[y].players[h].tank.position.x +=(g.teamMan.teams[y].players[h].tank.dx*g.teamMan.teams[y].players[h].tank.velocity.x*ft.asSeconds()*20);
-                    //g.teamMan.teams[y].players[h].tank.position.y +=(g.teamMan.teams[y].players[h].tank.dy*g.teamMan.teams[y].players[h].tank.velocity.y*ft.asSeconds()*20);
-                    g.teamMan.teams[y].players[h].tank.position.x += g.teamMan.teams[y].players[h].tank.dx/LINEAR_SMOOTH;
-                    g.teamMan.teams[y].players[h].tank.position.y += g.teamMan.teams[y].players[h].tank.dy/LINEAR_SMOOTH;
+
+                    //store cur location
+                    //calculate new position
+                    //if new position is closer than previous location, apply
+                    //otherwise, do nothing.
+
+                    float ndx,ndy, npx, npy;//New position
+                    ndx = g.teamMan.teams[y].players[h].tank.dx;
+                    ndy = g.teamMan.teams[y].players[h].tank.dy;
+                    npx = g.teamMan.teams[y].players[h].tank.position.x + ndx * ft.asSeconds() * 10.0f;
+                    npy = g.teamMan.teams[y].players[h].tank.position.y + ndy * ft.asSeconds() * 10.0f;
+
+                    float cpx,cpy;//Current position
+                    cpx = g.teamMan.teams[y].players[h].tank.position.x;
+                    cpy = g.teamMan.teams[y].players[h].tank.position.y;
+
+                    float spx,spy;//Shadow position
+                    spx = g.teamMan.teams[y].players[h].tank.shadowPos.x;
+                    spy = g.teamMan.teams[y].players[h].tank.shadowPos.y;
+
+                    //If mag(dist(n,s)) < mag(dist(c,s))
+                    //Then apply.
+                    float ndistx, ndisty;
+                    float cdistx, cdisty;
+                    ndistx = npx - spx;
+                    ndisty = npy - spy;
+
+                    cdistx = cpx - spx;
+                    cdisty = cpy - spy;
+
+                    float nmag, cmag;
+                    cmag = sqrt(cdistx*cdistx+cdisty*cdisty);
+                    nmag = sqrt(ndistx*ndistx+ndisty*ndisty);
+
+                    if (nmag <= cmag)
+                    {
+                        g.teamMan.teams[y].players[h].tank.position.x = npx;
+                        g.teamMan.teams[y].players[h].tank.position.y = npy;
+                    }else{
+                        g.teamMan.teams[y].players[h].tank.position.x = spx;
+                        g.teamMan.teams[y].players[h].tank.position.y = spy;
+                    }
+
+                
 
                     std::string tankName;
                     sf::Sprite b,t;
@@ -322,20 +378,11 @@ sf::Uint32 StageRun::doDraw(sf::RenderWindow & window, Game & g, sf::Time ft)
                     b.setPosition(g.teamMan.teams[y].players[h].tank.position);
                     t.setPosition(g.teamMan.teams[y].players[h].tank.position);
 
-
-                    /*std::cout << teamMan.teams[y].players[h].tank.position.x << ", " << teamMan.teams[y].players[h].tank.position.y << std::endl;
-                    std::cout << teamMan.teams[y].players[h].tank.velocity.x*20*ft.asSeconds() << ", " << teamMan.teams[y].players[h].tank.position.y*20*ft.asSeconds() << std::endl;*/
                     for (int k = 0;k < g.teamMan.teams[y].players[h].prjctls.size();k++)
                     {
                         sf::Sprite prjctl;
                         prjctl.setTexture(*g.assetMan.getProjectileImage("Projectile").tex);
                         prjctl.setPosition(g.teamMan.teams[y].players[h].prjctls[k].position);
-                       /* prjctl.setOrigin(27,180);
-                        prjctl.setRotation(-90);
-                        prjctl.rotate(g.teamMan.teams[y].players[h].tank.turretAngle);*/
-                       /* prjctl.setOrigin(50,0);
-                        prjctl.setRotation(g.teamMan.teams[y].players[h].tank.turretAngle);*/
-                        //prjctl.setRotation(teamMan.teams[y].players[h].prjctls[k].angle);
                         window.draw(prjctl);
                     }
 
@@ -353,6 +400,7 @@ sf::Uint32 StageRun::doDraw(sf::RenderWindow & window, Game & g, sf::Time ft)
                     window.draw(stat);
                 }
             
+                //Draw Creep
                 for (int lk = 0;lk < g.teamMan.teams[y].creep.size();lk++)
                 {
                     sf::Sprite creep;
@@ -362,12 +410,32 @@ sf::Uint32 StageRun::doDraw(sf::RenderWindow & window, Game & g, sf::Time ft)
                     window.draw(creep);
                 }
             
+                //Draw Generator lasers
+                for (int k = 0;k < g.teamMan.teams[y].gen1.prjctls.size();k++)
+                {
+                    sf::Sprite prjctl;
+                    prjctl.setTexture(*g.assetMan.getProjectileImage("BaseLaser").tex);
+                    prjctl.setOrigin(16.0f,16.0f);
+                    prjctl.setPosition(g.teamMan.teams[y].gen1.prjctls[k].position);
+                    prjctl.setRotation(g.teamMan.teams[y].gen1.prjctls[k].angle);
+                    window.draw(prjctl);
+                }
+
+                //Draw Base heal ray
+                for (int k = 0;k < g.teamMan.teams[y].base1.prjctls.size();k++)
+                {
+                    sf::Sprite prjctl;
+                    prjctl.setTexture(*g.assetMan.getProjectileImage("HealLaser").tex);
+                    prjctl.setOrigin(16.0f,16.0f);
+                    prjctl.setPosition(g.teamMan.teams[y].base1.prjctls[k].position);
+                    prjctl.setRotation(g.teamMan.teams[y].base1.prjctls[k].angle);
+                    window.draw(prjctl);
+                }
             }
         }
 
         //Draw the Dashboard
         dashView.reset(sf::FloatRect(0,0, g.scrWidth, g.scrHeight));
-        //dashView.setCenter(scrWidth/2,-1.0f*(scrHeight/2)+65);
    
         window.setView(dashView);
     

@@ -58,6 +58,16 @@ int AssetManager::load(){
     projectileImages["Projectile"] = pi;//.push_back(pi);
     LogFile::get()->log(0,0,"Loaded projectile");
 
+    ProjectileImage pi2;
+    pi2.load("Assets\\baselaser1.png");
+    projectileImages["BaseLaser"] = pi2;//.push_back(pi);
+    LogFile::get()->log(0,0,"Loaded Base Laser");
+
+    ProjectileImage pi3;
+    pi3.load("Assets\\heallaser.png");
+    projectileImages["HealLaser"] = pi3;//.push_back(pi);
+    LogFile::get()->log(0,0,"Loaded Heal Laser");
+
     //Load floor tiles
     FloorImage fi;
     fi.load("Assets\\floor1.png");

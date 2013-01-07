@@ -413,6 +413,32 @@ int doLoop(sg::Comm & comm, tg::TeamManager & teamMan)
     return 0;
 }
 -----------------------------------------------------------------------------------------
+
+float minDist = 400000000.0f;
+            int minIndex=-1;
+            int otherTeam = (y==1?2:1);
+            sf::Vector2f basePos = g.arenaMan.getStartPosition(y);//.teamMan.teams[y].base1.position
+            
+            for (auto p = 0;p < g.teamMan.teams[otherTeam].players.size();p++){
+                Player & player = g.teamMan.teams[otherTeam].players[p];
+                if (player.hasHost == false)
+                    continue;
+                //Calc distance between base and player
+                float dx,dy;
+                dx = basePos.x - player.tank.position.x;
+                dy = basePos.y - player.tank.position.y;
+                float dist = sqrt(dx*dx+dy*dy);
+                if (dist < minDist){
+                    minDist = dist;
+                    minIndex = p;
+                }
+            }
+
+            if (minIndex != -1)
+            {
+
+            }
+
 -----------------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------------

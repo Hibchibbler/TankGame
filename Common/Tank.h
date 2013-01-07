@@ -18,6 +18,8 @@ namespace tg
             turretAngle = 0.0f;
             mass = 5.0f;
             shadowUpdated = false;
+            prevDist = 0.0f;
+            curDist = 0.0f;
         }
         sf::Int32 health;
         sf::Uint32 power;
@@ -34,6 +36,10 @@ namespace tg
         bool shadowUpdated;
         float dx;
         float dy;
+        float accx;
+        float accy;
+        float prevDist;
+        float curDist;
         
     };
 

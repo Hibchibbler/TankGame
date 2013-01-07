@@ -156,11 +156,11 @@ namespace tg
                 {
                     sf::Vector2f p = i->getPosition();
                     if (team == 1){
-                        p.x += 125;
-                        p.y += 125;
+                        p.x += 62;
+                        p.y += 62;
                     }else if (team == 2){
-                        p.x -= 125;
-                        p.y -= 125;
+                        p.x += 62;
+                        p.y += 62;
                     }
                     return p;
                 }
@@ -173,10 +173,26 @@ namespace tg
                 if (i->getId() == 5 && team == 1 ||
                     i->getId() == 6 && team == 2)
                 {
-                    return i->getPosition();
+                    sf::Vector2f p = i->getPosition();
+                    if (team == 1){
+                        p.x += 62;
+                        p.y += 62;
+                    }else if (team == 2){
+                        p.x += 62;
+                        p.y += 62;
+                    }
+                    return p;
                 }
             }
             return sf::Vector2f(0,0);
+        }
+
+        sf::Uint32 getMapHorizTileNum(){
+            return horizTileNum;
+        }
+
+        sf::Uint32 getMapVertTileNum(){
+            return vertTileNum;
         }
 
         Tile & getTile(sf::Uint32 index){

@@ -22,6 +22,8 @@ namespace tg
         sf::Clock velocityClock;
         sf::Clock minionAddClock;
         sf::Clock accumulatingClock;
+        sf::Clock healLaserClock;
+        sf::Clock deathLaserClock;
 
         bool stateUpdated;
 

@@ -101,7 +101,7 @@ sf::Uint32 GameServer::doInit()
     stageEst.doInit(*this);
     stageRun.doInit(*this);
 
-    arenaMan.load("Assets\\map2.txt");
+    arenaMan.load("Assets\\map1.txt");
     teamMan.load();
     
     server.StartServer(8280);

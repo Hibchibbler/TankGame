@@ -13,10 +13,11 @@ namespace tg
     public:
         Base()
         {
-            health = 100;
+            health = 1000;
         }
+        sf::Vector2f position;
         sf::Int32 health;
-    private:
+        std::vector<Projectile> prjctls;
     };
 
 
@@ -24,10 +25,11 @@ namespace tg
     {
     public:
         Generator(){
-            health = 100;
+            health = 2500;
         }
+        sf::Vector2f position;
         sf::Int32 health;
-    private:
+        std::vector<Projectile> prjctls;
     };
 
 
@@ -41,6 +43,7 @@ namespace tg
         std::vector<Player> players;
         std::vector<Creep> creep;
         Generator gen1;
+        Base base1;
     };
 };
 

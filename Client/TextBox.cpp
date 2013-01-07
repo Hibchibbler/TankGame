@@ -10,12 +10,12 @@ sf::Uint32 TextBox::load(){
     font.loadFromFile("digital-7mono.ttf");
     aString.setFont(font);
     aString.setColor(sf::Color::Green);
-    aString.scale(0.96,0.80);
+    aString.scale(0.96f,0.80f);
     //backgroundAsset.load("textbox_background2.png");
     //backgroundSp.setTexture(backgroundAsset.getTexture());
 
     //backgroundSp.setPosition(sf::Vector2f(57,59));
-    aString.setPosition(sf::Vector2f(63,58));
+    aString.setPosition(sf::Vector2f(63.0f,58.0f));
     return 0;
 }
 sf::Uint32 TextBox::processMouseButtonPressed(sf::RenderWindow & w, sf::Event &e)

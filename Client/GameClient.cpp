@@ -129,18 +129,18 @@ sf::Uint32 GameClient::doInit()
 
 
     assetMan.load();
-    arenaMan.load("Assets\\map2.txt");
+    arenaMan.load("Assets\\map1.txt");
     teamMan.load();
     //sf::VideoMode::getFullscreenModes().front().
     window.create(sf::VideoMode(scrWidth, scrHeight,32),"Client");//(sf::VideoMode(800,600,32),  "TankGame Client",sf::Style::Fullscreen );
     //window.setVerticalSyncEnabled(true);
-    char ip[64];
-    short port;
+    //char ip[64];
+    //short port;
     //std::cout << "Enter IP to Connect to: ";
     //std::cin >> ip;
     /*std::cout << "Enter Port to Connect to: ";
     std::cin >> port;*/
-    client.StartClient(8280,"192.168.1.9");//sf::IpAddress(ip));
+    //client.StartClient(8280,"192.168.1.9");//sf::IpAddress(ip));
 
     return 0;
 }
@@ -166,6 +166,8 @@ sf::Uint32 GameClient::doLoop()
                 myName = stageStart.getSummary(1).b;
                 myServerIp = stageStart.getSummary(2).b;
                 myServerPort = stageStart.getSummary(3).a;
+
+                client.StartClient(myServerPort, sf::IpAddress(myServerIp));
 
                 std::cout << "Switching to StageLobby" << std::endl;
                 curStage = &stageLobby;
@@ -218,7 +220,7 @@ sf::Uint32 GameClient::doCleanup()
 
 sf::Uint32 GameClient::doDraw(sf::Time ft)
 {
-    if (updateStateClock.getElapsedTime().asMilliseconds() > 50)
+    if (updateStateClock.getElapsedTime().asMilliseconds() > 20)
     {
         window.clear();
 
@@ -226,7 +228,8 @@ sf::Uint32 GameClient::doDraw(sf::Time ft)
 
         window.display();
         updateStateClock.restart();
-    }
+    }else
+        sf::sleep(sf::milliseconds(0));
     return 0;
 }
 

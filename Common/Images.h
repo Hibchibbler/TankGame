@@ -69,8 +69,10 @@ namespace tg
             img = new sf::Image();
             img->loadFromFile(fn);
             img->createMaskFromColor(sf::Color::Cyan,0);
+            
             tex = new sf::Texture();
             tex->loadFromImage(*img);
+            
             return 0;
         }
         sf::Uint32 unload(){

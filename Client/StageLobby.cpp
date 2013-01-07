@@ -14,7 +14,7 @@ StageLobby::StageLobby(Game & game)
 }
 sf::Uint32 StageLobby::doInit(Game & g)
 {
-    sfg::Box::Ptr box( sfg::Box::Create( sfg::Box::VERTICAL, 5.0f ) );
+    box =  sfg::Box::Create( sfg::Box::VERTICAL, 5.0f ) ;
     
     sfg::Box::Ptr row = sfg::Box::Create( sfg::Box::HORIZONTAL, 5.0f );
     row->Pack(sfg::Label::Create("Team 1"));
@@ -44,7 +44,7 @@ sf::Uint32 StageLobby::doInit(Game & g)
     //joinButton->GetSignal( sfg::Widget::OnLeftClick ).Connect( &StageStart::doJoin, this );
 
 
-    sfg::Window::Ptr mywindow;
+    
     mywindow = sfg::Window::Create();
 
     mywindow->SetTitle("Lobby");
@@ -71,13 +71,20 @@ void StageLobby::doJoinTeam1()
     }
     joinTeam1Button->Show(false);
     joinTeam2Button->Show(false);
-    //desk.Remove(joinTeam1Button);
-    //desk.Remove(joinTeam2Button);
+
+    sfg::Box::Ptr row = sfg::Box::Create(sfg::Box::HORIZONTAL, 10.0f);
+    sfg::Spinner::Ptr spinner = sfg::Spinner::Create();
+    spinner->Start();
+    row->Pack(spinner);
+
+    sfg::Label::Ptr msg = sfg::Label::Create("Waiting for Host to start...");
+    row->Pack(msg);
+    box->Pack(row);
 }
 
 void StageLobby::doJoinTeam2()
 {
-    tg::Team::PlayerIterator & pi = g.teamMan.teams[0].players.begin();        
+    tg::Team::PlayerIterator & pi = g.teamMan.teams[0].players.begin();
     for (;pi != g.teamMan.teams[0].players.end();pi++){
         
         if (pi->hasHost == false)
@@ -88,6 +95,14 @@ void StageLobby::doJoinTeam2()
     }
     joinTeam1Button->Show(false);
     joinTeam2Button->Show(false);
+    sfg::Box::Ptr row = sfg::Box::Create(sfg::Box::HORIZONTAL, 10.0f);
+    sfg::Spinner::Ptr spinner = sfg::Spinner::Create();
+    spinner->Start();
+    row->Pack(spinner);
+
+    sfg::Label::Ptr msg = sfg::Label::Create("Waiting for Host to start...");
+    row->Pack(msg);
+    box->Pack(row);
 }
 
 

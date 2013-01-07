@@ -42,6 +42,8 @@ namespace tg
         sfg::Window::Ptr createNameDialog();
         sf::Clock deskUpdateClock;
         sfg::Desktop desk;
+        sfg::Window::Ptr mywindow;
+        sfg::Box::Ptr box;
         sfg::Button::Ptr joinTeam1Button;
         sfg::Button::Ptr joinTeam2Button;
         
