@@ -167,12 +167,15 @@ int Messages::sendStateOfUnion(Comm & comm, TeamManager & teamMan)
             event.packet << y->position.y;
         }
         //Generator death Laser
-        event.packet << teamMan.teams[t].gen1.prjctls.size();
-        for (auto y= teamMan.teams[t].gen1.prjctls.begin();y != teamMan.teams[t].gen1.prjctls.end();y++)
+        for (int gi = 0;gi < 2;gi++)
         {
-            event.packet << y->position.x;
-            event.packet << y->position.y;
-            event.packet << y->angle;
+            event.packet << teamMan.teams[t].gen[gi].prjctls.size();
+            for (auto y= teamMan.teams[t].gen[gi].prjctls.begin();y != teamMan.teams[t].gen[gi].prjctls.end();y++)
+            {
+                event.packet << y->position.x;
+                event.packet << y->position.y;
+                event.packet << y->angle;
+            }
         }
 
         //Base heal Laser

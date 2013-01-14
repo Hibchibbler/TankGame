@@ -83,8 +83,10 @@ sf::Uint32 StageStart::doLocalInput(sf::RenderWindow & window, Game & g)
 
 sf::Uint32 StageStart::doDraw(sf::RenderWindow &window,Game & g, sf::Time ft)
 {
+    window.clear();
     window.resetGLStates();
     g.sfGui.Display(window);
+    window.display();
     return 0;
 }
 

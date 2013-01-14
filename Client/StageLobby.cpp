@@ -243,8 +243,10 @@ sf::Uint32 StageLobby::doLocalInput(sf::RenderWindow & window, Game & g)
 
 sf::Uint32 StageLobby::doDraw(sf::RenderWindow &window,Game & g, sf::Time ft)
 {
+    window.clear();
     window.resetGLStates();
     g.sfGui.Display(window);
+    window.display();
     return 0;
 }
 

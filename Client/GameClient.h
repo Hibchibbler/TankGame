@@ -47,7 +47,8 @@ namespace tg
         StageStart stageStart;
         StageLobby stageLobby;
         StageRun   stageRun;
-        sf::Clock updateStateClock;
+        sf::Clock drawClock;
+        sf::Clock loopClock;
         //sf::Uint32 myCID;
         //sf::Uint32 mySlot;
         //sf::Uint32 myTeam;

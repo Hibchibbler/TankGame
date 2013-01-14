@@ -85,18 +85,21 @@ sf::Uint32 StageRun::doRemoteEvent(Game & g,
                 cevent.packet >> creep.position.y;
                 g.teamMan.teams[t].creep.push_back(creep);
             }
-            //  Generator Death Laser
-            g.teamMan.teams[t].gen1.prjctls.clear();
-            cevent.packet >> cc;
-            for (int b = 0;b < cc;b++)
-            {
-                Projectile proj;
-                cevent.packet >> proj.position.x;
-                cevent.packet >> proj.position.y;
-                cevent.packet >> proj.angle;
-                g.teamMan.teams[t].gen1.prjctls.push_back(proj);
-            }
 
+            //  Generator Death Laser
+            for  (int gi = 0;gi < 2;gi++)
+            {
+                g.teamMan.teams[t].gen[gi].prjctls.clear();
+                cevent.packet >> cc;
+                for (int b = 0;b < cc;b++)
+                {
+                    Projectile proj;
+                    cevent.packet >> proj.position.x;
+                    cevent.packet >> proj.position.y;
+                    cevent.packet >> proj.angle;
+                    g.teamMan.teams[t].gen[gi].prjctls.push_back(proj);
+                }
+            }
             //  Base Heal Laser
             g.teamMan.teams[t].base1.prjctls.clear();
             cevent.packet >> cc;
@@ -136,116 +139,130 @@ sf::Uint32 StageRun::doWindowEvent(sf::RenderWindow & w,
 sf::Uint32 StageRun::doLoop(Game & g)
 {
  
-    Player & p = g.teamMan.getPlayerBySlot(g.myTeam,g.mySlot);
+    if (loopClock.getElapsedTime().asSeconds() > 0.020f)
+    {
+        Player & p = g.teamMan.getPlayerBySlot(g.myTeam,g.mySlot);
     
-    dash.setDash(p);
+        dash.setDash(p);
 
-    switch (p.state){
-        case PlayerState::Ready:
-            p.state = PlayerState::Running;
-            break;
-        case PlayerState::SendingStateOfPlayer:
-            Messages::sendStateOfPlayer(g.client, g.teamMan, g.myCID, g.myTeam, g.mySlot, thisPlayer, attacking);
-            p.state = PlayerState::Running;
-            break;
-        case PlayerState::Running:
+        switch (p.state){
+            case PlayerState::Ready:
+                p.state = PlayerState::Running;
+                break;
+            case PlayerState::SendingStateOfPlayer:
+                Messages::sendStateOfPlayer(g.client, g.teamMan, g.myCID, g.myTeam, g.mySlot, thisPlayer, attacking);
+                p.state = PlayerState::Running;
+                break;
+            case PlayerState::Running:
 
-            break;
+                break;
 
+        }
+    }else{
+        sf::sleep(sf::seconds(0.0f));
     }
     return getSummary(0).a;
 }
 sf::Uint32 StageRun::doLocalInput(sf::RenderWindow & window, Game & g)
 {
-    //static bool prevControl = false;
-    bool curControl = false;
-    attacking = 0;
-    
-    if (!hasFocus)
-        return 0;
-
-    thisPlayer = g.teamMan.teams[g.myTeam].players[g.mySlot];
-    //We poll keyboard 
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)){
-        thisPlayer.tank.throttle += 2;
-        if (thisPlayer.tank.throttle > 16)
-            thisPlayer.tank.throttle = 16;  
-        curControl = true;
-    }
-    
-
-    //max speed lower in reverse
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::S)){
-        thisPlayer.tank.throttle += -2;
-        if (thisPlayer.tank.throttle < -8)
-            thisPlayer.tank.throttle = -8;
-        curControl = true;
-    }
-    
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::A)){
-        //Rotating left
-
-        thisPlayer.tank.bodyAngle = thisPlayer.tank.bodyAngle -  15;
-        if (thisPlayer.tank.bodyAngle >= 360.0f || thisPlayer.tank.bodyAngle <= -360.0f ){
-            thisPlayer.tank.bodyAngle = 0;
-        }
-        curControl = true;
-    }
-    
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::D)){
-        //Rotating right
-        thisPlayer.tank.bodyAngle = thisPlayer.tank.bodyAngle +  15;
-        if (thisPlayer.tank.bodyAngle >= 360.0f || thisPlayer.tank.bodyAngle <= -360.0f ){
-            thisPlayer.tank.bodyAngle = 0;
-        }
-        curControl = true;
-    }
-    
-    if (sf::Mouse::isButtonPressed(sf::Mouse::Left)){
-        attacking = true;
-        //std::cout << "Bang!" << std::endl;
-    }
-
-    lastMousePos = curMousePos;
-    curMousePos = sf::Mouse::getPosition(window);
-    if (curMousePos != lastMousePos || attacking)
+    if (inputClock.getElapsedTime().asSeconds() > 0.100f)
     {
-        float dx,dy;
-        sf::Vector2f centerOfTurretWorld;
-        sf::Vector2i mouseCursorScreen(curMousePos.x,curMousePos.y);
-        sf::Vector2f mouseCursorWorld;
+        //static bool prevControl = false;
+        bool curControl = false;
+        attacking = 0;
+    
+        if (!hasFocus)
+            return 0;
 
-        //Find turrent angle based on vector from tank origin to mouse.
-        centerOfTurretWorld = thisPlayer.tank.position;
+    
 
-        //mouse location is relative to arenaView!
-        mouseCursorWorld = window.convertCoords(mouseCursorScreen,arenaView);
-        dx = mouseCursorWorld.x - centerOfTurretWorld.x;
-        dy = mouseCursorWorld.y - centerOfTurretWorld.y;
+        thisPlayer = g.teamMan.teams[g.myTeam].players[g.mySlot];
+        //We poll keyboard 
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)){
+            thisPlayer.tank.throttle += 2;
+            if (thisPlayer.tank.throttle > 56)
+                thisPlayer.tank.throttle = 56;  
+            curControl = true;
+        }
+    
+
+        //max speed lower in reverse
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::S)){
+            thisPlayer.tank.throttle += -2;
+            if (thisPlayer.tank.throttle < -8)
+                thisPlayer.tank.throttle = -8;
+            curControl = true;
+        }
+    
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::A)){
+            //Rotating left
+
+            thisPlayer.tank.bodyAngle = thisPlayer.tank.bodyAngle -  15;
+            if (thisPlayer.tank.bodyAngle >= 360.0f || thisPlayer.tank.bodyAngle <= -360.0f ){
+                thisPlayer.tank.bodyAngle = 0;
+            }
+            curControl = true;
+        }
+    
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::D)){
+            //Rotating right
+            thisPlayer.tank.bodyAngle = thisPlayer.tank.bodyAngle +  15;
+            if (thisPlayer.tank.bodyAngle >= 360.0f || thisPlayer.tank.bodyAngle <= -360.0f ){
+                thisPlayer.tank.bodyAngle = 0;
+            }
+            curControl = true;
+        }
+    
+        if (sf::Mouse::isButtonPressed(sf::Mouse::Left)){
+            attacking = true;
+            //std::cout << "Bang!" << std::endl;
+        }
+
+        lastMousePos = curMousePos;
+        curMousePos = sf::Mouse::getPosition(window);
+        if (curMousePos != lastMousePos || attacking)
+        {
+            float dx,dy;
+            sf::Vector2f centerOfTurretWorld;
+            sf::Vector2i mouseCursorScreen(curMousePos.x,curMousePos.y);
+            sf::Vector2f mouseCursorWorld;
+
+            //Find turrent angle based on vector from tank origin to mouse.
+            centerOfTurretWorld = thisPlayer.tank.position;
+
+            //mouse location is relative to arenaView!
+            mouseCursorWorld = window.convertCoords(mouseCursorScreen,arenaView);
+            dx = mouseCursorWorld.x - centerOfTurretWorld.x;
+            dy = mouseCursorWorld.y - centerOfTurretWorld.y;
         
-        lastTurretAngle = curTurretAngle;
-        curTurretAngle = (180.0f/3.14156f)*atan2(dy,dx);
-        thisPlayer.tank.turretAngle = curTurretAngle;
+            lastTurretAngle = curTurretAngle;
+            curTurretAngle = (180.0f/3.14156f)*atan2(dy,dx);
+            thisPlayer.tank.turretAngle = curTurretAngle;
 
-        curControl = true;
+            curControl = true;
+        }
+
+       // if (stateOfPlayerClock.getElapsedTime().asMilliseconds() > 100)
+       // {
+            g.teamMan.teams[g.myTeam].players[g.mySlot].state = PlayerState::SendingStateOfPlayer;
+       //   stateOfPlayerClock.restart();
+       // }
+        inputClock.restart();
+    }else{
+        sf::sleep(sf::seconds(0.0f));
     }
-
-    if (stateOfPlayerClock.getElapsedTime().asMilliseconds() > 100)
-    {
-        g.teamMan.teams[g.myTeam].players[g.mySlot].state = PlayerState::SendingStateOfPlayer;
-        stateOfPlayerClock.restart();
-    }
-
     return 0;
 }
 #define LINEAR_SMOOTH 20.0f
 static std::vector<sf::Vector2f> posTrack;
 sf::Uint32 StageRun::doDraw(sf::RenderWindow & window, Game & g, sf::Time ft)
 {
-       
-       //Set view on top of this player.
+    if (drawClock.getElapsedTime().asSeconds() > 0.020f)
+    {
+        window.clear();
+        //Set view on top of this player.
         if ((int)g.myTeam != -1){//if == -1, then your team has not yet been established. TODO: i do not like this
-            
+            //TODO: move calculations into doLoop
             sf::Vector2f pos = g.teamMan.teams[g.myTeam].players[g.mySlot].tank.position;
             posTrack.push_back(pos);
             if (posTrack.size() > 70)
@@ -273,7 +290,7 @@ sf::Uint32 StageRun::doDraw(sf::RenderWindow & window, Game & g, sf::Time ft)
 
         sf::Uint32 t1=0;
         sf::Uint32 t2=0;
-         for (int t=1;t < 3;t++)
+            for (int t=1;t < 3;t++)
         {
             for (int s = 0;s < g.teamMan.teams[t].players.size();s++)
             {
@@ -285,7 +302,7 @@ sf::Uint32 StageRun::doDraw(sf::RenderWindow & window, Game & g, sf::Time ft)
                     else
                         t2++;
             }
-         }
+            }
         dash.setScore(t1, t2);
 
         //Draw the tanks
@@ -295,57 +312,61 @@ sf::Uint32 StageRun::doDraw(sf::RenderWindow & window, Game & g, sf::Time ft)
             {
                 if (g.teamMan.teams[y].players[h].hasHost)
                 {
-
-                    if (g.teamMan.teams[y].players[h].tank.shadowUpdated)
+                    g.teamMan.teams[y].players[h].tank.position = g.teamMan.teams[y].players[h].tank.shadowPos;
+                    /*if (g.teamMan.teams[y].players[h].tank.shadowUpdated)
                     {
                         g.teamMan.teams[y].players[h].tank.dx = g.teamMan.teams[y].players[h].tank.shadowPos.x - g.teamMan.teams[y].players[h].tank.position.x;
                         g.teamMan.teams[y].players[h].tank.dy = g.teamMan.teams[y].players[h].tank.shadowPos.y - g.teamMan.teams[y].players[h].tank.position.y;
                         g.teamMan.teams[y].players[h].tank.shadowUpdated = false;
                     }
+                    else{
+                        g.teamMan.teams[y].players[h].tank.position.x += g.teamMan.teams[y].players[h].tank.dx / 20.0f;
+                        g.teamMan.teams[y].players[h].tank.position.y += g.teamMan.teams[y].players[h].tank.dy / 20.0f;
+                    }*/
                
-
+                    //TODO: move calculations into doLoop
                     //store cur location
                     //calculate new position
                     //if new position is closer than previous location, apply
                     //otherwise, do nothing.
 
-                    float ndx,ndy, npx, npy;//New position
-                    ndx = g.teamMan.teams[y].players[h].tank.dx;
-                    ndy = g.teamMan.teams[y].players[h].tank.dy;
-                    npx = g.teamMan.teams[y].players[h].tank.position.x + ndx * ft.asSeconds() * 10.0f;
-                    npy = g.teamMan.teams[y].players[h].tank.position.y + ndy * ft.asSeconds() * 10.0f;
+                    //float ndx,ndy, npx, npy;//New position
+                    //ndx = g.teamMan.teams[y].players[h].tank.dx;
+                    //ndy = g.teamMan.teams[y].players[h].tank.dy;
+                    //npx = g.teamMan.teams[y].players[h].tank.position.x + ndx * ft.asSeconds() * 10.0f;
+                    //npy = g.teamMan.teams[y].players[h].tank.position.y + ndy * ft.asSeconds() * 10.0f;
 
-                    float cpx,cpy;//Current position
-                    cpx = g.teamMan.teams[y].players[h].tank.position.x;
-                    cpy = g.teamMan.teams[y].players[h].tank.position.y;
+                    //float cpx,cpy;//Current position
+                    //cpx = g.teamMan.teams[y].players[h].tank.position.x;
+                    //cpy = g.teamMan.teams[y].players[h].tank.position.y;
 
-                    float spx,spy;//Shadow position
-                    spx = g.teamMan.teams[y].players[h].tank.shadowPos.x;
-                    spy = g.teamMan.teams[y].players[h].tank.shadowPos.y;
+                    //float spx,spy;//Shadow position
+                    //spx = g.teamMan.teams[y].players[h].tank.shadowPos.x;
+                    //spy = g.teamMan.teams[y].players[h].tank.shadowPos.y;
 
-                    //If mag(dist(n,s)) < mag(dist(c,s))
-                    //Then apply.
-                    float ndistx, ndisty;
-                    float cdistx, cdisty;
-                    ndistx = npx - spx;
-                    ndisty = npy - spy;
+                    ////If mag(dist(n,s)) < mag(dist(c,s))
+                    ////Then apply.
+                    //float ndistx, ndisty;
+                    //float cdistx, cdisty;
+                    //ndistx = npx - spx;
+                    //ndisty = npy - spy;
+                    // 
+                    //cdistx = cpx - spx;
+                    //cdisty = cpy - spy;
 
-                    cdistx = cpx - spx;
-                    cdisty = cpy - spy;
+                    //float nmag, cmag;
+                    //cmag = sqrt(cdistx*cdistx+cdisty*cdisty);
+                    //nmag = sqrt(ndistx*ndistx+ndisty*ndisty);
 
-                    float nmag, cmag;
-                    cmag = sqrt(cdistx*cdistx+cdisty*cdisty);
-                    nmag = sqrt(ndistx*ndistx+ndisty*ndisty);
-
-                    if (nmag <= cmag)
-                    {
-                        g.teamMan.teams[y].players[h].tank.position.x = npx;
-                        g.teamMan.teams[y].players[h].tank.position.y = npy;
-                    }else{
-                        g.teamMan.teams[y].players[h].tank.position.x = spx;
-                        g.teamMan.teams[y].players[h].tank.position.y = spy;
-                    }
-
+                    //if (nmag <= cmag)
+                    //{
+                    //    g.teamMan.teams[y].players[h].tank.position.x = npx;
+                    //    g.teamMan.teams[y].players[h].tank.position.y = npy;
+                    //}else{
+                    //    g.teamMan.teams[y].players[h].tank.position.x = spx;
+                    //    g.teamMan.teams[y].players[h].tank.position.y = spy;
+                    //}
+                    
                 
 
                     std::string tankName;
@@ -382,6 +403,7 @@ sf::Uint32 StageRun::doDraw(sf::RenderWindow & window, Game & g, sf::Time ft)
                     {
                         sf::Sprite prjctl;
                         prjctl.setTexture(*g.assetMan.getProjectileImage("Projectile").tex);
+                        prjctl.setOrigin(8.0f,8.0f);
                         prjctl.setPosition(g.teamMan.teams[y].players[h].prjctls[k].position);
                         window.draw(prjctl);
                     }
@@ -394,9 +416,9 @@ sf::Uint32 StageRun::doDraw(sf::RenderWindow & window, Game & g, sf::Time ft)
                     ss << y << "/" << g.teamMan.teams[y].players[h].tank.health << "/" << g.teamMan.teams[y].players[h].tank.power;
                     stat.setString(ss.str());
                     stat.setFont(g.assetMan.getFont());
-                    stat.setScale(1.0,1.0);
+                    stat.setScale(2.0,2.0);
                     stat.setColor(sf::Color::Green);
-                    stat.setPosition(g.teamMan.teams[y].players[h].tank.position.x-33,g.teamMan.teams[y].players[h].tank.position.y-90);
+                    stat.setPosition(g.teamMan.teams[y].players[h].tank.position.x-75,g.teamMan.teams[y].players[h].tank.position.y-120);
                     window.draw(stat);
                 }
             
@@ -411,16 +433,18 @@ sf::Uint32 StageRun::doDraw(sf::RenderWindow & window, Game & g, sf::Time ft)
                 }
             
                 //Draw Generator lasers
-                for (int k = 0;k < g.teamMan.teams[y].gen1.prjctls.size();k++)
+                for (int gi = 0;gi < 2;gi++)
                 {
-                    sf::Sprite prjctl;
-                    prjctl.setTexture(*g.assetMan.getProjectileImage("BaseLaser").tex);
-                    prjctl.setOrigin(16.0f,16.0f);
-                    prjctl.setPosition(g.teamMan.teams[y].gen1.prjctls[k].position);
-                    prjctl.setRotation(g.teamMan.teams[y].gen1.prjctls[k].angle);
-                    window.draw(prjctl);
+                    for (int k = 0;k < g.teamMan.teams[y].gen[gi].prjctls.size();k++)
+                    {
+                        sf::Sprite prjctl;
+                        prjctl.setTexture(*g.assetMan.getProjectileImage("BaseLaser").tex);
+                        prjctl.setOrigin(16.0f,16.0f);
+                        prjctl.setPosition(g.teamMan.teams[y].gen[gi].prjctls[k].position);
+                        prjctl.setRotation(g.teamMan.teams[y].gen[gi].prjctls[k].angle);
+                        window.draw(prjctl);
+                    }
                 }
-
                 //Draw Base heal ray
                 for (int k = 0;k < g.teamMan.teams[y].base1.prjctls.size();k++)
                 {
@@ -466,7 +490,13 @@ sf::Uint32 StageRun::doDraw(sf::RenderWindow & window, Game & g, sf::Time ft)
         window.draw(dash.speedText);
         window.draw(dash.powerText);
         window.draw(dash.scoreText);
-    
+
+        window.display();
+
+        drawClock.restart();
+    }else{
+        sf::sleep(sf::seconds(0.0f));
+    }
     return 0;
 }
 

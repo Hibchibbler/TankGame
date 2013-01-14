@@ -51,8 +51,8 @@ sf::Uint32 StageRun::doRemoteEvent(Game & g,
             cevent.packet >> player.tank.throttle;
             cevent.packet >> player.tank.bodyAngle;
             cevent.packet >> player.tank.turretAngle;
-            //cevent.packet >> temp1;//player.tank.position.x;
-            //cevent.packet >> temp2;//player.tank.position.y;
+            //cevent.packet >> player.tank.shadowPos.x;
+            //cevent.packet >> player.tank.shadowPos.y;
             //cevent.packet >> temp3;//player.tank.velocity.x;
             //cevent.packet >> temp4;//player.tank.velocity.y;
             cevent.packet >> attacking;
@@ -96,10 +96,14 @@ bool isTankCollision(sf::Vector2f projPos, Game & g, sf::Int32 damage, sf::Uint3
             //tp->tank.position
             if (tp->hasHost)
             {
-                if (projPos.x > tp->tank.position.x &&
+                sf::FloatRect fr(tp->tank.position,sf::Vector2f(128,128));
+                
+
+                /*if (projPos.x > tp->tank.position.x &&
                     projPos.x < tp->tank.position.x+60.0f &&
                     projPos.y > tp->tank.position.y && 
-                    projPos.y < tp->tank.position.y+30.0f )
+                    projPos.y < tp->tank.position.y+30.0f )*/
+                if (fr.contains(projPos))
                 {
                     tp->tank.health-=damage;
                     if (tp->tank.health<=0)
@@ -128,10 +132,12 @@ int isCreepCollision(sf::Vector2f projPos, Game & g, sf::Uint32 damage, sf::Uint
         {
             //tp->tank.position
          
-                if (projPos.x > c->position.x &&
+                /*if (projPos.x > c->position.x &&
                     projPos.x < c->position.x+60.0f &&
                     projPos.y > c->position.y && 
-                    projPos.y < c->position.y+30.0f )
+                    projPos.y < c->position.y+30.0f )*/
+                sf::FloatRect fr(c->position,sf::Vector2f(128,128));
+                if (fr.contains(projPos))
                 {
                     c->health-=damage;
                     if (c->health <= 0)
@@ -158,18 +164,22 @@ bool isGeneratorCollision(sf::Vector2f projPos, Game & g, sf::Uint32 damage, sf:
         //skip doing collision if a safe team is specified
         if (y != -1 && team == y)
             continue;
-        sf::Vector2f genPos = g.arenaMan.getGeneratorPosition(y);
-
-        if (projPos.x > genPos.x &&
-            projPos.x < genPos.x+125.0f &&
-            projPos.y > genPos.y && 
-            projPos.y < genPos.y+125.0f )
+        
+        for (int gi =0;gi < g.arenaMan.getGeneratorCount(y);gi++)
         {
+            sf::Vector2f genPos = g.arenaMan.getGeneratorPosition(y,gi);
+
+            if (projPos.x > genPos.x &&
+                projPos.x < genPos.x+125.0f &&
+                projPos.y > genPos.y && 
+                projPos.y < genPos.y+125.0f )
+            {
             
-            g.teamMan.teams[y].gen1.health-=damage;
-            if (g.teamMan.teams[y].gen1.health<=0)
-                g.teamMan.teams[y].gen1.health=0;
-            return true;
+                g.teamMan.teams[y].gen[gi].health-=damage;
+                if (g.teamMan.teams[y].gen[gi].health<=0)
+                    g.teamMan.teams[y].gen[gi].health=0;
+                return true;
+            }
         }
     }
     return false;
@@ -199,15 +209,17 @@ bool isBaseCollision(sf::Vector2f projPos, Game & g, sf::Uint32 damage, sf::Uint
 
 #define CREEP_SPEED 17
 #define CREEP_SPAWN_MS 1400
-#define UPDATE_STATE_MS 30
-#define SEND_STATE_MS 100//110
+#define UPDATE_STATE_MS 33
+#define SEND_STATE_MS 110//110
 #define PIXELS_PER_SECOND 10
 #define CREEP_LIFE_S 75.0f
-#define BASE_LASER_PROXIMAL 1100.0f
+#define HEAL_LASER_PROXIMAL 500.0f
+#define DEATH_LASER_PROXIMAL 1100.0f
 #define BASE_LASER_LIFE_S 0.80f
-#define BASE_LASER_SPEED 120.0f
-#define HEAL_LASER_SPAWN_S 0.05f
-#define DEATH_LASER_SPAWN_S 0.04f
+#define HEAL_LASER_SPEED 65.0f
+#define DEATH_LASER_SPEED 150.0f
+#define HEAL_LASER_SPAWN_S 0.07f
+#define DEATH_LASER_SPAWN_S 0.030f
 
 //STATE_OF_UNION_MS
 sf::Uint32 StageRun::doLoop(Game & g)
@@ -258,8 +270,8 @@ sf::Uint32 StageRun::doLoop(Game & g)
                         //float mag = sqrt(vx*vx+vy*vy);
                         //g.teamMan.teams[y].base1.prjctls.back().velocity.x = -BASE_LASER_SPEED*mindx/mag; 
                         //g.teamMan.teams[y].base1.prjctls.back().velocity.y = -BASE_LASER_SPEED*mindy/mag;
-                        pi->prjctls.back().position.x = pi->tank.position.x + (vx/75.0f)*2.5f;
-                        pi->prjctls.back().position.y = pi->tank.position.y + (vy/75.0f)*2.5f;
+                        pi->prjctls.back().position.x = pi->tank.position.x + (vx/75.0f)*5.5f;
+                        pi->prjctls.back().position.y = pi->tank.position.y + (vy/75.0f)*5.5f;
                     
                         //std::cout << pi->prjctls.back().position.x << ", " << pi->prjctls.back().position.y << std::endl;
                         pi->prjctls.back().creationTime = accumulatingClock.getElapsedTime().asSeconds();
@@ -304,8 +316,10 @@ sf::Uint32 StageRun::doLoop(Game & g)
                                 if (yes1!=0 || yes2 || yes3 || yes4)
                                 {
                                     i = pi->prjctls.erase(i);
-                                    if (yes2==2)
+                                    if (yes2==2){
                                         pi->tank.power++;
+                                        pi->tank.maxHealth+=3;
+                                    }
                                     
                                 }
                                 else
@@ -344,6 +358,16 @@ sf::Uint32 StageRun::doLoop(Game & g)
                         pi->tank.position.x = pi->tank.position.x + pi->tank.velocity.x *  loopTime.asSeconds()*PIXELS_PER_SECOND;
                         pi->tank.position.y = pi->tank.position.y + pi->tank.velocity.y *  loopTime.asSeconds()*PIXELS_PER_SECOND;
             
+
+                        sf::Vector2f basePos = g.arenaMan.getStartPosition(y);
+                        if (pi->tank.position.x > basePos.x     &&
+                            pi->tank.position.x < basePos.x+125 &&
+                            pi->tank.position.y > basePos.y     &&
+                            pi->tank.position.y < basePos.y+125)
+                        {
+                            //Tank is  in base. Display upgrade dialog
+                        }
+
                         break;
                 }
             }
@@ -354,83 +378,94 @@ sf::Uint32 StageRun::doLoop(Game & g)
             // Determine the closest opponent tank for damage
             // Determine the closest friendly tank for heal
             
-            float minDistOther = 400000000.0f;
-            float mindxOther, mindyOther;
-            int minIndexOther=-1;
+           
 
-            float minDistUs = 400000000.0f;
-            float mindxUs, mindyUs;
-            int minIndexUs=-1;
+           
 
             int otherTeam = (y==1?2:1);
 
             
-            sf::Vector2f genPos = g.arenaMan.getGeneratorPosition(y);
+            //sf::Vector2f genPos = g.arenaMan.getGeneratorPosition(y);
             sf::Vector2f basePos = g.arenaMan.getStartPosition(y);
             
             //Do Generator Death Ray
             if (deathLaserClock.getElapsedTime().asSeconds() > DEATH_LASER_SPAWN_S)
             {
-                for (auto p = 0;p < g.teamMan.teams[otherTeam].players.size();p++){
-                    Player & player = g.teamMan.teams[otherTeam].players[p];
-                    if (player.hasHost == false)
-                        continue;
+                for (int gi=0;gi < g.arenaMan.getGeneratorCount(y);gi++)
+                {
+                     float minDistOther = 400000000.0f;
+                    float mindxOther, mindyOther;
+                    int minIndexOther=-1;
+
+                    for (auto p = 0;p < g.teamMan.teams[otherTeam].players.size();p++){
+                        Player & player = g.teamMan.teams[otherTeam].players[p];
+                        if (player.hasHost == false)
+                            continue;
 
                 
-                    //Calc distance between generator and player
-                    float dx,dy;
-                    dx = genPos.x - player.tank.position.x;
-                    dy = genPos.y - player.tank.position.y;
-                    float dist = sqrt(dx*dx+dy*dy);
+                        //Calc distance between generator and player
+                        float dx,dy;
+                        dx = g.arenaMan.getGeneratorPosition(y,gi).x - player.tank.position.x;
+                        dy = g.arenaMan.getGeneratorPosition(y,gi).y - player.tank.position.y;
+                        float dist = sqrt(dx*dx+dy*dy);
                 
-                    if (dist < minDistOther){
-                        minDistOther = dist;
-                        minIndexOther = p;
-                        mindxOther = dx;
-                        mindyOther = dy;
+                        if (dist < minDistOther){
+                            minDistOther = dist;
+                            minIndexOther = p;
+                            mindxOther = dx;
+                            mindyOther = dy;
+                        }
+
                     }
 
-                }
-
-                // If closest opponent is closer than BASE_LASER_PROXIMAL
-                // fire at it!
-                if (minIndexOther != -1 && g.teamMan.teams[y].gen1.health > 0 && minDistOther <= BASE_LASER_PROXIMAL)
-                {
-                    g.teamMan.teams[y].gen1.prjctls.push_back(Projectile());
+                    // If closest opponent is closer than BASE_LASER_PROXIMAL
+                    // fire at it!
+                    if (minIndexOther != -1 && g.teamMan.teams[y].gen[gi].health > 0 && minDistOther <= DEATH_LASER_PROXIMAL)
+                    {
+                        g.teamMan.teams[y].gen[gi].prjctls.push_back(Projectile());
                     
                     
-                    float mag = sqrt(mindxOther*mindxOther+mindyOther*mindyOther);
-                    g.teamMan.teams[y].gen1.prjctls.back().velocity.x = -BASE_LASER_SPEED*mindxOther/mag; 
-                    g.teamMan.teams[y].gen1.prjctls.back().velocity.y = -BASE_LASER_SPEED*mindyOther/mag;
+                        float mag = sqrt(mindxOther*mindxOther+mindyOther*mindyOther);
+                        g.teamMan.teams[y].gen[gi].prjctls.back().velocity.x = -DEATH_LASER_SPEED*mindxOther/mag; 
+                        g.teamMan.teams[y].gen[gi].prjctls.back().velocity.y = -DEATH_LASER_SPEED*mindyOther/mag;
 
-                    g.teamMan.teams[y].gen1.prjctls.back().position.x = genPos.x;
-                    g.teamMan.teams[y].gen1.prjctls.back().position.y = genPos.y;
+                        g.teamMan.teams[y].gen[gi].prjctls.back().position.x = g.arenaMan.getGeneratorPosition(y,gi).x;
+                        g.teamMan.teams[y].gen[gi].prjctls.back().position.y = g.arenaMan.getGeneratorPosition(y,gi).y;
 
-                    g.teamMan.teams[y].gen1.prjctls.back().angle = atan2(mindyOther,mindxOther)*(180.0f/3.141567f)-90.0f;
+                        g.teamMan.teams[y].gen[gi].prjctls.back().angle = atan2(mindyOther,mindxOther)*(180.0f/3.141567f)-90.0f;
 
-                    g.teamMan.teams[y].gen1.prjctls.back().creationTime = accumulatingClock.getElapsedTime().asSeconds();
-                    g.teamMan.teams[y].gen1.prjctls.back().damage = 1;
+                        g.teamMan.teams[y].gen[gi].prjctls.back().creationTime = accumulatingClock.getElapsedTime().asSeconds();
+                        g.teamMan.teams[y].gen[gi].prjctls.back().damage = 1;
+                    }
                 }
             }
             //For each generator laser segment, keep it moving. also, remove expired segments.
-            for (auto b = g.teamMan.teams[y].gen1.prjctls.begin();b != g.teamMan.teams[y].gen1.prjctls.end();)
-            {
-                b->position.x = b->position.x + b->velocity.x*loopTime.asSeconds()*PIXELS_PER_SECOND;
-                b->position.y = b->position.y + b->velocity.y*loopTime.asSeconds()*PIXELS_PER_SECOND;
+             for (int gi=0;gi < 2;gi++)
+             {
+                for (auto b = g.teamMan.teams[y].gen[gi].prjctls.begin();b != g.teamMan.teams[y].gen[gi].prjctls.end();)
+                {
+                    b->position.x = b->position.x + b->velocity.x*loopTime.asSeconds()*PIXELS_PER_SECOND;
+                    b->position.y = b->position.y + b->velocity.y*loopTime.asSeconds()*PIXELS_PER_SECOND;
 
-                bool yes = isTankCollision(b->position,g,b->damage,y);
-                if (yes || b->creationTime + BASE_LASER_LIFE_S < accumulatedClock)
-                {
-                    b = g.teamMan.teams[y].gen1.prjctls.erase(b);
-                }else
-                {
-                    b++;
+                    bool yes = isTankCollision(b->position,g,b->damage,y);
+                    if (yes || b->creationTime + BASE_LASER_LIFE_S < accumulatedClock)
+                    {
+                        b = g.teamMan.teams[y].gen[gi].prjctls.erase(b);
+                    }else
+                    {
+                        b++;
+                    }
                 }
-            }
+             }
 
+            
             //Do Base Heal Ray
             if (healLaserClock.getElapsedTime().asSeconds() > HEAL_LASER_SPAWN_S)
             {
+                float minDistUs = 400000000.0f;
+                float mindxUs, mindyUs;
+                int minIndexUs=-1;
+
                 for (auto p = 0;p < g.teamMan.teams[y].players.size();p++){
                     Player & player = g.teamMan.teams[y].players[p];
                     if (player.hasHost == false)
@@ -454,14 +489,14 @@ sf::Uint32 StageRun::doLoop(Game & g)
 
                 // If closest ally is closer than BASE_LASER_PROXIMAL
                 // fire at it!
-                if (minIndexUs != -1 && g.teamMan.teams[y].base1.health > 0 && g.teamMan.teams[y].players[minIndexUs].tank.health < 100 && minDistUs <= BASE_LASER_PROXIMAL)
+                if (minIndexUs != -1 && g.teamMan.teams[y].base1.health > 0 && g.teamMan.teams[y].players[minIndexUs].tank.health < g.teamMan.teams[y].players[minIndexUs].tank.maxHealth && minDistUs <= HEAL_LASER_PROXIMAL)
                 {
                     g.teamMan.teams[y].base1.prjctls.push_back(Projectile());
                     
                     
                     float mag = sqrt(mindxUs*mindxUs+mindyUs*mindyUs);
-                    g.teamMan.teams[y].base1.prjctls.back().velocity.x = -BASE_LASER_SPEED*mindxUs/mag; 
-                    g.teamMan.teams[y].base1.prjctls.back().velocity.y = -BASE_LASER_SPEED*mindyUs/mag;
+                    g.teamMan.teams[y].base1.prjctls.back().velocity.x = -HEAL_LASER_SPEED*mindxUs/mag; 
+                    g.teamMan.teams[y].base1.prjctls.back().velocity.y = -HEAL_LASER_SPEED*mindyUs/mag;
 
                     g.teamMan.teams[y].base1.prjctls.back().position.x = basePos.x;
                     g.teamMan.teams[y].base1.prjctls.back().position.y = basePos.y;

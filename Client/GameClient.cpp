@@ -129,81 +129,81 @@ sf::Uint32 GameClient::doInit()
 
 
     assetMan.load();
-    arenaMan.load("Assets\\map1.txt");
+    arenaMan.load("Assets\\map4.txt");
     teamMan.load();
     //sf::VideoMode::getFullscreenModes().front().
     window.create(sf::VideoMode(scrWidth, scrHeight,32),"Client");//(sf::VideoMode(800,600,32),  "TankGame Client",sf::Style::Fullscreen );
-    //window.setVerticalSyncEnabled(true);
-    //char ip[64];
-    //short port;
-    //std::cout << "Enter IP to Connect to: ";
-    //std::cin >> ip;
-    /*std::cout << "Enter Port to Connect to: ";
-    std::cin >> port;*/
-    //client.StartClient(8280,"192.168.1.9");//sf::IpAddress(ip));
+    
 
     return 0;
 }
 
 sf::Uint32 GameClient::doLoop()
 {
-    if (curStage != NULL)
+    if (true)//loopClock.getElapsedTime().asMilliseconds() > 10)
     {
-        sf::Uint32 summary = curStage->doLoop(*this);
-        //Id is set in GameServer constructor.
-        switch (curStage->getId()){
-        case 0://stageStart
-            switch (summary){
-            case 0x1:
-                //Stage Done
-                //Get summary details
-                //transition to next stage;
+        if (curStage != NULL)
+        {
+            sf::Uint32 summary = curStage->doLoop(*this);
+            //Id is set in GameServer constructor.
+            switch (curStage->getId()){
+            case 0://stageStart
+                switch (summary){
+                case 0x1:
+                    //Stage Done
+                    //Get summary details
+                    //transition to next stage;
 
-                std::cout << "Start summary: " << stageStart.getSummary(1).b << std::endl;
-                std::cout << "               " << stageStart.getSummary(2).b << std::endl;
-                std::cout << "             @ " << stageStart.getSummary(3).a << std::endl;
+                    std::cout << "Start summary: " << stageStart.getSummary(1).b << std::endl;
+                    std::cout << "               " << stageStart.getSummary(2).b << std::endl;
+                    std::cout << "             @ " << stageStart.getSummary(3).a << std::endl;
 
-                myName = stageStart.getSummary(1).b;
-                myServerIp = stageStart.getSummary(2).b;
-                myServerPort = stageStart.getSummary(3).a;
+                    myName = stageStart.getSummary(1).b;
+                    myServerIp = stageStart.getSummary(2).b;
+                    myServerPort = stageStart.getSummary(3).a;
 
-                client.StartClient(myServerPort, sf::IpAddress(myServerIp));
+                    client.StartClient(myServerPort, sf::IpAddress(myServerIp));
 
-                std::cout << "Switching to StageLobby" << std::endl;
-                curStage = &stageLobby;
+                    std::cout << "Switching to StageLobby" << std::endl;
+                    curStage = &stageLobby;
+                    break;
+                default:
+                    //stage still running
+                    break;
+                }
                 break;
-            default:
-                //stage still running
-                break;
-            }
-            break;
-        case 1://stageLobby
-            switch (summary){
-            case 0x1://Stage Done, transition to next stage;
-                myTeam = curStage->getSummary(1).a;
-                mySlot = curStage->getSummary(2).a;
+            case 1://stageLobby
+                switch (summary){
+                case 0x1://Stage Done, transition to next stage;
+                    myTeam = curStage->getSummary(1).a;
+                    mySlot = curStage->getSummary(2).a;
 
-                std::cout << myCID << ", " << myTeam << ", " << mySlot << std::endl;
+                    std::cout << myCID << ", " << myTeam << ", " << mySlot << std::endl;
 
-                std::cout << "Switching to StageRun" << std::endl;
-                curStage = &stageRun;
+                    std::cout << "Switching to StageRun" << std::endl;
+                    curStage = &stageRun;
                 
+                    break;
+                default:
+                    //stage still running
+                    break;
+                }
                 break;
-            default:
-                //stage still running
+            case 2://stageRun
+                switch (summary){
+                case 0x1://Stage Done, transition to next stage;
+                    break;
+                default:
+                    //stage still running
+                    break;
+                }
                 break;
             }
-            break;
-        case 2://stageRun
-            switch (summary){
-            case 0x1://Stage Done, transition to next stage;
-                break;
-            default:
-                //stage still running
-                break;
-            }
-            break;
         }
+        loopClock.restart();
+    }else
+    {
+        sf::sleep(sf::milliseconds(0));
     }
 
     return 0;
@@ -220,14 +220,14 @@ sf::Uint32 GameClient::doCleanup()
 
 sf::Uint32 GameClient::doDraw(sf::Time ft)
 {
-    if (updateStateClock.getElapsedTime().asMilliseconds() > 20)
+    if (true)//drawClock.getElapsedTime().asMilliseconds() > 10)
     {
-        window.clear();
+        //window.clear();
 
         curStage->doDraw(window, *this, ft);
 
-        window.display();
-        updateStateClock.restart();
+        //window.display();
+        drawClock.restart();
     }else
         sf::sleep(sf::milliseconds(0));
     return 0;

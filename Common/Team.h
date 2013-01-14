@@ -38,11 +38,14 @@ namespace tg
     public:
         Team(){
             players.reserve(5);
+            gen.push_back(Generator());
+            gen.push_back(Generator());
         }
         typedef std::vector<Player>::iterator PlayerIterator;
         std::vector<Player> players;
         std::vector<Creep> creep;
-        Generator gen1;
+        std::vector<Generator> gen;
+
         Base base1;
     };
 };

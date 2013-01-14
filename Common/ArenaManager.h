@@ -81,6 +81,11 @@ namespace tg
                     //The name is used by the doDraw routines.
                     // to get the correct asset, which uses a dictionary by name.
                     std::string name;
+                    sf::Vector2f pos;
+                    pos.x = (index % horizTileNum) * ARENAMAN_TILE_WIDTH;
+                    pos.y = row * ARENAMAN_TILE_HEIGHT;
+                    
+                    arenaData[index].setPosition(pos);
                     switch (id){
                     case 0:
                         name = "Floor1";
@@ -93,35 +98,32 @@ namespace tg
                         break;
                     case 3:
                         name = "Team1Garage";
+                        team1BasePos = pos;
+                        team1BasePos.x += 62;
+                        team1BasePos.y += 62;
                         break;
                     case 4:
                         name = "Team2Garage";
+                        team2BasePos = pos;
+                        team2BasePos.x += 62;
+                        team2BasePos.y += 62;
                         break;
                     case 5:
                         name = "Team1Generator";
+                        team1GenPos.push_back(pos);
                         break;
                     case 6:
                         name = "Team2Generator";
+                        team2GenPos.push_back(pos);
                         break;
                     }
                     arenaData[index].setName(name);
-                    
-                    
 
-                    sf::Vector2f pos;
-                    pos.x = (index % horizTileNum) * ARENAMAN_TILE_WIDTH;
-                    pos.y = row * ARENAMAN_TILE_HEIGHT;
-                    
-                    arenaData[index].setPosition(pos);
                     index++;
 
                     if (index % horizTileNum == 0)
                         row++;
 
-                  /*  int a=0;
-                    int b=0;
-                    indexToRC(index-1,a,b);
-                    std::cout << a << ", " << b << std::endl;*/
                 }
             }else{
                 std::cout << "ArenaManager::load unable to open map" << std::endl;
@@ -150,7 +152,7 @@ namespace tg
 
         sf::Uint32 setSprites(AssetManager & am, int screenWidth, int screenHeight);
         sf::Vector2f getStartPosition(int team){
-            for (auto i = arenaData.begin();i != arenaData.end();i++){
+            /*for (auto i = arenaData.begin();i != arenaData.end();i++){
                 if (i->getId() == 3 && team == 1 ||
                     i->getId() == 4 && team == 2)
                 {
@@ -165,11 +167,26 @@ namespace tg
                     return p;
                 }
             }
-            return sf::Vector2f(0,0);
+            return sf::Vector2f(0,0);*/
+            if (team == 1){
+                return team1BasePos;
+            }else if (team == 2){
+                return team2BasePos;
+            }
         }
 
-        sf::Vector2f getGeneratorPosition(int team){
-            for (auto i = arenaData.begin();i != arenaData.end();i++){
+        sf::Uint32 getGeneratorCount(int team){
+             if (team == 1)
+            {
+                return team1GenPos.size();
+            }else// if (team == 2)
+            {
+                return team2GenPos.size();
+            }
+        }
+
+        sf::Vector2f getGeneratorPosition(int team, int gi){
+            /*for (auto i = arenaData.begin();i != arenaData.end();i++){
                 if (i->getId() == 5 && team == 1 ||
                     i->getId() == 6 && team == 2)
                 {
@@ -184,7 +201,14 @@ namespace tg
                     return p;
                 }
             }
-            return sf::Vector2f(0,0);
+            return sf::Vector2f(0,0);*/
+            if (team == 1)
+            {
+                return team1GenPos[gi];
+            }else// if (team == 2)
+            {
+                return team2GenPos[gi];
+            }
         }
 
         sf::Uint32 getMapHorizTileNum(){
@@ -203,6 +227,10 @@ namespace tg
         sf::Uint32 vertTileNum;
 private:
         std::vector<Tile>  arenaData;
+        std::vector<sf::Vector2f> team1GenPos;
+        std::vector<sf::Vector2f> team2GenPos;
+        sf::Vector2f team1BasePos;
+        sf::Vector2f team2BasePos;
         
     };
 }

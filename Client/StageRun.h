@@ -40,6 +40,9 @@ namespace tg
         float lastTurretAngle;
         sf::Clock stateOfPlayerClock;
         sf::Clock updateStateClock;
+        sf::Clock drawClock;
+        sf::Clock loopClock;
+        sf::Clock inputClock;
         
         float timeCurUpdate;
         float timePrevUpdate;

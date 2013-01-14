@@ -11,7 +11,7 @@ namespace tg
         Tank(){
             position = sf::Vector2f(200,200);
             velocity = sf::Vector2f(0,0);
-            health = 100;
+            health = maxHealth = 100;
             power = 1;
             throttle = 0.0f;
             bodyAngle = 0.0f;
@@ -21,6 +21,7 @@ namespace tg
             prevDist = 0.0f;
             curDist = 0.0f;
         }
+        sf::Int32 maxHealth;
         sf::Int32 health;
         sf::Uint32 power;
 
