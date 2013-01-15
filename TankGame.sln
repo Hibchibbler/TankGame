@@ -21,8 +21,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TankMapMaker", "TankMapMaker\TankMapMaker.csproj", "{37DFC491-043B-4465-94FB-8BCE8931C5F4}"
 EndProject
-Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "TankGame", "TankGame\TankGame.vdproj", "{64551783-BFC8-4EEB-AFD2-DF02F7CF4F05}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Mixed Platforms = Debug|Mixed Platforms
@@ -73,18 +71,6 @@ Global
 		{37DFC491-043B-4465-94FB-8BCE8931C5F4}.Release|Win32.ActiveCfg = Release|x86
 		{37DFC491-043B-4465-94FB-8BCE8931C5F4}.Release|x86.ActiveCfg = Release|x86
 		{37DFC491-043B-4465-94FB-8BCE8931C5F4}.Release|x86.Build.0 = Release|x86
-		{64551783-BFC8-4EEB-AFD2-DF02F7CF4F05}.Debug|Mixed Platforms.ActiveCfg = Debug
-		{64551783-BFC8-4EEB-AFD2-DF02F7CF4F05}.Debug|Mixed Platforms.Build.0 = Debug
-		{64551783-BFC8-4EEB-AFD2-DF02F7CF4F05}.Debug|Win32.ActiveCfg = Debug
-		{64551783-BFC8-4EEB-AFD2-DF02F7CF4F05}.Debug|Win32.Build.0 = Debug
-		{64551783-BFC8-4EEB-AFD2-DF02F7CF4F05}.Debug|x86.ActiveCfg = Debug
-		{64551783-BFC8-4EEB-AFD2-DF02F7CF4F05}.Debug|x86.Build.0 = Debug
-		{64551783-BFC8-4EEB-AFD2-DF02F7CF4F05}.Release|Mixed Platforms.ActiveCfg = Release
-		{64551783-BFC8-4EEB-AFD2-DF02F7CF4F05}.Release|Mixed Platforms.Build.0 = Release
-		{64551783-BFC8-4EEB-AFD2-DF02F7CF4F05}.Release|Win32.ActiveCfg = Release
-		{64551783-BFC8-4EEB-AFD2-DF02F7CF4F05}.Release|Win32.Build.0 = Release
-		{64551783-BFC8-4EEB-AFD2-DF02F7CF4F05}.Release|x86.ActiveCfg = Release
-		{64551783-BFC8-4EEB-AFD2-DF02F7CF4F05}.Release|x86.Build.0 = Release
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

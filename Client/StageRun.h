@@ -43,6 +43,12 @@ namespace tg
         sf::Clock drawClock;
         sf::Clock loopClock;
         sf::Clock inputClock;
+
+        sf::Time previousTime;
+        sf::Time currentTime;
+        sf::Time deltaTime;
+        sf::Time frameTime;
+        sf::Clock clock;
         
         float timeCurUpdate;
         float timePrevUpdate;

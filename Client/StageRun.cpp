@@ -61,6 +61,21 @@ sf::Uint32 StageRun::doRemoteEvent(Game & g,
                 {
                     aPlayer.tank.position = aPlayer.tank.shadowPos;
                 }
+
+                bool auth=false;
+                for (int x = 0;x < aPlayer.tank.posHistory.size();x++)
+                {
+                    //if (g.teamMan.teams[y].players[h].tank.posHistory[x].
+                    if (aPlayer.tank.posHistory[x].pos ==  aPlayer.tank.shadowPos)
+                        auth = true;
+                }
+
+                if (!auth)
+                {
+                    aPlayer.tank.position = aPlayer.tank.shadowPos;
+                    aPlayer.tank.posHistory.clear();
+                }
+
                  
                 sf::Uint32 ps;
                 cevent.packet >> ps;
@@ -242,6 +257,11 @@ sf::Uint32 StageRun::doLocalInput(sf::RenderWindow & window, Game & g)
             curControl = true;
         }
 
+        if (curControl)
+        {
+            thisPlayer.tank.velocity.x = thisPlayer.tank.throttle * (float)cos(thisPlayer.tank.bodyAngle * (0.0174531f));
+            thisPlayer.tank.velocity.y = thisPlayer.tank.throttle * (float)sin(thisPlayer.tank.bodyAngle * (0.0174531f));
+        }
        // if (stateOfPlayerClock.getElapsedTime().asMilliseconds() > 100)
        // {
             g.teamMan.teams[g.myTeam].players[g.mySlot].state = PlayerState::SendingStateOfPlayer;
@@ -259,6 +279,11 @@ sf::Uint32 StageRun::doDraw(sf::RenderWindow & window, Game & g, sf::Time ft)
 {
     if (drawClock.getElapsedTime().asSeconds() > 0.020f)
     {
+        previousTime = currentTime;
+        currentTime = clock.restart();
+        deltaTime = currentTime - previousTime;
+        frameTime += deltaTime;
+
         window.clear();
         //Set view on top of this player.
         if ((int)g.myTeam != -1){//if == -1, then your team has not yet been established. TODO: i do not like this
@@ -312,60 +337,24 @@ sf::Uint32 StageRun::doDraw(sf::RenderWindow & window, Game & g, sf::Time ft)
             {
                 if (g.teamMan.teams[y].players[h].hasHost)
                 {
-                    g.teamMan.teams[y].players[h].tank.position = g.teamMan.teams[y].players[h].tank.shadowPos;
-                    /*if (g.teamMan.teams[y].players[h].tank.shadowUpdated)
+                    if (g.myTeam == y && g.mySlot == h)
                     {
-                        g.teamMan.teams[y].players[h].tank.dx = g.teamMan.teams[y].players[h].tank.shadowPos.x - g.teamMan.teams[y].players[h].tank.position.x;
-                        g.teamMan.teams[y].players[h].tank.dy = g.teamMan.teams[y].players[h].tank.shadowPos.y - g.teamMan.teams[y].players[h].tank.position.y;
-                        g.teamMan.teams[y].players[h].tank.shadowUpdated = false;
+                        //std::cout << frameTime.asSeconds() << std::endl;
+                        g.teamMan.teams[y].players[h].tank.position.x += thisPlayer.tank.velocity.x * frameTime.asSeconds() * 10.0f;
+                        g.teamMan.teams[y].players[h].tank.position.y += thisPlayer.tank.velocity.y * frameTime.asSeconds() * 10.0f;
+
+                        AuthPos ap;
+                        ap.pos = g.teamMan.teams[y].players[h].tank.position;
+                        ap.authorized = false;
+                        g.teamMan.teams[y].players[h].tank.posHistory.push_back(ap);
+                        if (g.teamMan.teams[y].players[h].tank.posHistory.size() > 15)
+                            g.teamMan.teams[y].players[h].tank.posHistory.erase(g.teamMan.teams[y].players[h].tank.posHistory.begin());
+
+                    }else
+                    {
+                        g.teamMan.teams[y].players[h].tank.position = g.teamMan.teams[y].players[h].tank.shadowPos;
                     }
-                    else{
-                        g.teamMan.teams[y].players[h].tank.position.x += g.teamMan.teams[y].players[h].tank.dx / 20.0f;
-                        g.teamMan.teams[y].players[h].tank.position.y += g.teamMan.teams[y].players[h].tank.dy / 20.0f;
-                    }*/
-               
-                    //TODO: move calculations into doLoop
-                    //store cur location
-                    //calculate new position
-                    //if new position is closer than previous location, apply
-                    //otherwise, do nothing.
 
-                    //float ndx,ndy, npx, npy;//New position
-                    //ndx = g.teamMan.teams[y].players[h].tank.dx;
-                    //ndy = g.teamMan.teams[y].players[h].tank.dy;
-                    //npx = g.teamMan.teams[y].players[h].tank.position.x + ndx * ft.asSeconds() * 10.0f;
-                    //npy = g.teamMan.teams[y].players[h].tank.position.y + ndy * ft.asSeconds() * 10.0f;
-
-                    //float cpx,cpy;//Current position
-                    //cpx = g.teamMan.teams[y].players[h].tank.position.x;
-                    //cpy = g.teamMan.teams[y].players[h].tank.position.y;
-
-                    //float spx,spy;//Shadow position
-                    //spx = g.teamMan.teams[y].players[h].tank.shadowPos.x;
-                    //spy = g.teamMan.teams[y].players[h].tank.shadowPos.y;
-
-                    ////If mag(dist(n,s)) < mag(dist(c,s))
-                    ////Then apply.
-                    //float ndistx, ndisty;
-                    //float cdistx, cdisty;
-                    //ndistx = npx - spx;
-                    //ndisty = npy - spy;
-                    // 
-                    //cdistx = cpx - spx;
-                    //cdisty = cpy - spy;
-
-                    //float nmag, cmag;
-                    //cmag = sqrt(cdistx*cdistx+cdisty*cdisty);
-                    //nmag = sqrt(ndistx*ndistx+ndisty*ndisty);
-
-                    //if (nmag <= cmag)
-                    //{
-                    //    g.teamMan.teams[y].players[h].tank.position.x = npx;
-                    //    g.teamMan.teams[y].players[h].tank.position.y = npy;
-                    //}else{
-                    //    g.teamMan.teams[y].players[h].tank.position.x = spx;
-                    //    g.teamMan.teams[y].players[h].tank.position.y = spy;
-                    //}
                     
                 
 

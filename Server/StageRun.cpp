@@ -210,7 +210,7 @@ bool isBaseCollision(sf::Vector2f projPos, Game & g, sf::Uint32 damage, sf::Uint
 #define CREEP_SPEED 17
 #define CREEP_SPAWN_MS 1400
 #define UPDATE_STATE_MS 33
-#define SEND_STATE_MS 110//110
+#define SEND_STATE_MS 200//110
 #define PIXELS_PER_SECOND 10
 #define CREEP_LIFE_S 75.0f
 #define HEAL_LASER_PROXIMAL 500.0f

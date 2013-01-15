@@ -2,9 +2,16 @@
 #define Tank_h_
 
 #include <SFML/System.hpp>
+#include <vector>
 
 namespace tg
 {
+    class AuthPos
+    {
+    public:
+        sf::Vector2f pos;
+        bool authorized;
+    };
     class Tank
     {
     public:
@@ -41,6 +48,7 @@ namespace tg
         float accy;
         float prevDist;
         float curDist;
+        std::vector<AuthPos> posHistory;
         
     };
 
