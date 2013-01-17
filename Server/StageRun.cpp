@@ -39,31 +39,13 @@ sf::Uint32 StageRun::doRemoteEvent(Game & g,
             break;
         }case MsgId::StateOfPlayer:{
             //std::cout << "Got Action" << std::endl;
-            //These are from players when they change the state of the game via an input mechanism
-            //After crunching this event, send a Result packet to each player.
-
-            //std::cout << << std::endl;
-            //sf::Uint32 playerAction;
-            
-            sf::Uint32 attacking = 0;
-           //float temp1,temp2,temp3,temp4;
-
+            //These are from players when they change the state of their tank
             cevent.packet >> player.tank.throttle;
             cevent.packet >> player.tank.bodyAngle;
             cevent.packet >> player.tank.turretAngle;
-            //cevent.packet >> player.tank.shadowPos.x;
-            //cevent.packet >> player.tank.shadowPos.y;
-            //cevent.packet >> temp3;//player.tank.velocity.x;
-            //cevent.packet >> temp4;//player.tank.velocity.y;
-            cevent.packet >> attacking;
 
-            if (attacking){
-                //std::cout << "#";
-                player.state = PlayerState::EmitProjectile;
-            }
-            //update player 1 velocity based on updated throttle and body angle.
-            /*player.tank.position.x =  player.tank.position.x + player.tank.throttle * (float)cos(player.tank.bodyAngle / (180/3.14156));
-            player.tank.position.y =  player.tank.position.y + player.tank.throttle * (float)sin(player.tank.bodyAngle / (180/3.14156));*/
+            cevent.packet >> player.attacking;
+
             player.tank.velocity.x = player.tank.throttle * (float)cos(player.tank.bodyAngle * (0.0174531f));
             player.tank.velocity.y = player.tank.throttle * (float)sin(player.tank.bodyAngle * (0.0174531f));
             //std::cout << player.tank.position.x << ", " << player.tank.position.y << std::endl;
@@ -73,16 +55,6 @@ sf::Uint32 StageRun::doRemoteEvent(Game & g,
     return 0;
 }
 
-bool isContained(sf::Vector2f pt, float left, float top, float width, float height)
-{
-    if (pt.x <left+width && pt.x > left &&
-        pt.y > top       && pt.y < top+height)
-    {
-        return true;
-    }
-    return false;
-   // return fr.contains(pt);
-}
 
 bool isTankCollision(sf::Vector2f projPos, Game & g, sf::Int32 damage, sf::Uint32 team=-1)
 {
@@ -96,13 +68,7 @@ bool isTankCollision(sf::Vector2f projPos, Game & g, sf::Int32 damage, sf::Uint3
             //tp->tank.position
             if (tp->hasHost)
             {
-                sf::FloatRect fr(tp->tank.position,sf::Vector2f(128,128));
-                
-
-                /*if (projPos.x > tp->tank.position.x &&
-                    projPos.x < tp->tank.position.x+60.0f &&
-                    projPos.y > tp->tank.position.y && 
-                    projPos.y < tp->tank.position.y+30.0f )*/
+                sf::FloatRect fr(tp->tank.position,sf::Vector2f(64,64));
                 if (fr.contains(projPos))
                 {
                     tp->tank.health-=damage;
@@ -130,24 +96,18 @@ int isCreepCollision(sf::Vector2f projPos, Game & g, sf::Uint32 damage, sf::Uint
         
         for (auto c = g.teamMan.teams[y].creep.begin();c != g.teamMan.teams[y].creep.end();)
         {
-            //tp->tank.position
-         
-                /*if (projPos.x > c->position.x &&
-                    projPos.x < c->position.x+60.0f &&
-                    projPos.y > c->position.y && 
-                    projPos.y < c->position.y+30.0f )*/
-                sf::FloatRect fr(c->position,sf::Vector2f(128,128));
-                if (fr.contains(projPos))
+            sf::FloatRect fr(c->position,sf::Vector2f(48,48));
+            if (fr.contains(projPos))
+            {
+                c->health-=damage;
+                if (c->health <= 0)
                 {
-                    c->health-=damage;
-                    if (c->health <= 0)
-                    {
-                        c = g.teamMan.teams[y].creep.erase(c);
-                        return 2;
-                    }
-                    return 1;
-                }else
-                    c++;
+                    c = g.teamMan.teams[y].creep.erase(c);
+                    return 2;
+                }
+                return 1;
+            }else
+                c++;
             
         }
     }
@@ -209,8 +169,8 @@ bool isBaseCollision(sf::Vector2f projPos, Game & g, sf::Uint32 damage, sf::Uint
 
 #define CREEP_SPEED 17
 #define CREEP_SPAWN_MS 1400
-#define UPDATE_STATE_MS 33
-#define SEND_STATE_MS 200//110
+#define UPDATE_STATE_MS 30
+#define SEND_STATE_MS 100//110
 #define PIXELS_PER_SECOND 10
 #define CREEP_LIFE_S 75.0f
 #define HEAL_LASER_PROXIMAL 500.0f
@@ -221,10 +181,10 @@ bool isBaseCollision(sf::Vector2f projPos, Game & g, sf::Uint32 damage, sf::Uint
 #define HEAL_LASER_SPAWN_S 0.07f
 #define DEATH_LASER_SPAWN_S 0.030f
 
+static int RANDOM_LAG =0;
 //STATE_OF_UNION_MS
 sf::Uint32 StageRun::doLoop(Game & g)
-{
-    
+{    
     //std::cout << currentTime.asSeconds() << std::endl;
     //Players, teams, and global Update
     if (updateStateTimer.getElapsedTime().asMilliseconds() > UPDATE_STATE_MS)
@@ -234,6 +194,7 @@ sf::Uint32 StageRun::doLoop(Game & g)
         currentTime = velocityClock.restart();
         deltaTime = currentTime - previousTime;
         loopTime += deltaTime;
+        //std::cout << loopTime.asSeconds() << std::endl;
         for (int y = 1; y < 3 ; y++)
         {
             //Players update
@@ -256,32 +217,34 @@ sf::Uint32 StageRun::doLoop(Game & g)
                         Messages::sendStart(g.server, g.teamMan, pi->connectionId);
                         pi->state = PlayerState::Running;
                         break;
-                    case PlayerState::EmitProjectile:
-                    {
-                        pi->prjctls.push_back(Projectile());
-                        //TODO: THINK: do you want projectile to inherit the tanks' velocity?
-                    
-                        pi->prjctls.back().velocity.x = 75.0f*((float)cos(pi->tank.turretAngle*(0.0174531f)));
-                        pi->prjctls.back().velocity.y = 75.0f*((float)sin(pi->tank.turretAngle*(0.0174531f)));
-
-                        float vx,vy;
-                        vx =  pi->prjctls.back().velocity.x;
-                        vy =  pi->prjctls.back().velocity.y;
-                        //float mag = sqrt(vx*vx+vy*vy);
-                        //g.teamMan.teams[y].base1.prjctls.back().velocity.x = -BASE_LASER_SPEED*mindx/mag; 
-                        //g.teamMan.teams[y].base1.prjctls.back().velocity.y = -BASE_LASER_SPEED*mindy/mag;
-                        pi->prjctls.back().position.x = pi->tank.position.x + (vx/75.0f)*5.5f;
-                        pi->prjctls.back().position.y = pi->tank.position.y + (vy/75.0f)*5.5f;
-                    
-                        //std::cout << pi->prjctls.back().position.x << ", " << pi->prjctls.back().position.y << std::endl;
-                        pi->prjctls.back().creationTime = accumulatingClock.getElapsedTime().asSeconds();
-                        pi->prjctls.back().angle = pi->tank.turretAngle;
-                        pi->prjctls.back().damage = 1+pi->tank.power/10.0f;
-                        pi->state = PlayerState::Running;
-                        //break;
-                    }
                     case PlayerState::Running:
                          //Remove projectiles who have run out of power.
+                        if (pi->attacking){
+                            if (pi->attackClock.getElapsedTime().asSeconds() > 0.015f)
+                            {
+                                 pi->prjctls.push_back(Projectile());
+                                //TODO: THINK: do you want projectile to inherit the tanks' velocity?
+                    
+                                pi->prjctls.back().velocity.x = 85.0f*((float)cos(pi->tank.turretAngle*(0.0174531f)));
+                                pi->prjctls.back().velocity.y = 85.0f*((float)sin(pi->tank.turretAngle*(0.0174531f)));
+
+                                float vx,vy;
+                                vx =  pi->prjctls.back().velocity.x;
+                                vy =  pi->prjctls.back().velocity.y;
+
+                                pi->prjctls.back().position.x = pi->tank.position.x + vx;//(vx/75.0f)*5.5f;
+                                pi->prjctls.back().position.y = pi->tank.position.y + vy;//(vy/75.0f)*5.5f;
+                    
+                                //std::cout << pi->prjctls.back().position.x << ", " << pi->prjctls.back().position.y << std::endl;
+                                pi->prjctls.back().creationTime = accumulatingClock.getElapsedTime().asSeconds();
+                                pi->prjctls.back().angle = pi->tank.turretAngle;
+                                pi->prjctls.back().damage = 1+pi->tank.power/10.0f;
+
+                                pi->attackClock.restart();
+                            }
+                        }
+
+
                         for (auto i = pi->prjctls.begin();i != pi->prjctls.end();)
                         {
                             float accTime = accumulatingClock.getElapsedTime().asSeconds();
@@ -290,24 +253,11 @@ sf::Uint32 StageRun::doLoop(Game & g)
                                 i = pi->prjctls.erase(i);
                             }else
                             {
-                               /* if ((i->position.x + i->velocity.x *  loopTime.asSeconds()*PIXELS_PER_SECOND < (15*125) &&
-                                    i->position.x + i->velocity.x *  loopTime.asSeconds()*PIXELS_PER_SECOND > (14*125) &&
-                                    i->position.y + i->velocity.y *  loopTime.asSeconds()*PIXELS_PER_SECOND > (12*125) &&
-                                    i->position.y + i->velocity.y *  loopTime.asSeconds()*PIXELS_PER_SECOND < (19*125)) ||
-                                    (i->position.x + i->velocity.x *  loopTime.asSeconds()*PIXELS_PER_SECOND < (18*125) &&
-                                    i->position.x + i->velocity.x *  loopTime.asSeconds()*PIXELS_PER_SECOND > (11*125) &&
-                                    i->position.y + i->velocity.y *  loopTime.asSeconds()*PIXELS_PER_SECOND > (15*125) &&
-                                    i->position.y + i->velocity.y *  loopTime.asSeconds()*PIXELS_PER_SECOND < (16*125)))
-                                {
-                                    i->velocity.x = 0;
-                                    i->velocity.y = 0;
-                                }*/
-
                                 i->position.x = i->position.x + i->velocity.x * loopTime.asSeconds()*PIXELS_PER_SECOND;
                                 i->position.y = i->position.y + i->velocity.y * loopTime.asSeconds()*PIXELS_PER_SECOND;
                                 i->totalDistance+=1;
 
-                                ////Remove projectile that has hit a tank or creep
+                                ////Remove projectile that has hit a tank, creep, generator, or base.
                                 bool yes1 = isTankCollision(i->position,g,i->damage,y);
                                 int yes2 = isCreepCollision(i->position,g,i->damage,y);
                                 bool yes3 = isGeneratorCollision(i->position,g, i->damage,y);
@@ -340,20 +290,6 @@ sf::Uint32 StageRun::doLoop(Game & g)
                             pi->tank.velocity.y = 0;
                         }
 
-                       /* if ((pi->tank.position.x + pi->tank.velocity.x *  loopTime.asSeconds()*PIXELS_PER_SECOND < (15*125) &&
-                            pi->tank.position.x + pi->tank.velocity.x *  loopTime.asSeconds()*PIXELS_PER_SECOND > (14*125) &&
-                            pi->tank.position.y + pi->tank.velocity.y *  loopTime.asSeconds()*PIXELS_PER_SECOND > (12*125) &&
-                            pi->tank.position.y + pi->tank.velocity.y *  loopTime.asSeconds()*PIXELS_PER_SECOND < (19*125)) ||
-                            (pi->tank.position.x + pi->tank.velocity.x *  loopTime.asSeconds()*PIXELS_PER_SECOND < (18*125) &&
-                            pi->tank.position.x + pi->tank.velocity.x *  loopTime.asSeconds()*PIXELS_PER_SECOND > (11*125) &&
-                            pi->tank.position.y + pi->tank.velocity.y *  loopTime.asSeconds()*PIXELS_PER_SECOND > (15*125) &&
-                            pi->tank.position.y + pi->tank.velocity.y *  loopTime.asSeconds()*PIXELS_PER_SECOND < (16*125)))
-                        {
-                             pi->tank.velocity.x = 0;
-                             pi->tank.velocity.y = 0;
-                        }*/
-
-                   
 
                         pi->tank.position.x = pi->tank.position.x + pi->tank.velocity.x *  loopTime.asSeconds()*PIXELS_PER_SECOND;
                         pi->tank.position.y = pi->tank.position.y + pi->tank.velocity.y *  loopTime.asSeconds()*PIXELS_PER_SECOND;
@@ -377,14 +313,9 @@ sf::Uint32 StageRun::doLoop(Game & g)
             //Generator LASER
             // Determine the closest opponent tank for damage
             // Determine the closest friendly tank for heal
-            
-           
-
-           
 
             int otherTeam = (y==1?2:1);
 
-            
             //sf::Vector2f genPos = g.arenaMan.getGeneratorPosition(y);
             sf::Vector2f basePos = g.arenaMan.getStartPosition(y);
             

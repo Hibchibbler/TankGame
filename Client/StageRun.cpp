@@ -5,6 +5,8 @@
 #include "Common\TeamManager.h"
 #include "Common\ArenaManager.h"
 #include "Common\AssetManager.h"
+#include "Common\LogFile.h"
+
 #include <sstream>
 using namespace tg;
 
@@ -62,20 +64,19 @@ sf::Uint32 StageRun::doRemoteEvent(Game & g,
                     aPlayer.tank.position = aPlayer.tank.shadowPos;
                 }
 
-                bool auth=false;
-                for (int x = 0;x < aPlayer.tank.posHistory.size();x++)
+                //SNAP into place when an update is gotten
+                if (t == g.myTeam &&
+                    u == g.mySlot)
                 {
-                    //if (g.teamMan.teams[y].players[h].tank.posHistory[x].
-                    if (aPlayer.tank.posHistory[x].pos ==  aPlayer.tank.shadowPos)
-                        auth = true;
-                }
-
-                if (!auth)
+                    //std::cout << "(" << thisPlayer.tank.position.x << ", " << thisPlayer.tank.position.y << "), (" << aPlayer.tank.shadowPos.x << ", " << aPlayer.tank.shadowPos.y << ")" << std::endl;
+                    float dx,dy;
+                    sf::Vector2f d;
+                    d = aPlayer.tank.shadowPos - thisPlayer.tank.position;
+                    thisPlayer.tank.position += d/4.0f;
+                }else
                 {
                     aPlayer.tank.position = aPlayer.tank.shadowPos;
-                    aPlayer.tank.posHistory.clear();
                 }
-
                  
                 sf::Uint32 ps;
                 cevent.packet >> ps;
@@ -154,7 +155,12 @@ sf::Uint32 StageRun::doWindowEvent(sf::RenderWindow & w,
 sf::Uint32 StageRun::doLoop(Game & g)
 {
  
-    if (loopClock.getElapsedTime().asSeconds() > 0.020f)
+    previousTime = currentTime;
+    currentTime = clock.restart();
+    deltaTime = currentTime - previousTime;
+    frameTime += deltaTime;
+   
+    if (loopClock.getElapsedTime().asSeconds() > 0.010f)
     {
         Player & p = g.teamMan.getPlayerBySlot(g.myTeam,g.mySlot);
     
@@ -167,9 +173,11 @@ sf::Uint32 StageRun::doLoop(Game & g)
             case PlayerState::SendingStateOfPlayer:
                 Messages::sendStateOfPlayer(g.client, g.teamMan, g.myCID, g.myTeam, g.mySlot, thisPlayer, attacking);
                 p.state = PlayerState::Running;
-                break;
+                
             case PlayerState::Running:
-
+                //std::cout << frameTime.asSeconds() << std::endl;
+                thisPlayer.tank.position.x += thisPlayer.tank.velocity.x * frameTime.asSeconds() * 10.0f;
+                thisPlayer.tank.position.y += thisPlayer.tank.velocity.y * frameTime.asSeconds() * 10.0f;
                 break;
 
         }
@@ -180,18 +188,18 @@ sf::Uint32 StageRun::doLoop(Game & g)
 }
 sf::Uint32 StageRun::doLocalInput(sf::RenderWindow & window, Game & g)
 {
-    if (inputClock.getElapsedTime().asSeconds() > 0.100f)
+    if (inputClock.getElapsedTime().asSeconds() > 0.050f)
     {
         //static bool prevControl = false;
         bool curControl = false;
-        attacking = 0;
+        //attacking = 0;
     
         if (!hasFocus)
             return 0;
 
     
 
-        thisPlayer = g.teamMan.teams[g.myTeam].players[g.mySlot];
+        //thisPlayer = g.teamMan.teams[g.myTeam].players[g.mySlot];
         //We poll keyboard 
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)){
             thisPlayer.tank.throttle += 2;
@@ -212,7 +220,7 @@ sf::Uint32 StageRun::doLocalInput(sf::RenderWindow & window, Game & g)
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::A)){
             //Rotating left
 
-            thisPlayer.tank.bodyAngle = thisPlayer.tank.bodyAngle -  15;
+            thisPlayer.tank.bodyAngle = thisPlayer.tank.bodyAngle -  10;
             if (thisPlayer.tank.bodyAngle >= 360.0f || thisPlayer.tank.bodyAngle <= -360.0f ){
                 thisPlayer.tank.bodyAngle = 0;
             }
@@ -221,16 +229,24 @@ sf::Uint32 StageRun::doLocalInput(sf::RenderWindow & window, Game & g)
     
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::D)){
             //Rotating right
-            thisPlayer.tank.bodyAngle = thisPlayer.tank.bodyAngle +  15;
+            thisPlayer.tank.bodyAngle = thisPlayer.tank.bodyAngle +  10;
             if (thisPlayer.tank.bodyAngle >= 360.0f || thisPlayer.tank.bodyAngle <= -360.0f ){
                 thisPlayer.tank.bodyAngle = 0;
             }
             curControl = true;
         }
+
+        if (curControl)
+        {
+            thisPlayer.tank.velocity.x = thisPlayer.tank.throttle * (float)cos(thisPlayer.tank.bodyAngle * (0.0174531f));
+            thisPlayer.tank.velocity.y = thisPlayer.tank.throttle * (float)sin(thisPlayer.tank.bodyAngle * (0.0174531f));
+        }
     
         if (sf::Mouse::isButtonPressed(sf::Mouse::Left)){
-            attacking = true;
+            thisPlayer.attacking = 1;
             //std::cout << "Bang!" << std::endl;
+        }else{
+            thisPlayer.attacking = 0;
         }
 
         lastMousePos = curMousePos;
@@ -257,48 +273,38 @@ sf::Uint32 StageRun::doLocalInput(sf::RenderWindow & window, Game & g)
             curControl = true;
         }
 
-        if (curControl)
-        {
-            thisPlayer.tank.velocity.x = thisPlayer.tank.throttle * (float)cos(thisPlayer.tank.bodyAngle * (0.0174531f));
-            thisPlayer.tank.velocity.y = thisPlayer.tank.throttle * (float)sin(thisPlayer.tank.bodyAngle * (0.0174531f));
-        }
-       // if (stateOfPlayerClock.getElapsedTime().asMilliseconds() > 100)
-       // {
-            g.teamMan.teams[g.myTeam].players[g.mySlot].state = PlayerState::SendingStateOfPlayer;
-       //   stateOfPlayerClock.restart();
-       // }
+      
+        g.teamMan.teams[g.myTeam].players[g.mySlot].state = PlayerState::SendingStateOfPlayer;
+
         inputClock.restart();
     }else{
         sf::sleep(sf::seconds(0.0f));
     }
     return 0;
 }
-#define LINEAR_SMOOTH 20.0f
-static std::vector<sf::Vector2f> posTrack;
+
+
 sf::Uint32 StageRun::doDraw(sf::RenderWindow & window, Game & g, sf::Time ft)
 {
     if (drawClock.getElapsedTime().asSeconds() > 0.020f)
     {
-        previousTime = currentTime;
-        currentTime = clock.restart();
-        deltaTime = currentTime - previousTime;
-        frameTime += deltaTime;
+
 
         window.clear();
         //Set view on top of this player.
         if ((int)g.myTeam != -1){//if == -1, then your team has not yet been established. TODO: i do not like this
             //TODO: move calculations into doLoop
-            sf::Vector2f pos = g.teamMan.teams[g.myTeam].players[g.mySlot].tank.position;
+            sf::Vector2f pos = thisPlayer.tank.position;
             posTrack.push_back(pos);
-            if (posTrack.size() > 70)
+            if (posTrack.size() > 30)
                 posTrack.erase(posTrack.begin());
 
             pos = sf::Vector2f(0,0);
             for (auto m = 0;m < posTrack.size();m++){
                 pos += posTrack[m];
             }
-            pos.x  = pos.x / 70.0f;
-            pos.y  = pos.y / 70.0f;
+            pos.x  = pos.x / 30.0f;
+            pos.y  = pos.y / 30.0f;
 
             arenaView.reset(sf::FloatRect(pos.x-((g.scrWidth)/2.0f),pos.y-((g.scrHeight)/2.0f),g.scrWidth,g.scrHeight));//sf::FloatRect(0,0,g.scrWidth,g.scrHeight));//
             arenaView.zoom(zoom);
@@ -337,38 +343,14 @@ sf::Uint32 StageRun::doDraw(sf::RenderWindow & window, Game & g, sf::Time ft)
             {
                 if (g.teamMan.teams[y].players[h].hasHost)
                 {
-                    if (g.myTeam == y && g.mySlot == h)
-                    {
-                        //std::cout << frameTime.asSeconds() << std::endl;
-                        g.teamMan.teams[y].players[h].tank.position.x += thisPlayer.tank.velocity.x * frameTime.asSeconds() * 10.0f;
-                        g.teamMan.teams[y].players[h].tank.position.y += thisPlayer.tank.velocity.y * frameTime.asSeconds() * 10.0f;
-
-                        AuthPos ap;
-                        ap.pos = g.teamMan.teams[y].players[h].tank.position;
-                        ap.authorized = false;
-                        g.teamMan.teams[y].players[h].tank.posHistory.push_back(ap);
-                        if (g.teamMan.teams[y].players[h].tank.posHistory.size() > 15)
-                            g.teamMan.teams[y].players[h].tank.posHistory.erase(g.teamMan.teams[y].players[h].tank.posHistory.begin());
-
-                    }else
-                    {
-                        g.teamMan.teams[y].players[h].tank.position = g.teamMan.teams[y].players[h].tank.shadowPos;
-                    }
-
-                    
-                
-
                     std::string tankName;
                     sf::Sprite b,t;
-                    //TODO: uh.. i do not like this
-                    if (y==1 && h == 0)
+                    
+                    //Team 1 is blue, team 2 is red.
+                    if (y==1)
                         tankName = "BlueTank";
-                    else if (y==1 && h==1)
+                    else if (y==2)
                         tankName = "RedTank";
-                    else if (y==2 && h==0)
-                        tankName = "GreenTank";
-                    else
-                        tankName = "YellowTank";
 
                     TankImage & ti = g.assetMan.getTankImage(tankName);
 
@@ -378,15 +360,62 @@ sf::Uint32 StageRun::doDraw(sf::RenderWindow & window, Game & g, sf::Time ft)
                     b.setOrigin(40,61);
                     t.setOrigin(27,90);
                 
-                    b.setRotation(-90);
-                    t.setRotation(-90);
+                    
+                    
+                    if (g.myTeam == y && g.mySlot == h)
+                    {
+                        //Draw My Locally Predicted Tank
+                        b.setRotation(-90);
+                        t.setRotation(-90);
 
-                    b.rotate(g.teamMan.teams[y].players[h].tank.bodyAngle);
-                    t.rotate(g.teamMan.teams[y].players[h].tank.turretAngle);
+                        b.rotate(thisPlayer.tank.bodyAngle);
+                        t.rotate(thisPlayer.tank.turretAngle);
 
-               
-                    b.setPosition(g.teamMan.teams[y].players[h].tank.position);
-                    t.setPosition(g.teamMan.teams[y].players[h].tank.position);
+                        b.setPosition(thisPlayer.tank.position);
+                        t.setPosition(thisPlayer.tank.position);
+
+                        window.draw(b);
+                        window.draw(t);
+
+                        //And my Stats
+                        sf::Text stat;
+                        std::stringstream ss;
+                        //ss << y << "/" << g.teamMan.teams[y].players[h].tank.health << "/" << g.teamMan.teams[y].players[h].tank.power;
+                        ss << g.teamMan.teams[y].players[h].tank.health ;
+                        stat.setString(ss.str());
+                        stat.setFont(g.assetMan.getFont());
+                        stat.setScale(2.0,2.0);
+                        stat.setColor(sf::Color::Green);
+                        stat.setPosition(thisPlayer.tank.position.x-55,thisPlayer.tank.position.y-120);
+                        window.draw(stat);
+
+                        //Draw my Tank with last server update
+                        /*b.setRotation(-90);
+                        t.setRotation(-90);
+
+                        b.rotate(g.teamMan.teams[y].players[h].tank.bodyAngle);
+                        t.rotate(g.teamMan.teams[y].players[h].tank.turretAngle);
+
+                        b.setPosition(g.teamMan.teams[y].players[h].tank.shadowPos);
+                        t.setPosition(g.teamMan.teams[y].players[h].tank.shadowPos);
+
+                        window.draw(b);
+                        window.draw(t);*/
+                    }else{
+
+                        //Draw other players' tank with last server update
+                        b.setRotation(-90);
+                        t.setRotation(-90);
+
+                        b.rotate(g.teamMan.teams[y].players[h].tank.bodyAngle);
+                        t.rotate(g.teamMan.teams[y].players[h].tank.turretAngle);
+
+                        b.setPosition(g.teamMan.teams[y].players[h].tank.position);
+                        t.setPosition(g.teamMan.teams[y].players[h].tank.position);
+
+                        window.draw(b);
+                        window.draw(t);
+                    }
 
                     for (int k = 0;k < g.teamMan.teams[y].players[h].prjctls.size();k++)
                     {
@@ -397,18 +426,7 @@ sf::Uint32 StageRun::doDraw(sf::RenderWindow & window, Game & g, sf::Time ft)
                         window.draw(prjctl);
                     }
 
-                    window.draw(b);
-                    window.draw(t);
-
-                    sf::Text stat;
-                    std::stringstream ss;
-                    ss << y << "/" << g.teamMan.teams[y].players[h].tank.health << "/" << g.teamMan.teams[y].players[h].tank.power;
-                    stat.setString(ss.str());
-                    stat.setFont(g.assetMan.getFont());
-                    stat.setScale(2.0,2.0);
-                    stat.setColor(sf::Color::Green);
-                    stat.setPosition(g.teamMan.teams[y].players[h].tank.position.x-75,g.teamMan.teams[y].players[h].tank.position.y-120);
-                    window.draw(stat);
+                    
                 }
             
                 //Draw Creep

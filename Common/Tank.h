@@ -2,7 +2,7 @@
 #define Tank_h_
 
 #include <SFML/System.hpp>
-#include <vector>
+#include <list>
 
 namespace tg
 {
@@ -48,7 +48,7 @@ namespace tg
         float accy;
         float prevDist;
         float curDist;
-        std::vector<AuthPos> posHistory;
+        std::list<AuthPos> posHistory;
         
     };
 

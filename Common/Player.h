@@ -48,6 +48,7 @@ enum pstate{
             hasHost = false;
             slotNum = -1;
             baseLocked = 0;
+            attacking = 0;
         }
         Tank tank;
         std::vector<Projectile> prjctls;
@@ -60,8 +61,11 @@ enum pstate{
         sf::Uint32 state;
         sf::Uint32 lmb;
         sf::Uint32 rmb;
+        sf::Uint32 attacking;
 
         sf::Uint32 baseLocked;
+
+        sf::Clock attackClock;
     };
 };
 

@@ -49,6 +49,8 @@ namespace tg
         sf::Time deltaTime;
         sf::Time frameTime;
         sf::Clock clock;
+
+        std::vector<sf::Vector2f> posTrack;
         
         float timeCurUpdate;
         float timePrevUpdate;

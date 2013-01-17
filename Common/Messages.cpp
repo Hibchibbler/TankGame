@@ -35,7 +35,7 @@ int Messages::sendStateOfPlayer(Comm & comm, TeamManager & teamMan, int cid, int
     //event.packet << player.tank.position.y;
     //event.packet << player.tank.velocity.x;
     //event.packet << player.tank.velocity.y;
-    event.packet << attacking;// ?
+    event.packet << player.attacking;
     comm.Send(event);
     return 0;
 }
