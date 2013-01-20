@@ -3,6 +3,7 @@
 
 #include "Common\GameStage.h"
 #include "Common\Player.h"
+#include "Common\Images.h"
 #include "Dashboard.h"
 namespace tg
 {
@@ -43,6 +44,7 @@ namespace tg
         sf::Clock drawClock;
         sf::Clock loopClock;
         sf::Clock inputClock;
+        sf::Clock accumulatingClock;
 
         sf::Time previousTime;
         sf::Time currentTime;
@@ -57,7 +59,18 @@ namespace tg
         bool hasRxStateOfUnion;
         bool hasFocus;
 
+        bool showShadow;
 
+        std::list<Explosion> explosionsTankDeath;
+        std::list<Explosion> explosionsTankHit;
+        std::list<Explosion> explosionsCreepDeath;
+        std::list<Explosion> explosionsCreepHit;
+        std::list<Explosion> explosionsGeneratorDeath;
+        std::list<Explosion> explosionsGeneratorHit;
+        std::list<Explosion> explosionsBaseDeath;
+        std::list<Explosion> explosionsBaseHit;
+
+        std::list<Explosion> explosions;
     };
 };
 

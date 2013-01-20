@@ -19,7 +19,8 @@ sf::Uint32 StageStart::doInit(Game & g)
     sfg::Table::Ptr table( sfg::Table::Create(  ) );
 
     sfg::Label::Ptr nameLabel;
-    nameLabel = sfg::Label::Create("Name");    
+    
+    nameLabel = sfg::Label::Create("Name");
     nameEntry = sfg::Entry::Create("Anon");
     nameEntry->SetRequisition(sf::Vector2f(120.0f,0.0f));
     table->Attach(nameLabel,sf::Rect<sf::Uint32>(0,0,1,1), 0);
@@ -45,7 +46,7 @@ sf::Uint32 StageStart::doInit(Game & g)
 
     sfg::Window::Ptr mywindow;
     mywindow = sfg::Window::Create();
-
+    
     mywindow->SetTitle("Mega Blaster Client");
     mywindow->SetPosition(sf::Vector2f(100.0f,100.0f));
     mywindow->Add(table);

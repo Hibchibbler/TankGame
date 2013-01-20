@@ -90,6 +90,7 @@
   <ItemGroup>
     <ClInclude Include="Dashboard.h" />
     <ClInclude Include="GameClient.h" />
+    <ClInclude Include="Particle.h" />
     <ClInclude Include="StageLobby.h" />
     <ClInclude Include="StageRun.h" />
     <ClInclude Include="StageStart.h" />

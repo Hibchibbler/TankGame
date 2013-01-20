@@ -20,12 +20,16 @@ namespace tg
         ProjectileImage & getProjectileImage(std::string name);
         MinionImage & getMinionImage(std::string name);
         Image & getDashboardImage();
+        Image & getTankDeathExplosionImage();
+        Image & getTankHitExplosionImage();
     private:
         sf::Font font;
         std::map<std::string, TankImage> tankImages;
         std::map<std::string, FloorImage> floorImages;
         std::map<std::string, ProjectileImage> projectileImages;
         std::map<std::string, MinionImage> minionImages;
+        Image tankDeathExplosionImage;
+        Image tankHitExplosionImage;
         Image dashboardImage;
         
     };

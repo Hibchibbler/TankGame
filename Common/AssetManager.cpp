@@ -52,11 +52,19 @@ int AssetManager::load(){
     tankImages["YellowTank"] = ti;//.push_back(ti);
     LogFile::get()->log(0,0,"Loaded yellow tank");
 
+    ti.load("Assets\\ShadowTankBody.png", "Assets\\ShadowTankTurret.png");
+    tankImages["ShadowTank"] = ti;//.push_back(ti);
+    LogFile::get()->log(0,0,"Loaded Shadow tank");
+
     //Load projectiles
     ProjectileImage pi;
     pi.load("Assets\\projectile.png");
     projectileImages["Projectile"] = pi;//.push_back(pi);
     LogFile::get()->log(0,0,"Loaded projectile");
+
+    pi.load("Assets\\projectileShadow.png");
+    projectileImages["ProjectileShadow"] = pi;//.push_back(pi);
+    LogFile::get()->log(0,0,"Loaded projectile shadow");
 
     ProjectileImage pi2;
     pi2.load("Assets\\baselaser1.png");
@@ -113,8 +121,24 @@ int AssetManager::load(){
     dashboardImage.load("Assets\\dashboard1.png");
     LogFile::get()->log(0,0,"Loaded dashboard1");
 
+
+    //tankExplosionImage.load("Assets\\tank_explosion2.png");
+    tankDeathExplosionImage.load("Assets\\explosion2.png");
+    tankHitExplosionImage.load("Assets\\explosion3.png");
+
     return 0;
 }
+
+Image & AssetManager::getTankDeathExplosionImage()
+{
+    return tankDeathExplosionImage;
+}
+
+Image & AssetManager::getTankHitExplosionImage()
+{
+    return tankHitExplosionImage;
+}
+
 
 TankImage & AssetManager::getTankImage(std::string name)
 {

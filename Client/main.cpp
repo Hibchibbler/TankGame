@@ -11,11 +11,8 @@ int main()
 
     gameClient.doInit();
 
-    sf::Time previousTime;
-    sf::Time currentTime;
-    sf::Time deltaTime;
     sf::Time frameTime;
-    sf::Clock clock;
+
 
     sf::sleep(sf::milliseconds(500));
     while (!done){
@@ -26,11 +23,6 @@ int main()
 
         gameClient.doLoop();
 
-        previousTime = currentTime;
-        currentTime = clock.restart();
-        deltaTime = currentTime - previousTime;
-        frameTime += deltaTime;
-        
         gameClient.doDraw(frameTime);
 
         sf::sleep(sf::milliseconds(0));

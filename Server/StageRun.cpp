@@ -3,6 +3,8 @@
 #include "Common\Messages.h"
 #include "Common\TeamManager.h"
 #include "Common\ArenaManager.h"
+#include "Common\Physics.h"
+
 #include "GameServer.h"
 using namespace tg;
 
@@ -40,14 +42,12 @@ sf::Uint32 StageRun::doRemoteEvent(Game & g,
         }case MsgId::StateOfPlayer:{
             //std::cout << "Got Action" << std::endl;
             //These are from players when they change the state of their tank
-            cevent.packet >> player.tank.throttle;
-            cevent.packet >> player.tank.bodyAngle;
             cevent.packet >> player.tank.turretAngle;
+            cevent.packet >> player.tank.accelerating;
+            cevent.packet >> player.tank.turningBody;
+            cevent.packet >> player.tank.attacking;
 
-            cevent.packet >> player.attacking;
-
-            player.tank.velocity.x = player.tank.throttle * (float)cos(player.tank.bodyAngle * (0.0174531f));
-            player.tank.velocity.y = player.tank.throttle * (float)sin(player.tank.bodyAngle * (0.0174531f));
+            
             //std::cout << player.tank.position.x << ", " << player.tank.position.y << std::endl;
             break;
         }
@@ -56,120 +56,9 @@ sf::Uint32 StageRun::doRemoteEvent(Game & g,
 }
 
 
-bool isTankCollision(sf::Vector2f projPos, Game & g, sf::Int32 damage, sf::Uint32 team=-1)
-{
-    for (int y = 1; y < 3 ; y++)
-    {
-        //skip doing collision if a safe team is specified
-        if (y != -1 && team == y)
-            continue;
-        tg::Team::PlayerIterator tp = g.teamMan.getTeam(y).begin();
-        for (;tp != g.teamMan.getTeam(y).end();tp++){
-            //tp->tank.position
-            if (tp->hasHost)
-            {
-                sf::FloatRect fr(tp->tank.position,sf::Vector2f(64,64));
-                if (fr.contains(projPos))
-                {
-                    tp->tank.health-=damage;
-                    if (tp->tank.health<=0)
-                        tp->tank.health=0;
-                    
-                    return true;
-                }
-            }
-        }
-    }
-
-    return false;
-
-    ////TODO: assumes size of tank.
-}
-
-int isCreepCollision(sf::Vector2f projPos, Game & g, sf::Uint32 damage, sf::Uint32 team=-1)
-{
-    for (int y = 1; y < 3 ; y++)
-    {
-        //skip doing collision if a safe team is specified
-        if (y != -1 && team == y)
-            continue;
-        
-        for (auto c = g.teamMan.teams[y].creep.begin();c != g.teamMan.teams[y].creep.end();)
-        {
-            sf::FloatRect fr(c->position,sf::Vector2f(48,48));
-            if (fr.contains(projPos))
-            {
-                c->health-=damage;
-                if (c->health <= 0)
-                {
-                    c = g.teamMan.teams[y].creep.erase(c);
-                    return 2;
-                }
-                return 1;
-            }else
-                c++;
-            
-        }
-    }
-
-    return 0;
-
-    ////TODO: assumes size of tank.
-}
-
-bool isGeneratorCollision(sf::Vector2f projPos, Game & g, sf::Uint32 damage, sf::Uint32 team=-1)
-{
-    for (int y = 1; y < 3 ; y++)
-    {
-        //skip doing collision if a safe team is specified
-        if (y != -1 && team == y)
-            continue;
-        
-        for (int gi =0;gi < g.arenaMan.getGeneratorCount(y);gi++)
-        {
-            sf::Vector2f genPos = g.arenaMan.getGeneratorPosition(y,gi);
-
-            if (projPos.x > genPos.x &&
-                projPos.x < genPos.x+125.0f &&
-                projPos.y > genPos.y && 
-                projPos.y < genPos.y+125.0f )
-            {
-            
-                g.teamMan.teams[y].gen[gi].health-=damage;
-                if (g.teamMan.teams[y].gen[gi].health<=0)
-                    g.teamMan.teams[y].gen[gi].health=0;
-                return true;
-            }
-        }
-    }
-    return false;
-}
-bool isBaseCollision(sf::Vector2f projPos, Game & g, sf::Uint32 damage, sf::Uint32 team=-1)
-{
-    for (int y = 1; y < 3 ; y++)
-    {
-        //skip doing collision if a safe team is specified
-        if (y != -1 && team == y)
-            continue;
-        sf::Vector2f genPos = g.arenaMan.getStartPosition(y);
-
-        if (projPos.x > genPos.x &&
-            projPos.x < genPos.x+125.0f &&
-            projPos.y > genPos.y && 
-            projPos.y < genPos.y+125.0f )
-        {
-            g.teamMan.teams[y].base1.health-=damage;
-            if (g.teamMan.teams[y].base1.health<=0)
-                g.teamMan.teams[y].base1.health=0;
-            return true;
-        }
-    }
-    return false;
-}
-
 #define CREEP_SPEED 17
 #define CREEP_SPAWN_MS 1400
-#define UPDATE_STATE_MS 30
+#define UPDATE_STATE_MS 20
 #define SEND_STATE_MS 100//110
 #define PIXELS_PER_SECOND 10
 #define CREEP_LIFE_S 75.0f
@@ -177,9 +66,9 @@ bool isBaseCollision(sf::Vector2f projPos, Game & g, sf::Uint32 damage, sf::Uint
 #define DEATH_LASER_PROXIMAL 1100.0f
 #define BASE_LASER_LIFE_S 0.80f
 #define HEAL_LASER_SPEED 65.0f
-#define DEATH_LASER_SPEED 150.0f
+#define DEATH_LASER_SPEED 200.0f
 #define HEAL_LASER_SPAWN_S 0.07f
-#define DEATH_LASER_SPAWN_S 0.030f
+#define DEATH_LASER_SPAWN_S 0.007f
 
 static int RANDOM_LAG =0;
 //STATE_OF_UNION_MS
@@ -218,92 +107,7 @@ sf::Uint32 StageRun::doLoop(Game & g)
                         pi->state = PlayerState::Running;
                         break;
                     case PlayerState::Running:
-                         //Remove projectiles who have run out of power.
-                        if (pi->attacking){
-                            if (pi->attackClock.getElapsedTime().asSeconds() > 0.015f)
-                            {
-                                 pi->prjctls.push_back(Projectile());
-                                //TODO: THINK: do you want projectile to inherit the tanks' velocity?
-                    
-                                pi->prjctls.back().velocity.x = 85.0f*((float)cos(pi->tank.turretAngle*(0.0174531f)));
-                                pi->prjctls.back().velocity.y = 85.0f*((float)sin(pi->tank.turretAngle*(0.0174531f)));
-
-                                float vx,vy;
-                                vx =  pi->prjctls.back().velocity.x;
-                                vy =  pi->prjctls.back().velocity.y;
-
-                                pi->prjctls.back().position.x = pi->tank.position.x + vx;//(vx/75.0f)*5.5f;
-                                pi->prjctls.back().position.y = pi->tank.position.y + vy;//(vy/75.0f)*5.5f;
-                    
-                                //std::cout << pi->prjctls.back().position.x << ", " << pi->prjctls.back().position.y << std::endl;
-                                pi->prjctls.back().creationTime = accumulatingClock.getElapsedTime().asSeconds();
-                                pi->prjctls.back().angle = pi->tank.turretAngle;
-                                pi->prjctls.back().damage = 1+pi->tank.power/10.0f;
-
-                                pi->attackClock.restart();
-                            }
-                        }
-
-
-                        for (auto i = pi->prjctls.begin();i != pi->prjctls.end();)
-                        {
-                            float accTime = accumulatingClock.getElapsedTime().asSeconds();
-                            if ( ((i->creationTime + 0.5f) + (pi->tank.power/20.0f))  < accTime )// (PROJECTILE_DISTANCE*500)+(pi->tank.power*25))
-                            {
-                                i = pi->prjctls.erase(i);
-                            }else
-                            {
-                                i->position.x = i->position.x + i->velocity.x * loopTime.asSeconds()*PIXELS_PER_SECOND;
-                                i->position.y = i->position.y + i->velocity.y * loopTime.asSeconds()*PIXELS_PER_SECOND;
-                                i->totalDistance+=1;
-
-                                ////Remove projectile that has hit a tank, creep, generator, or base.
-                                bool yes1 = isTankCollision(i->position,g,i->damage,y);
-                                int yes2 = isCreepCollision(i->position,g,i->damage,y);
-                                bool yes3 = isGeneratorCollision(i->position,g, i->damage,y);
-                                bool yes4 = isBaseCollision(i->position,g, i->damage,y);
-                            
-                                if (yes1!=0 || yes2 || yes3 || yes4)
-                                {
-                                    i = pi->prjctls.erase(i);
-                                    if (yes2==2){
-                                        pi->tank.power++;
-                                        pi->tank.maxHealth+=3;
-                                    }
-                                    
-                                }
-                                else
-                                    i++;
-                            }
-                        }
-
-                        //TODO: HACK: hardcoded arena boundaries based on debug map and a 125px wide floor tile.
-                        if (pi->tank.position.x + pi->tank.velocity.x *  loopTime.asSeconds()*PIXELS_PER_SECOND < (125) ||
-                            pi->tank.position.x + pi->tank.velocity.x *  loopTime.asSeconds()*PIXELS_PER_SECOND > (59*125) )
-                        {
-                            pi->tank.velocity.x = 0;
-                        }
-
-                        if (pi->tank.position.y + pi->tank.velocity.y *  loopTime.asSeconds()*PIXELS_PER_SECOND < (125) ||
-                            pi->tank.position.y + pi->tank.velocity.y *  loopTime.asSeconds()*PIXELS_PER_SECOND > (59*125) )
-                        {
-                            pi->tank.velocity.y = 0;
-                        }
-
-
-                        pi->tank.position.x = pi->tank.position.x + pi->tank.velocity.x *  loopTime.asSeconds()*PIXELS_PER_SECOND;
-                        pi->tank.position.y = pi->tank.position.y + pi->tank.velocity.y *  loopTime.asSeconds()*PIXELS_PER_SECOND;
-            
-
-                        sf::Vector2f basePos = g.arenaMan.getStartPosition(y);
-                        if (pi->tank.position.x > basePos.x     &&
-                            pi->tank.position.x < basePos.x+125 &&
-                            pi->tank.position.y > basePos.y     &&
-                            pi->tank.position.y < basePos.y+125)
-                        {
-                            //Tank is  in base. Display upgrade dialog
-                        }
-
+                        MeAndMyTank___Bitch(g,*pi, y,loopTime, accumulatingClock);
                         break;
                 }
             }
@@ -378,7 +182,8 @@ sf::Uint32 StageRun::doLoop(Game & g)
                     b->position.x = b->position.x + b->velocity.x*loopTime.asSeconds()*PIXELS_PER_SECOND;
                     b->position.y = b->position.y + b->velocity.y*loopTime.asSeconds()*PIXELS_PER_SECOND;
 
-                    bool yes = isTankCollision(b->position,g,b->damage,y);
+                    sf::Vector2u sz = g.assetMan.getProjectileImage("BaseLaser").img->getSize();
+                    bool yes = isTankCollision(b->position,sf::Vector2f((float)sz.x,(float)sz.y),g,b->damage,y);
                     if (yes || b->creationTime + BASE_LASER_LIFE_S < accumulatedClock)
                     {
                         b = g.teamMan.teams[y].gen[gi].prjctls.erase(b);
@@ -443,8 +248,9 @@ sf::Uint32 StageRun::doLoop(Game & g)
             {
                 b->position.x = b->position.x + b->velocity.x*loopTime.asSeconds()*PIXELS_PER_SECOND;
                 b->position.y = b->position.y + b->velocity.y*loopTime.asSeconds()*PIXELS_PER_SECOND;
-
-                bool yes = isTankCollision(b->position,g,-b->damage,-1);
+                
+                sf::Vector2u sz = g.assetMan.getProjectileImage("HealLaser").img->getSize();
+                bool yes = isTankCollision(b->position,sf::Vector2f((float)sz.x,(float)sz.y) , g,-b->damage,-1);
                 if (yes || b->creationTime + BASE_LASER_LIFE_S < accumulatedClock)
                 {
                     b = g.teamMan.teams[y].base1.prjctls.erase(b);
@@ -488,6 +294,7 @@ sf::Uint32 StageRun::doLoop(Game & g)
                             r = (rand()%30)+180-15;
                         }
                     }
+                    newCreep.angle = r-90.0f;
                     newCreep.velocity.x = CREEP_SPEED*cos(r*0.0174531f);
                     newCreep.velocity.y = CREEP_SPEED*sin(r*0.0174531f);
 
@@ -515,7 +322,7 @@ sf::Uint32 StageRun::doLoop(Game & g)
                         if (sqrt(dx*dx+dy*dy) < 700)
                         {
                             float ang =  atan2(dy,dx) / 0.0174531f;
-                        
+                            c->angle = ang+90.0f;
                             c->velocity.x = -CREEP_SPEED*cos(ang * (0.0174531f));
                             c->velocity.y = -CREEP_SPEED*sin(ang * (0.0174531f));
                         
@@ -525,8 +332,9 @@ sf::Uint32 StageRun::doLoop(Game & g)
                 }
 
                 ////Remove creep that is hit a tank or another creep
-                bool yes = isTankCollision(c->position,g, 5, y);
-                int yes2 = isCreepCollision(c->position,g,5,y);
+                sf::Vector2u sz = g.assetMan.getMinionImage("Minion1").img->getSize();                
+                bool yes = isTankCollision(c->position, sf::Vector2f((float)sz.x,(float)sz.y), g, 5, y);
+                int yes2 = isCreepCollision(c->position, sf::Vector2f((float)sz.x,(float)sz.y),g,5,y);
                 if (yes || (yes2 && rand()%2==1) || c->creationTime + CREEP_LIFE_S < accumulatedClock )
                 {
                     c = g.teamMan.teams[y].creep.erase(c);

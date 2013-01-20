@@ -102,6 +102,8 @@ namespace tg
         sf::Texture* tex;
     };
 
+  
+
     class MinionImage
     {
     public:
@@ -164,6 +166,32 @@ namespace tg
         sf::Image i;
         sf::Texture t;
 
+    };
+
+    struct ExplosionType{
+        enum et{
+            None,
+            TankHit,
+            TankDeath,
+            CreepHit,
+            CreepDeath,
+            GeneratorHit,
+            GeneratorDeath,
+            BaseHit,
+            BaseDeath
+        };
+    };
+    class Explosion
+    {
+    public:
+        Explosion(){
+            index = 0;
+            type = ExplosionType::None;
+        }
+        sf::Uint32 type;
+        sf::Vector2f position;
+        sf::Uint32 index;
+        sf::Clock rate;
     };
 };
 

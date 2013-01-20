@@ -28,14 +28,12 @@ int Messages::sendStateOfPlayer(Comm & comm, TeamManager & teamMan, int cid, int
     event.connectionId = cid;
     event.packet << CommEventType::Data;
     event.packet << MsgId::StateOfPlayer;
-    event.packet << player.tank.throttle;
-    event.packet << player.tank.bodyAngle;
+
     event.packet << player.tank.turretAngle;
-    //event.packet << player.tank.position.x;
-    //event.packet << player.tank.position.y;
-    //event.packet << player.tank.velocity.x;
-    //event.packet << player.tank.velocity.y;
-    event.packet << player.attacking;
+    event.packet << player.tank.accelerating;
+    event.packet << player.tank.turningBody;
+    event.packet << player.tank.attacking;
+    
     comm.Send(event);
     return 0;
 }
@@ -165,6 +163,7 @@ int Messages::sendStateOfUnion(Comm & comm, TeamManager & teamMan)
         {
             event.packet << y->position.x;
             event.packet << y->position.y;
+            event.packet << y->angle;
         }
         //Generator death Laser
         for (int gi = 0;gi < 2;gi++)

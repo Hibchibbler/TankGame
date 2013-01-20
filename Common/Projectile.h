@@ -21,6 +21,7 @@ namespace tg
         sf::Vector2f shadowPos;
         sf::Vector2f velocity;
         sf::Uint32 totalDistance;
+        sf::Uint32 uid;
         float creationTime;
         sf::Uint32 damage;
     private:

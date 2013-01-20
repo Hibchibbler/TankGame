@@ -95,6 +95,7 @@
     <ClInclude Include="Tank.h" />
     <ClInclude Include="Team.h" />
     <ClInclude Include="TeamManager.h" />
+    <ClInclude Include="Physics.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Client\TextBox.cpp" />

@@ -11,30 +11,32 @@ namespace tg
     //to identify state. so, some states don't make sense from a client
     //perspective, and likewise for server.
     //None the less, the state is specific to a Player
-struct PlayerState{
-enum pstate{
-        New,/***********/
-        SendingWhoIs,
-        SendingWhoIsAck,
-        WaitingForWhoIsAck,
-        SendingId,
-        SendingIdAck,
-        SendingIdNack,
-        WaitingForIdAck,
-        SendingStateOfPlayer,
-        WaitingForStateOfPlayer,
-        SendingStateOfUnion,
-        WaitingForStateOfUnion,
-        SendingReady,
-        WaitingForReady,
-        Ready,/***********/
-        WaitingForMap,
-        WaitingForStart,
-        Running,/***********/
-        Paused,/***********/
-        EmitProjectile
+    struct PlayerState{
+        enum pstate{
+            New,/***********/
+            SendingWhoIs,
+            SendingWhoIsAck,
+            WaitingForWhoIsAck,
+            SendingId,
+            SendingIdAck,
+            SendingIdNack,
+            WaitingForIdAck,
+            SendingStateOfPlayer,
+            WaitingForStateOfPlayer,
+            SendingStateOfUnion,
+            WaitingForStateOfUnion,
+            SendingReady,
+            WaitingForReady,
+            Ready,/***********/
+            WaitingForMap,
+            WaitingForStart,
+            Running,/***********/
+            Paused,/***********/
+            EmitProjectile
+        };
     };
-};
+
+    
 
 
     class Player
@@ -43,29 +45,23 @@ enum pstate{
         Player(){
             playerName = "-empty-";
             connectionId = -1;
-            //team = -1;
             state = PlayerState::New;
             hasHost = false;
             slotNum = -1;
-            baseLocked = 0;
-            attacking = 0;
+            nextUid=1;
         }
         Tank tank;
         std::vector<Projectile> prjctls;
+        sf::Uint32 nextUid;
         std::string playerName;
         sf::Uint32 connectionId;
         sf::Uint32 hasHost;//yes, like, in the alien sense.
         sf::Uint32 slotNum;
-        //sf::Uint32 team;
-        //sf::Uint32 health;
+
         sf::Uint32 state;
-        sf::Uint32 lmb;
-        sf::Uint32 rmb;
-        sf::Uint32 attacking;
-
-        sf::Uint32 baseLocked;
-
         sf::Clock attackClock;
+        sf::Clock accelerateClock;
+        sf::Clock turnClock;
     };
 };
 

@@ -6,12 +6,29 @@
 
 namespace tg
 {
-    class AuthPos
-    {
-    public:
-        sf::Vector2f pos;
-        bool authorized;
+    struct AttackAction{
+        enum aa{
+            Attacking,
+            Idle
+        };
     };
+
+    struct AccelerateAction{
+        enum aa{
+            Forward,
+            Reverse,
+            Idle
+        };
+    };
+
+    struct TurnAction{
+        enum ta{
+            Right,
+            Left,
+            Idle
+        };
+    };
+
     class Tank
     {
     public:
@@ -27,10 +44,16 @@ namespace tg
             shadowUpdated = false;
             prevDist = 0.0f;
             curDist = 0.0f;
+            attacking = AttackAction::Idle;
+            accelerating= AccelerateAction::Idle;
+            turningBody = TurnAction::Idle;
+            explosionIndex = 0;
         }
         sf::Int32 maxHealth;
         sf::Int32 health;
         sf::Uint32 power;
+
+
 
         sf::Vector2f position;
         sf::Vector2f velocity;
@@ -38,6 +61,9 @@ namespace tg
         float bodyAngle;
         float turretAngle;
         float mass;
+        sf::Uint32 attacking;
+        sf::Uint32 accelerating;
+        sf::Uint32 turningBody;
 
         sf::Vector2f shadowPos;
         sf::Vector2f shadowVel;
@@ -48,8 +74,10 @@ namespace tg
         float accy;
         float prevDist;
         float curDist;
-        std::list<AuthPos> posHistory;
         
+        
+        sf::Clock explosionClock;
+        sf::Uint32 explosionIndex;
     };
 
 };

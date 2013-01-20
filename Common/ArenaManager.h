@@ -152,22 +152,6 @@ namespace tg
 
         sf::Uint32 setSprites(AssetManager & am, int screenWidth, int screenHeight);
         sf::Vector2f getStartPosition(int team){
-            /*for (auto i = arenaData.begin();i != arenaData.end();i++){
-                if (i->getId() == 3 && team == 1 ||
-                    i->getId() == 4 && team == 2)
-                {
-                    sf::Vector2f p = i->getPosition();
-                    if (team == 1){
-                        p.x += 62;
-                        p.y += 62;
-                    }else if (team == 2){
-                        p.x += 62;
-                        p.y += 62;
-                    }
-                    return p;
-                }
-            }
-            return sf::Vector2f(0,0);*/
             if (team == 1){
                 return team1BasePos;
             }else if (team == 2){
@@ -186,22 +170,6 @@ namespace tg
         }
 
         sf::Vector2f getGeneratorPosition(int team, int gi){
-            /*for (auto i = arenaData.begin();i != arenaData.end();i++){
-                if (i->getId() == 5 && team == 1 ||
-                    i->getId() == 6 && team == 2)
-                {
-                    sf::Vector2f p = i->getPosition();
-                    if (team == 1){
-                        p.x += 62;
-                        p.y += 62;
-                    }else if (team == 2){
-                        p.x += 62;
-                        p.y += 62;
-                    }
-                    return p;
-                }
-            }
-            return sf::Vector2f(0,0);*/
             if (team == 1)
             {
                 return team1GenPos[gi];
