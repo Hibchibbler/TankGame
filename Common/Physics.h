@@ -6,7 +6,7 @@
 
 using namespace tg;
 
-bool isTankCollision(sf::Vector2f projPos, sf::Vector2f projSize, Game & g, sf::Int32 damage, sf::Uint32 team=-1)
+int isTankCollision(sf::Vector2f projPos, sf::Vector2f projSize, Game & g, sf::Int32 damage, sf::Uint32 team=-1)
 {
     for (int y = 1; y < 3 ; y++)
     {
@@ -20,19 +20,21 @@ bool isTankCollision(sf::Vector2f projPos, sf::Vector2f projSize, Game & g, sf::
             {
                 sf::FloatRect fr(tp->tank.position,sf::Vector2f(64,64));
                 sf::FloatRect pr(projPos, projSize);
-                if (fr.contains(projPos))
+                if (fr.intersects(pr))
                 {
                     tp->tank.health-=damage;
                     if (tp->tank.health<=0)
+                    {
                         tp->tank.health=0;
-                    
-                    return true;
+                        return 2;
+                    }
+                    return 1;
                 }
             }
         }
     }
 
-    return false;
+    return 0;
 
     ////TODO: assumes size of tank.
 }
@@ -44,23 +46,42 @@ int isCreepCollision(sf::Vector2f projPos, sf::Vector2f projSize, Game & g, sf::
         //skip doing collision if a safe team is specified
         if (y != -1 && team == y)
             continue;
-        
-        for (auto c = g.teamMan.teams[y].creep.begin();c != g.teamMan.teams[y].creep.end();)
+        if (damage > 0)
         {
-            sf::FloatRect fr(c->position,sf::Vector2f(48,48));
-            sf::FloatRect pr(projPos, projSize);
-            if (fr.intersects(pr))//fr.contains(projPos))
+            for (auto c = g.teamMan.teams[y].creep.begin();c != g.teamMan.teams[y].creep.end();)
             {
-                c->health-=damage;
-                if (c->health <= 0)
+                sf::FloatRect fr(c->position,sf::Vector2f(48,48));
+                sf::FloatRect pr(projPos, projSize);
+                if (fr.intersects(pr))//fr.contains(projPos))
                 {
-                    c = g.teamMan.teams[y].creep.erase(c);
-                    return 2;
+                    c->health-=damage;
+                    if (c->health <= 0)
+                    {
+                        c = g.teamMan.teams[y].creep.erase(c);
+                        c->health =0 ;
+                        return 2;
+                    }
+                    return 1;
+                }else
+                    c++;
+            } 
+        }else{
+             for (auto c = g.teamMan.teams[y].creep.begin();c != g.teamMan.teams[y].creep.end();c++)
+            {
+                sf::FloatRect fr(c->position,sf::Vector2f(48,48));
+                sf::FloatRect pr(projPos, projSize);
+                if (fr.intersects(pr))//fr.contains(projPos))
+                {
+                    c->health-=damage;
+                    if (c->health <= 0)
+                    {
+                        //c = g.teamMan.teams[y].creep.erase(c);
+                        c->health =0 ;
+                        return 2;
+                    }
+                    return 1;
                 }
-                return 1;
-            }else
-                c++;
-            
+            } 
         }
     }
 
@@ -69,7 +90,7 @@ int isCreepCollision(sf::Vector2f projPos, sf::Vector2f projSize, Game & g, sf::
     ////TODO: assumes size of tank.
 }
 
-bool isGeneratorCollision(sf::Vector2f projPos, Game & g, sf::Uint32 damage, sf::Uint32 team=-1)
+int isGeneratorCollision(sf::Vector2f projPos, Game & g, sf::Uint32 damage, sf::Uint32 team=-1)
 {
     for (int y = 1; y < 3 ; y++)
     {
@@ -89,14 +110,17 @@ bool isGeneratorCollision(sf::Vector2f projPos, Game & g, sf::Uint32 damage, sf:
             
                 g.teamMan.teams[y].gen[gi].health-=damage;
                 if (g.teamMan.teams[y].gen[gi].health<=0)
+                {
                     g.teamMan.teams[y].gen[gi].health=0;
-                return true;
+                    return 2;
+                }
+                return 1;
             }
         }
     }
-    return false;
+    return 0;
 }
-bool isBaseCollision(sf::Vector2f projPos, Game & g, sf::Uint32 damage, sf::Uint32 team=-1)
+int isBaseCollision(sf::Vector2f projPos, Game & g, sf::Uint32 damage, sf::Uint32 team=-1)
 {
     for (int y = 1; y < 3 ; y++)
     {
@@ -112,14 +136,17 @@ bool isBaseCollision(sf::Vector2f projPos, Game & g, sf::Uint32 damage, sf::Uint
         {
             g.teamMan.teams[y].base1.health-=damage;
             if (g.teamMan.teams[y].base1.health<=0)
+            {
                 g.teamMan.teams[y].base1.health=0;
-            return true;
+                return 2;
+            }
+            return 1;
         }
     }
-    return false;
+    return 0;
 }
 
-bool MeAndMyTank___Bitch(Game & g, Player & player, sf::Uint32 playerTeam, sf::Time frameTime, sf::Clock & clock)
+bool MeAndMyTank___Bitch(Game & g, Player & player, sf::Uint32 playerTeam, Explosion & e, bool noDamage, sf::Time frameTime, sf::Clock & clock)
 {
     const float PIXELS_PER_SECOND = 10.0f;
     //TODO: perhaps do this is little more similarly to the other notes recieved from client
@@ -130,8 +157,6 @@ bool MeAndMyTank___Bitch(Game & g, Player & player, sf::Uint32 playerTeam, sf::T
     if (player.tank.attacking == AttackAction::Attacking)
     {
         player.prjctls.push_back(Projectile());
-        //TODO: THINK: do you want projectile to inherit the tanks' velocity?
-                    
         player.prjctls.back().velocity.x = 200.0f*((float)cos(player.tank.turretAngle*(0.0174531f))) + player.tank.velocity.x;
         player.prjctls.back().velocity.y = 200.0f*((float)sin(player.tank.turretAngle*(0.0174531f))) + player.tank.velocity.y;
 
@@ -179,7 +204,7 @@ bool MeAndMyTank___Bitch(Game & g, Player & player, sf::Uint32 playerTeam, sf::T
     for (auto i = player.prjctls.begin();i != player.prjctls.end();)
     {
         float accTime = clock.getElapsedTime().asSeconds();
-        if ( (i->creationTime + 0.75f)  < accTime )
+        if ( (i->creationTime + 0.50f)  < accTime )
         {
             //Remove projectiles who have run out of power.
             i = player.prjctls.erase(i);
@@ -190,18 +215,44 @@ bool MeAndMyTank___Bitch(Game & g, Player & player, sf::Uint32 playerTeam, sf::T
             i->totalDistance+=1;
 
             ////Remove projectile that has hit a tank, creep, generator, or base.
+            sf::Uint32 damage = (noDamage? 0 : i->damage);
             sf::Vector2u sz = g.assetMan.getProjectileImage("Projectile").img->getSize();
-            bool yes1 = isTankCollision(i->position, sf::Vector2f((float)sz.x,(float)sz.y), g,i->damage,playerTeam);
-            int yes2 = isCreepCollision(i->position, sf::Vector2f((float)sz.x,(float)sz.y),g,i->damage,playerTeam);
-            bool yes3 = isGeneratorCollision(i->position,g, i->damage,playerTeam);
-            bool yes4 = isBaseCollision(i->position,g, i->damage,playerTeam);
+            int yes1 = isTankCollision(i->position, sf::Vector2f((float)sz.x,(float)sz.y), g,damage,playerTeam);
+            int yes2 = isCreepCollision(i->position, sf::Vector2f((float)sz.x,(float)sz.y),g,damage,playerTeam);
+            int yes3 = isGeneratorCollision(i->position,g, damage,playerTeam);
+            int yes4 = isBaseCollision(i->position,g, damage,playerTeam);
                             
-            if (yes1!=0 || yes2 || yes3 || yes4)
+            if (yes1 || yes2 || yes3 || yes4)
             {
+                e.position = i->position;
+                player.tank.explosionIndex=0;
                 i = player.prjctls.erase(i);
-                if (yes2==2){
+                
+                if (yes1 == 1){
+                    e.type = ExplosionType::TankHit;
+                }else if (yes1 == 2){
+                    e.type = ExplosionType::TankDeath;
+                }
+
+                if (yes2 == 1){
+                    e.type = ExplosionType::CreepHit;
+                }else if (yes2 == 2){
+                    e.type = ExplosionType::CreepDeath;
                     player.tank.power++;
                     player.tank.maxHealth+=3;
+                    
+                }
+
+                if (yes3 == 1){
+                    e.type = ExplosionType::GeneratorHit;
+                }else if (yes3 == 2){
+                    e.type = ExplosionType::GeneratorDeath;
+                }
+
+                if (yes4 == 1){
+                    e.type = ExplosionType::BaseHit;
+                }else if (yes4 == 2){
+                    e.type = ExplosionType::BaseDeath;
                 }
             }
             else

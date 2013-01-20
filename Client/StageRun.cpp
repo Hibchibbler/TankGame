@@ -176,8 +176,13 @@ sf::Uint32 StageRun::doLoop(Game & g)
                 p.state = PlayerState::Running;
                 
             case PlayerState::Running:
-                MeAndMyTank___Bitch(g,thisPlayer, g.myTeam,frameTime, accumulatingClock);
+            {
+                Explosion e;
+                MeAndMyTank___Bitch(g,thisPlayer, g.myTeam, e,true, frameTime, accumulatingClock);
+                if (e.type != ExplosionType::None)
+                    explosions.push_back(e);
                 break;
+            }
 
         }
     }else{
@@ -507,6 +512,46 @@ sf::Uint32 StageRun::doDraw(sf::RenderWindow & window, Game & g, sf::Time ft)
                     window.draw(prjctl);
                 }
             }
+        }
+
+        //Explosions!!
+        for (auto e = explosions.begin();e != explosions.end();){
+            sf::Sprite exp;
+            if (e->type == ExplosionType::TankHit      ||
+                e->type == ExplosionType::CreepHit     ||
+                e->type == ExplosionType::GeneratorHit ||
+                e->type == ExplosionType::BaseHit)
+            {
+                exp.setTexture(*g.assetMan.getTankHitExplosionImage().tex);
+            }else{
+                exp.setTexture(*g.assetMan.getTankDeathExplosionImage().tex);
+            }
+            
+            exp.setScale(4.0f,4.0f);
+            int xi,yi;
+
+            xi = (e->index % 4) * 64;
+            yi = (e->index / 4) * 64;
+            exp.setTextureRect(sf::IntRect(xi,yi,64,64));
+            exp.setOrigin(32,32);
+            exp.setPosition(e->position);
+
+            window.draw(exp);
+
+            bool done = false;
+            if (e->rate.getElapsedTime().asMilliseconds() > 75){
+                //std::cout << xi << ", " << yi << std::endl;
+                e->index = (e->index + 1) % 20;
+                if (e->index == 19){
+                    done = true;
+                }
+                e->rate.restart();
+            }
+        
+            if (done)
+                e = explosions.erase(e);
+            else
+                e++;
         }
 
         //Draw the Dashboard

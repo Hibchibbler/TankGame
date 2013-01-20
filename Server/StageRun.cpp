@@ -107,8 +107,11 @@ sf::Uint32 StageRun::doLoop(Game & g)
                         pi->state = PlayerState::Running;
                         break;
                     case PlayerState::Running:
-                        MeAndMyTank___Bitch(g,*pi, y,loopTime, accumulatingClock);
+                        {
+                        Explosion e;
+                        MeAndMyTank___Bitch(g,*pi, y,e,false,loopTime, accumulatingClock);
                         break;
+                        }
                 }
             }
             //Teams Update
