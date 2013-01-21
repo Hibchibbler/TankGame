@@ -58,7 +58,7 @@ sf::Uint32 StageRun::doRemoteEvent(Game & g,
 
 #define CREEP_SPEED 17
 #define CREEP_SPAWN_MS 1400
-#define UPDATE_STATE_MS 20
+#define UPDATE_STATE_MS 50
 #define SEND_STATE_MS 100//110
 #define PIXELS_PER_SECOND 10
 #define CREEP_LIFE_S 75.0f
@@ -92,7 +92,7 @@ sf::Uint32 StageRun::doLoop(Game & g)
         
                 if (pi->hasHost == false)
                     continue;
-    
+
                 switch (pi->state){
                     case PlayerState::SendingWhoIsAck:
                         Messages::sendWhoIsAck(g.server, g.teamMan, pi->connectionId);
@@ -107,14 +107,14 @@ sf::Uint32 StageRun::doLoop(Game & g)
                         pi->state = PlayerState::Running;
                         break;
                     case PlayerState::Running:
-                        {
-                        Explosion e;
-                        MeAndMyTank___Bitch(g,*pi, y,e,false,loopTime, accumulatingClock);
+                        MeAndMyTank___Bitch(g,*pi, y,false,loopTime, accumulatingClock);
                         break;
-                        }
                 }
             }
             //Teams Update
+            bool client = false;///the following code needs to be put into MeAndMyTank
+                                //this hack exists due to that fact.
+
             float accumulatedClock = accumulatingClock.getElapsedTime().asSeconds();
 
             //Generator LASER
@@ -131,7 +131,7 @@ sf::Uint32 StageRun::doLoop(Game & g)
             {
                 for (int gi=0;gi < g.arenaMan.getGeneratorCount(y);gi++)
                 {
-                     float minDistOther = 400000000.0f;
+                    float minDistOther = 400000000.0f;
                     float mindxOther, mindyOther;
                     int minIndexOther=-1;
 
@@ -184,10 +184,19 @@ sf::Uint32 StageRun::doLoop(Game & g)
                 {
                     b->position.x = b->position.x + b->velocity.x*loopTime.asSeconds()*PIXELS_PER_SECOND;
                     b->position.y = b->position.y + b->velocity.y*loopTime.asSeconds()*PIXELS_PER_SECOND;
-
+                    CollisionResult cr1;
                     sf::Vector2u sz = g.assetMan.getProjectileImage("BaseLaser").img->getSize();
-                    bool yes = isTankCollision(b->position,sf::Vector2f((float)sz.x,(float)sz.y),g,b->damage,y);
-                    if (yes || b->creationTime + BASE_LASER_LIFE_S < accumulatedClock)
+                    bool yes1 = isTankCollision(b->position, sf::Vector2f((float)sz.x,(float)sz.y), g.teamMan.teams[otherTeam].players,cr1,otherTeam);
+                    if (yes1){
+                        int ret = doExplosiveStrike(g.teamMan.explosions,
+                                                g.teamMan.teams[cr1.team].players[cr1.slot].tank.health,
+                                                cr1.loc,
+                                                cr1.team,
+                                                cr1.slot,
+                                                b->damage);
+                    }
+
+                    if (yes1 || b->creationTime + BASE_LASER_LIFE_S < accumulatedClock)
                     {
                         b = g.teamMan.teams[y].gen[gi].prjctls.erase(b);
                     }else
@@ -246,15 +255,21 @@ sf::Uint32 StageRun::doLoop(Game & g)
                     g.teamMan.teams[y].base1.prjctls.back().damage = 1;
                 }
             }
-            //For each base laser segment, keep it moving. also, remove expired segments.
+            //For each heal laser segment, keep it moving. also, remove expired segments.
             for (auto b = g.teamMan.teams[y].base1.prjctls.begin();b != g.teamMan.teams[y].base1.prjctls.end();)
             {
                 b->position.x = b->position.x + b->velocity.x*loopTime.asSeconds()*PIXELS_PER_SECOND;
                 b->position.y = b->position.y + b->velocity.y*loopTime.asSeconds()*PIXELS_PER_SECOND;
-                
+                CollisionResult cr;
                 sf::Vector2u sz = g.assetMan.getProjectileImage("HealLaser").img->getSize();
-                bool yes = isTankCollision(b->position,sf::Vector2f((float)sz.x,(float)sz.y) , g,-b->damage,-1);
-                if (yes || b->creationTime + BASE_LASER_LIFE_S < accumulatedClock)
+                
+                bool yes1 = isTankCollision(b->position, sf::Vector2f((float)sz.x,(float)sz.y), g.teamMan.teams[y].players,cr,y);
+                if (yes1){
+                    ////////
+                    g.teamMan.teams[y].players[cr.slot].tank.health += b->damage;
+                    ////////
+                }
+                if (yes1 || b->creationTime + BASE_LASER_LIFE_S < accumulatedClock)
                 {
                     b = g.teamMan.teams[y].base1.prjctls.erase(b);
                 }else
@@ -308,6 +323,8 @@ sf::Uint32 StageRun::doLoop(Game & g)
             //For each creep
             for (auto c = g.teamMan.teams[y].creep.begin();c != g.teamMan.teams[y].creep.end();)
             {
+                
+
                 //Move this creep
                 c->position.x = c->position.x + c->velocity.x * loopTime.asSeconds()*PIXELS_PER_SECOND;
                 c->position.y = c->position.y + c->velocity.y * loopTime.asSeconds()*PIXELS_PER_SECOND;
@@ -335,10 +352,77 @@ sf::Uint32 StageRun::doLoop(Game & g)
                 }
 
                 ////Remove creep that is hit a tank or another creep
-                sf::Vector2u sz = g.assetMan.getMinionImage("Minion1").img->getSize();                
-                bool yes = isTankCollision(c->position, sf::Vector2f((float)sz.x,(float)sz.y), g, 5, y);
-                int yes2 = isCreepCollision(c->position, sf::Vector2f((float)sz.x,(float)sz.y),g,5,y);
-                if (yes || (yes2 && rand()%2==1) || c->creationTime + CREEP_LIFE_S < accumulatedClock )
+                CollisionResult cr;
+                sf::Vector2u sz = g.assetMan.getMinionImage("Minion1").img->getSize();
+                
+                bool yes1 = isTankCollision(c->position, 
+                                            sf::Vector2f((float)sz.x,(float)sz.y),
+                                            g.teamMan.teams[otherTeam].players,
+                                            cr,
+                                            otherTeam);
+
+                bool yes2 = isCreepCollision(c->position, 
+                                             sf::Vector2f((float)sz.x,(float)sz.y),
+                                             g.teamMan.teams[otherTeam].creep, 
+                                             cr,
+                                             otherTeam);
+                if (yes1){
+                    g.teamMan.teams[cr.team].players[cr.slot].tank.health -= 5;
+                    if (!client && g.teamMan.teams[cr.team].players[cr.slot].tank.health <= 0 )
+                    {//Server must empower player
+                        Explosion exp;
+                        exp.type = ExplosionType::TankDeath;
+                        exp.position = cr.loc;
+                        exp.index = 0;
+                        g.teamMan.explosions.push_back(exp);
+
+                    }else if (client && g.teamMan.teams[cr.team].players[cr.slot].tank.health <= 0)
+                    {//client just gotta make explosions
+                        Explosion exp;
+                        exp.type = ExplosionType::TankDeath;
+                        exp.position = cr.loc;
+                        exp.index = 0;
+                        g.teamMan.explosions.push_back(exp);
+                    }else if (g.teamMan.teams[cr.team].players[cr.slot].tank.health > 0)
+                    {
+                        Explosion exp;
+                        exp.type = ExplosionType::TankHit;
+                        exp.position = cr.loc;
+                        exp.index = 0;
+                        g.teamMan.explosions.push_back(exp);
+                    }
+                }
+
+
+                if (yes2)
+                {
+                    g.teamMan.teams[cr.team].creep[cr.slot].health -= 5;
+                    if (!client && g.teamMan.teams[cr.team].creep[cr.slot].health <= 0 )
+                    {//Server must empower player
+                        Explosion exp;
+                        exp.type = ExplosionType::TankDeath;
+                        exp.position = cr.loc;
+                        exp.index = 0;
+                        g.teamMan.explosions.push_back(exp);
+
+                    }else if (client && g.teamMan.teams[cr.team].creep[cr.slot].health <= 0)
+                    {//client just gotta make explosions
+                        Explosion exp;
+                        exp.type = ExplosionType::TankDeath;
+                        exp.position = cr.loc;
+                        exp.index = 0;
+                        g.teamMan.explosions.push_back(exp);
+                    }else if (g.teamMan.teams[cr.team].creep[cr.slot].health > 0)
+                    {
+                        Explosion exp;
+                        exp.type = ExplosionType::TankHit;
+                        exp.position = cr.loc;
+                        exp.index = 0;
+                        g.teamMan.explosions.push_back(exp);
+                    }
+                }
+
+                if (c->health <= 0 || yes1 || (yes2 && rand()%2==1) || c->creationTime + CREEP_LIFE_S < accumulatedClock )
                 {
                     c = g.teamMan.teams[y].creep.erase(c);
                 }else

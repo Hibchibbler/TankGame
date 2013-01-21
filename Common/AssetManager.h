@@ -4,6 +4,7 @@
 
 #include "Images.h"
 #include <map>
+#include <vector>
 
 namespace tg
 {
@@ -16,7 +17,7 @@ namespace tg
 
         sf::Font & getFont();
         TankImage & getTankImage(std::string name);
-        FloorImage & getFloorImage(std::string name);
+        FloorImage & getFloorImage(int i);
         ProjectileImage & getProjectileImage(std::string name);
         MinionImage & getMinionImage(std::string name);
         Image & getDashboardImage();
@@ -25,7 +26,7 @@ namespace tg
     private:
         sf::Font font;
         std::map<std::string, TankImage> tankImages;
-        std::map<std::string, FloorImage> floorImages;
+        std::vector<FloorImage> floorImages;
         std::map<std::string, ProjectileImage> projectileImages;
         std::map<std::string, MinionImage> minionImages;
         Image tankDeathExplosionImage;

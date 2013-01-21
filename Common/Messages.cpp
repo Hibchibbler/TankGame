@@ -187,6 +187,17 @@ int Messages::sendStateOfUnion(Comm & comm, TeamManager & teamMan)
         }
     }
 
+    //Explosions
+    event.packet << teamMan.explosions.size();
+    for (auto y = teamMan.explosions.begin();y != teamMan.explosions.end();)
+    {
+        event.packet << y->position.x;
+        event.packet << y->position.y;
+        event.packet << y->type;
+
+        //Remove it from server, after it is sends it..
+        y = teamMan.explosions.erase(y);
+    }
    
     comm.Send(event);
 

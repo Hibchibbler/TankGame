@@ -37,6 +37,8 @@ int AssetManager::load(){
     //Load Tanks
     TankImage ti;
     ti.load("Assets\\BlueTankBody.png", "Assets\\BlueTankTurret.png");
+    ti.btex->setSmooth(true);
+    ti.ttex->setSmooth(true);
     tankImages["BlueTank"] = ti;//.push_back(ti);
     LogFile::get()->log(0,0,"Loaded blue tank");
 
@@ -79,32 +81,32 @@ int AssetManager::load(){
     //Load floor tiles
     FloorImage fi;
     fi.load("Assets\\floor1.png");
-    floorImages["Floor1"] = fi;//.push_back(fi);
-    LogFile::get()->log(0,0,"Loaded floor1");
+    floorImages.push_back(fi);
+    LogFile::get()->log(0,0,"Loaded floor1");//0
 
     fi.load("Assets\\floor2.png");
-    floorImages["Floor2"] = fi;//.push_back(fi);
-    LogFile::get()->log(0,0,"Loaded floor2");
+    floorImages.push_back(fi);
+    LogFile::get()->log(0,0,"Loaded floor2");//1
 
     fi.load("Assets\\floor3.png");
-    floorImages["Floor3"] = fi;//.push_back(fi);
-    LogFile::get()->log(0,0,"Loaded floor3");
+    floorImages.push_back(fi);
+    LogFile::get()->log(0,0,"Loaded floor3");//2
 
     fi.load("Assets\\team1Garage.png");
-    floorImages["Team1Garage"] = fi;//.push_back(fi);
-    LogFile::get()->log(0,0,"Loaded team1Garage");
+    floorImages.push_back(fi);
+    LogFile::get()->log(0,0,"Loaded team1Garage");//3
 
     fi.load("Assets\\team2Garage.png");
-    floorImages["Team2Garage"] = fi;//.push_back(fi);
-    LogFile::get()->log(0,0,"Loaded team2Garage");
+    floorImages.push_back(fi);
+    LogFile::get()->log(0,0,"Loaded team2Garage");//4
 
     fi.load("Assets\\team1Generator.png");
-    floorImages["Team1Generator"] = fi;//.push_back(fi);
-    LogFile::get()->log(0,0,"Loaded team1Generator");
+    floorImages.push_back(fi);
+    LogFile::get()->log(0,0,"Loaded team1Generator");//5
 
     fi.load("Assets\\team2Generator.png");
-    floorImages["Team2Generator"] = fi;//.push_back(fi);
-    LogFile::get()->log(0,0,"Loaded team2Generator");
+    floorImages.push_back(fi);
+    LogFile::get()->log(0,0,"Loaded team2Generator");//6
 
     //load minions
     MinionImage mi;
@@ -144,9 +146,9 @@ TankImage & AssetManager::getTankImage(std::string name)
 {
     return tankImages[name];
 }
-FloorImage & AssetManager::getFloorImage(std::string name)
+FloorImage & AssetManager::getFloorImage(int i)
 {
-    return floorImages[name];
+    return floorImages[i];
 }
 ProjectileImage & AssetManager::getProjectileImage(std::string name)
 {

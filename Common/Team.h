@@ -25,7 +25,7 @@ namespace tg
     {
     public:
         Generator(){
-            health = 2500;
+            health = 2000;
         }
         sf::Vector2f position;
         sf::Int32 health;

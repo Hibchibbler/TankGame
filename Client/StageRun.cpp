@@ -74,10 +74,10 @@ sf::Uint32 StageRun::doRemoteEvent(Game & g,
                     sf::Vector2f d;
                     d = aPlayer.tank.shadowPos - thisPlayer.tank.position;
                     thisPlayer.tank.position += d/3.0f;
-
-                    //float dba = (aPlayer.tank.bodyAngle - thisPlayer.tank.bodyAngle);
-                    //std::cout << aPlayer.tank.bodyAngle << ", " << thisPlayer.tank.bodyAngle << std::endl;
-                    thisPlayer.tank.bodyAngle=aPlayer.tank.bodyAngle;// += dba;
+                    thisPlayer.tank.throttle = aPlayer.tank.throttle;
+                    thisPlayer.tank.bodyAngle= aPlayer.tank.bodyAngle;
+                    thisPlayer.tank.velocity = aPlayer.tank.velocity;
+                    
                 }else
                 {
                     aPlayer.tank.position = aPlayer.tank.shadowPos;
@@ -134,6 +134,21 @@ sf::Uint32 StageRun::doRemoteEvent(Game & g,
                 g.teamMan.teams[t].base1.prjctls.push_back(proj);
             }
         }
+
+        sf::Uint32 exp_cnt;
+        cevent.packet >> exp_cnt;
+        //explosions.clear();
+        for (int ei = 0;ei < exp_cnt;ei++)
+        {
+            Explosion ex;
+            cevent.packet >> ex.position.x;
+            cevent.packet >> ex.position.y;
+            cevent.packet >> ex.type;
+            ex.index=0;
+            explosions.push_back(ex);
+        }
+
+
         hasRxStateOfUnion = true;
         break;
     }
@@ -157,7 +172,7 @@ sf::Uint32 StageRun::doWindowEvent(sf::RenderWindow & w,
 }
 sf::Uint32 StageRun::doLoop(Game & g)
 {
-    if (loopClock.getElapsedTime().asMilliseconds() > 10)
+    if (loopClock.getElapsedTime().asMilliseconds() > 50)
     {
         previousTime = currentTime;
         currentTime = clock.restart();
@@ -174,16 +189,9 @@ sf::Uint32 StageRun::doLoop(Game & g)
             case PlayerState::SendingStateOfPlayer:
                 Messages::sendStateOfPlayer(g.client, g.teamMan, g.myCID, g.myTeam, g.mySlot, thisPlayer, attacking);
                 p.state = PlayerState::Running;
-                
             case PlayerState::Running:
-            {
-                Explosion e;
-                MeAndMyTank___Bitch(g,thisPlayer, g.myTeam, e,true, frameTime, accumulatingClock);
-                if (e.type != ExplosionType::None)
-                    explosions.push_back(e);
+                MeAndMyTank___Bitch(g,thisPlayer, g.myTeam, true, frameTime, accumulatingClock);
                 break;
-            }
-
         }
     }else{
         sf::sleep(sf::seconds(0.0f));
@@ -192,7 +200,7 @@ sf::Uint32 StageRun::doLoop(Game & g)
 }
 sf::Uint32 StageRun::doLocalInput(sf::RenderWindow & window, Game & g)
 {
-    if (inputClock.getElapsedTime().asSeconds() > 0.030f)
+    if (inputClock.getElapsedTime().asSeconds() > 0.100f)
     {
         if (!hasFocus)
             return 0;
@@ -266,7 +274,7 @@ sf::Uint32 StageRun::doLocalInput(sf::RenderWindow & window, Game & g)
 
 sf::Uint32 StageRun::doDraw(sf::RenderWindow & window, Game & g, sf::Time ft)
 {
-    if (drawClock.getElapsedTime().asSeconds() > 0.020f)
+    if (drawClock.getElapsedTime().asSeconds() > 0.050f)
     {
         window.clear();
         //Set view on top of this player.
@@ -292,7 +300,7 @@ sf::Uint32 StageRun::doDraw(sf::RenderWindow & window, Game & g, sf::Time ft)
         for (int i = 0;i < g.arenaMan.getMapHorizTileNum()*g.arenaMan.getMapVertTileNum();i++){
             Tile &tile = g.arenaMan.getTile(i);
             sf::Sprite ts;
-            ts.setTexture(*g.assetMan.getFloorImage(tile.getName()).tex);
+            ts.setTexture(*g.assetMan.getFloorImage(tile.getId()).tex);
             ts.setPosition(tile.getPosition());
             window.draw(ts);
         }

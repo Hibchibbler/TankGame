@@ -277,16 +277,17 @@ void tg::Comm::CommLooper(Comm* comm)
 
                         //we'd better remove the socket from the selector
                         comm->EstablishedSelector.remove(*connection->Socket);
-                        delete connection->Socket;
-                        delete connection->SendMutex;
-                        delete connection->RecvMutex;
                         ok = false;
+                        break;
                     }
                 }
                 connection->SendMutex->unlock();
                 if (ok)
                     connection++;
                 else{
+                    delete connection->Socket;
+                    delete connection->SendMutex;
+                    delete connection->RecvMutex;
                     connection = comm->Established.erase(connection);
                 }
                 

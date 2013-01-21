@@ -179,6 +179,17 @@ namespace tg
             }
         }
 
+        std::vector<sf::Vector2f> &  getGenerator(int team)
+        {
+            if (team == 1)
+            {
+                return team1GenPos;
+            }else// if (team == 2)
+            {
+                return team2GenPos;
+            }
+        }
+
         sf::Uint32 getMapHorizTileNum(){
             return horizTileNum;
         }

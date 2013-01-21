@@ -25,7 +25,7 @@ namespace tg
         ArenaManager            arenaMan;
         AssetManager            assetMan;
         sf::RenderWindow        window;//don't know what's going to happen to this...
-        
+
         sf::Uint32 myCID;
         sf::Uint32 mySlot;
         sf::Uint32 myTeam;

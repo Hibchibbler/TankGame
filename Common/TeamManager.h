@@ -2,6 +2,7 @@
 #define TeamManager_h_
 
 #include "Team.h"
+#include "Images.h"
 #include <iostream>
 #include <vector>
 namespace tg
@@ -121,6 +122,7 @@ namespace tg
         }
     //private:
         std::vector<Team> teams;
+        std::list<Explosion> explosions;
     };
 };
 
