@@ -1,7 +1,7 @@
 TankGame - Redux
 ================
 Explosion Generator - Awesome...
-![logo](http://www.positech.co.uk/content/explosion/explosiongenerator.html)
+http://www.positech.co.uk/content/explosion/explosiongenerator.html
 
 Start Screen
 ![logo](https://raw.github.com/Hibchibbler/TankGame/master/Screenshots/StartScreenShot_2.png?login=Hibchibbler&token=fde09ec171da6186f4f5384a4eb0d1d8)
