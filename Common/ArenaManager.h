@@ -47,6 +47,18 @@ namespace tg
         std::string name;
     };
 
+    struct TileType{
+        enum tt{
+            Wall,
+            Floor1,
+            Floor2,
+            Base1,
+            Base2,
+            Generator1,
+            Generator2
+        };
+    };
+
     class AssetManager;
     class ArenaManager
     {
@@ -60,69 +72,48 @@ namespace tg
                 fin.read((char*)&horizTileNum, 4);
                 fin.read((char*)&vertTileNum, 4);
 
-                //Now populate arena vector
-                //Although we intend to display a grid
-                //the sprites are laid out in contiguous memory.
-                //So, we have index, row, and %, helping us translate
-                //index to x&y
+                //Each consecutive uint32 is a tile id
                 int index = 0;
                 int row = 0;
                 arenaData.reserve(horizTileNum*vertTileNum);
                 while (!fin.eof()){
-                    if (index == horizTileNum*vertTileNum){
-                        int a = 42;
-                    }
 
                     sf::Uint32 id;
                     fin.read((char*)&id, 4);
                     arenaData.push_back(Tile());
                     arenaData[index].setId(id);
 
-                    //The name is used by the doDraw routines.
-                    // to get the correct asset, which uses a dictionary by name.
-                    std::string name;
                     sf::Vector2f pos;
-                    pos.x = (index % horizTileNum) * ARENAMAN_TILE_WIDTH;
-                    pos.y = row * ARENAMAN_TILE_HEIGHT;
+                    pos.x = (float)((index % horizTileNum) * ARENAMAN_TILE_WIDTH);
+                    pos.y = (float)((index / horizTileNum) * ARENAMAN_TILE_HEIGHT);
                     
                     arenaData[index].setPosition(pos);
                     switch (id){
-                    case 0:
-                        name = "Floor1";
+                    case TileType::Wall:
                         break;
-                    case 1:
-                        name = "Floor2";
+                    case TileType::Floor1:
                         break;
-                    case 2:
-                        name = "Floor3";
+                    case TileType::Floor2:
                         break;
-                    case 3:
-                        name = "Team1Garage";
+                    case TileType::Base1:
                         team1BasePos = pos;
                         team1BasePos.x += 62;
                         team1BasePos.y += 62;
                         break;
-                    case 4:
-                        name = "Team2Garage";
+                    case TileType::Base2:
                         team2BasePos = pos;
                         team2BasePos.x += 62;
                         team2BasePos.y += 62;
                         break;
-                    case 5:
-                        name = "Team1Generator";
+                    case TileType::Generator1:
                         team1GenPos.push_back(pos);
                         break;
-                    case 6:
-                        name = "Team2Generator";
+                    case TileType::Generator2:
                         team2GenPos.push_back(pos);
                         break;
                     }
-                    arenaData[index].setName(name);
 
                     index++;
-
-                    if (index % horizTileNum == 0)
-                        row++;
 
                 }
             }else{
@@ -132,7 +123,7 @@ namespace tg
             return 0;
         }
 
-        bool indexToRC(int index, int & r, int & c)
+        /*bool indexToRC(int index, int & r, int & c)
         {
             sf::Vector2f pos;
 
@@ -148,13 +139,13 @@ namespace tg
         {
             index = (pos.x / horizTileNum) * (pos.y / vertTileNum);
             return true;
-        }
+        }*/
 
         sf::Uint32 setSprites(AssetManager & am, int screenWidth, int screenHeight);
         sf::Vector2f getStartPosition(int team){
             if (team == 1){
                 return team1BasePos;
-            }else if (team == 2){
+            }else{// if (team == 2){
                 return team2BasePos;
             }
         }

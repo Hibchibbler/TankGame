@@ -8,6 +8,38 @@
 
 namespace tg
 {
+    struct ImageType{
+        enum siat{
+            Projectile1,
+            ProjectileShadow,
+            ProjectileHealRay,
+            ProjectileDeathRay,
+            FloorWall1,
+            Floor1,
+            Floor2,
+            FloorBase1,
+            FloorBase2,
+            FloorGenerator1,
+            FloorGenerator2,
+            FloorTiles,
+            Minion1,
+            Minion2,
+            Dash1,
+            Explosion1,
+            Explosion2,
+            MAX_IT
+        };
+    };
+
+    struct TankImageType{
+        enum miat{
+            TankBlue,
+            TankRed,
+            TankShadow,
+            MAX_TIT
+        };
+    };
+
     class AssetManager
     {
     public:
@@ -16,22 +48,22 @@ namespace tg
         int load();
 
         sf::Font & getFont();
-        TankImage & getTankImage(std::string name);
-        FloorImage & getFloorImage(int i);
-        ProjectileImage & getProjectileImage(std::string name);
-        MinionImage & getMinionImage(std::string name);
-        Image & getDashboardImage();
-        Image & getTankDeathExplosionImage();
-        Image & getTankHitExplosionImage();
+        TankImage & getTankImage(int i);
+        Image & getImage(int i);
+        
     private:
         sf::Font font;
-        std::map<std::string, TankImage> tankImages;
+        /*std::map<std::string, TankImage> tankImages;
         std::vector<FloorImage> floorImages;
         std::map<std::string, ProjectileImage> projectileImages;
         std::map<std::string, MinionImage> minionImages;
         Image tankDeathExplosionImage;
         Image tankHitExplosionImage;
-        Image dashboardImage;
+        Image dashboardImage;*/
+
+
+        Image single_images[ImageType::MAX_IT];
+        TankImage tank_images[TankImageType::MAX_TIT];
         
     };
 };

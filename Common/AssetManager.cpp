@@ -34,138 +34,86 @@ int AssetManager::load(){
     Minion2
     */
     font.loadFromFile("Assets\\digital-7mono.ttf");
+    
     //Load Tanks
-    TankImage ti;
-    ti.load("Assets\\BlueTankBody.png", "Assets\\BlueTankTurret.png");
-    ti.btex->setSmooth(true);
-    ti.ttex->setSmooth(true);
-    tankImages["BlueTank"] = ti;//.push_back(ti);
+    tank_images[TankImageType::TankBlue].load("Assets\\BlueTankBody.png", "Assets\\BlueTankTurret.png");// = ti;
     LogFile::get()->log(0,0,"Loaded blue tank");
-
-    ti.load("Assets\\RedTankBody.png", "Assets\\RedTankTurret.png");
-    tankImages["RedTank"] = ti;//.push_back(ti);
+    
+    tank_images[TankImageType::TankRed].load("Assets\\RedTankBody.png", "Assets\\RedTankTurret.png");// = ti;
     LogFile::get()->log(0,0,"Loaded red tank");
-
-     ti.load("Assets\\GreenTankBody.png", "Assets\\GreenTankTurret.png");
-    tankImages["GreenTank"] = ti;//.push_back(ti);
-    LogFile::get()->log(0,0,"Loaded green tank");
-
-    ti.load("Assets\\YellowTankBody.png", "Assets\\YellowTankTurret.png");
-    tankImages["YellowTank"] = ti;//.push_back(ti);
-    LogFile::get()->log(0,0,"Loaded yellow tank");
-
-    ti.load("Assets\\ShadowTankBody.png", "Assets\\ShadowTankTurret.png");
-    tankImages["ShadowTank"] = ti;//.push_back(ti);
+    
+    tank_images[TankImageType::TankShadow].load("Assets\\ShadowTankBody.png", "Assets\\ShadowTankTurret.png");
     LogFile::get()->log(0,0,"Loaded Shadow tank");
 
     //Load projectiles
-    ProjectileImage pi;
-    pi.load("Assets\\projectile.png");
-    projectileImages["Projectile"] = pi;//.push_back(pi);
+    single_images[ImageType::Projectile1].load("Assets\\projectile.png");
     LogFile::get()->log(0,0,"Loaded projectile");
 
-    pi.load("Assets\\projectileShadow.png");
-    projectileImages["ProjectileShadow"] = pi;//.push_back(pi);
+    single_images[ImageType::ProjectileShadow].load("Assets\\projectileShadow.png");
     LogFile::get()->log(0,0,"Loaded projectile shadow");
 
-    ProjectileImage pi2;
-    pi2.load("Assets\\baselaser1.png");
-    projectileImages["BaseLaser"] = pi2;//.push_back(pi);
+    single_images[ImageType::ProjectileDeathRay].load("Assets\\baselaser1.png");
     LogFile::get()->log(0,0,"Loaded Base Laser");
 
-    ProjectileImage pi3;
-    pi3.load("Assets\\heallaser.png");
-    projectileImages["HealLaser"] = pi3;//.push_back(pi);
+    single_images[ImageType::ProjectileHealRay].load("Assets\\heallaser.png");
     LogFile::get()->log(0,0,"Loaded Heal Laser");
 
     //Load floor tiles
-    FloorImage fi;
-    fi.load("Assets\\floor1.png");
-    floorImages.push_back(fi);
+    single_images[ImageType::FloorWall1].load("Assets\\floor1.png");
     LogFile::get()->log(0,0,"Loaded floor1");//0
 
-    fi.load("Assets\\floor2.png");
-    floorImages.push_back(fi);
+    single_images[ImageType::Floor1].load("Assets\\floor2.png");
     LogFile::get()->log(0,0,"Loaded floor2");//1
 
-    fi.load("Assets\\floor3.png");
-    floorImages.push_back(fi);
+    single_images[ImageType::Floor2].load("Assets\\floor3.png");
     LogFile::get()->log(0,0,"Loaded floor3");//2
 
-    fi.load("Assets\\team1Garage.png");
-    floorImages.push_back(fi);
+    single_images[ImageType::FloorBase1].load("Assets\\team1Garage.png");
     LogFile::get()->log(0,0,"Loaded team1Garage");//3
 
-    fi.load("Assets\\team2Garage.png");
-    floorImages.push_back(fi);
+    single_images[ImageType::FloorBase2].load("Assets\\team2Garage.png");
     LogFile::get()->log(0,0,"Loaded team2Garage");//4
 
-    fi.load("Assets\\team1Generator.png");
-    floorImages.push_back(fi);
+    single_images[ImageType::FloorGenerator1].load("Assets\\team1Generator.png");
     LogFile::get()->log(0,0,"Loaded team1Generator");//5
 
-    fi.load("Assets\\team2Generator.png");
-    floorImages.push_back(fi);
+    single_images[ImageType::FloorGenerator2].load("Assets\\team2Generator.png");
     LogFile::get()->log(0,0,"Loaded team2Generator");//6
 
+    single_images[ImageType::FloorTiles].load("Assets\\FloorTiles.png");
+
     //load minions
-    MinionImage mi;
-    mi.load("Assets\\minion1.png");
-    minionImages["Minion1"] = mi;//.push_back(mi);
+    single_images[ImageType::Minion1].load("Assets\\minion1.png");
     LogFile::get()->log(0,0,"Loaded minion1");
 
-    mi.load("Assets\\minion2.png");
-    minionImages["Minion2"] = mi;//.push_back(mi);
+    single_images[ImageType::Minion2].load("Assets\\minion2.png");
     LogFile::get()->log(0,0,"Loaded minion2");
 
-
-    
-    dashboardImage.load("Assets\\dashboard1.png");
+    single_images[ImageType::Dash1].load("Assets\\dashboard1.png");
     LogFile::get()->log(0,0,"Loaded dashboard1");
 
+    single_images[ImageType::Explosion1].load("Assets\\explosion2.png");
+    LogFile::get()->log(0,0,"Loaded explosion1");
 
-    //tankExplosionImage.load("Assets\\tank_explosion2.png");
-    tankDeathExplosionImage.load("Assets\\explosion2.png");
-    tankHitExplosionImage.load("Assets\\explosion3.png");
+    single_images[ImageType::Explosion2].load("Assets\\explosion3.png");
+    LogFile::get()->log(0,0,"Loaded explosion2");
 
     return 0;
 }
 
-Image & AssetManager::getTankDeathExplosionImage()
+TankImage & AssetManager::getTankImage(int i)
 {
-    return tankDeathExplosionImage;
+    return tank_images[i];
+}
+Image & AssetManager::getImage(int i)
+{
+    return single_images[i];
 }
 
-Image & AssetManager::getTankHitExplosionImage()
-{
-    return tankHitExplosionImage;
-}
-
-
-TankImage & AssetManager::getTankImage(std::string name)
-{
-    return tankImages[name];
-}
-FloorImage & AssetManager::getFloorImage(int i)
-{
-    return floorImages[i];
-}
-ProjectileImage & AssetManager::getProjectileImage(std::string name)
-{
-    return projectileImages[name];
-}
-MinionImage & AssetManager::getMinionImage(std::string name)
-{
-    return minionImages[name];
-}
 
 sf::Font & AssetManager::getFont()
 {
     return font;
 }
 
-Image & AssetManager::getDashboardImage()
-{
-    return dashboardImage;
-}
 

@@ -54,23 +54,26 @@ namespace tg
 
         std::vector<sf::Vector2f> posTrack;
         
-        float timeCurUpdate;
-        float timePrevUpdate;
         bool hasRxStateOfUnion;
         bool hasFocus;
 
         bool showShadow;
 
-        std::list<Explosion> explosionsTankDeath;
-        std::list<Explosion> explosionsTankHit;
-        std::list<Explosion> explosionsCreepDeath;
-        std::list<Explosion> explosionsCreepHit;
-        std::list<Explosion> explosionsGeneratorDeath;
-        std::list<Explosion> explosionsGeneratorHit;
-        std::list<Explosion> explosionsBaseDeath;
-        std::list<Explosion> explosionsBaseHit;
 
         std::list<Explosion> explosions;
+
+        sf::Sprite arenaSprite;
+        sf::RenderTexture arenaTexture;
+
+        sf::Sprite entitiesSprite;
+        sf::RenderTexture entitiesTexture;
+
+        sf::Sprite dashSprite;
+        sf::RenderTexture dashTexture;
+
+
+        std::vector<sf::Sprite> floor;
+        bool firstRun;
     };
 };
 

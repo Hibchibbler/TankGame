@@ -135,7 +135,9 @@ sf::Uint32 GameClient::doInit()
     arenaMan.load("Assets\\map5.txt");
     teamMan.load();
     //sf::VideoMode::getFullscreenModes().front().
-    window.create(sf::VideoMode(scrWidth, scrHeight,32),"Client");//(sf::VideoMode(800,600,32),  "TankGame Client",sf::Style::Fullscreen );
+    
+
+    window.create(sf::VideoMode(scrWidth, scrHeight, 32), "Mega Blaster Tank Game", sf::Style::Fullscreen);//(sf::VideoMode(scrWidth, scrHeight,32),"Client");//(sf::VideoMode(800,600,32),  "TankGame Client",sf::Style::Fullscreen );
     
 
     return 0;

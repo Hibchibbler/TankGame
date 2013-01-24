@@ -1,11 +1,16 @@
 #include "GameClient.h"
 #include <SFML/Window.hpp>
 
-#define WINDOW_WIDTH 400
-#define WINDOW_HEIGHT 400
+#define WINDOW_WIDTH 1366
+#define WINDOW_HEIGHT 768
 
 int main()
 {
+    int xres,yres;
+    std::cout << "enter x resolution: ";
+    std::cin >> xres;
+    std::cout << "enter y resolution: ";
+    std::cin >> yres;
     tg::GameClient gameClient(WINDOW_WIDTH,WINDOW_HEIGHT);
     bool done = false;
 

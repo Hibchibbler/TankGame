@@ -150,8 +150,9 @@ bool MeAndMyTank___Bitch(Game & g, Player & player, sf::Uint32 playerTeam, bool 
     if (player.tank.accelerating == AccelerateAction::Forward)
     {
         player.tank.throttle+=2;
-        if (player.tank.throttle > 56)
-            player.tank.throttle = 56;
+        float max = (13+player.tank.power/10.0f > 40 ? 40 : 13+player.tank.power/5.0f);
+        if (player.tank.throttle > max)
+            player.tank.throttle = max;
     }else if (player.tank.accelerating == AccelerateAction::Reverse)
     {
         player.tank.throttle-=2;
@@ -176,7 +177,7 @@ bool MeAndMyTank___Bitch(Game & g, Player & player, sf::Uint32 playerTeam, bool 
     for (auto i = player.prjctls.begin();i != player.prjctls.end();)
     {
         float accTime = clock.getElapsedTime().asSeconds();
-        if ( (i->creationTime + 0.50f)  < accTime )
+        if ( (i->creationTime + 0.56f)  < accTime )
         {
             //Remove projectiles who have run out of power.
             i = player.prjctls.erase(i);
@@ -188,7 +189,7 @@ bool MeAndMyTank___Bitch(Game & g, Player & player, sf::Uint32 playerTeam, bool 
 
             ////Remove projectile that has hit a tank, creep, generator, or base.
             sf::Uint32 damage = (client ? 0 : i->damage);
-            sf::Vector2u sz = g.assetMan.getProjectileImage("Projectile").img->getSize();
+            sf::Vector2u sz = g.assetMan.getImage(ImageType::Projectile1).img.getSize();//getProjectileImage("Projectile").img->getSize();
             sf::Uint32 otherTeam  = (playerTeam==1 ? 2 : 1);
             CollisionResult cr1;
             CollisionResult cr2;
@@ -234,8 +235,7 @@ bool MeAndMyTank___Bitch(Game & g, Player & player, sf::Uint32 playerTeam, bool 
                                                 cr1.slot,
                                                 damage);
                     if (ret == 2){
-                        player.tank.power+=25;
-                        player.tank.maxHealth+=50;
+                        
                     }
                     
                 }
@@ -262,8 +262,7 @@ bool MeAndMyTank___Bitch(Game & g, Player & player, sf::Uint32 playerTeam, bool 
                                                 cr3.slot,
                                                 damage);
                     if (ret == 2){
-                        player.tank.power+=25;
-                        player.tank.maxHealth+=50;
+                        
                     }
               
                 }
@@ -276,8 +275,7 @@ bool MeAndMyTank___Bitch(Game & g, Player & player, sf::Uint32 playerTeam, bool 
                                                 cr4.slot,
                                                 damage);
                     if (ret == 2){
-                        player.tank.power+=25;
-                        player.tank.maxHealth+=50;
+                        
                     }
                 }
                 i = player.prjctls.erase(i);

@@ -17,155 +17,58 @@ namespace tg
     {
     public:
         sf::Uint32 load(std::string bodyFn, std::string turretFn){
-            bimg = new sf::Image();
-            bimg->loadFromFile(bodyFn);
-            bimg->createMaskFromColor(sf::Color::Cyan,0);
-            btex = new sf::Texture();
-            btex->loadFromImage(*bimg);
+            //bimg = new sf::Image();
+            bimg.loadFromFile(bodyFn);
+            bimg.createMaskFromColor(sf::Color::Cyan,0);
+            //btex = new sf::Texture();
+            btex.loadFromImage(bimg);
             
-            timg = new sf::Image();
-            timg->loadFromFile(turretFn);
-            timg->createMaskFromColor(sf::Color::Cyan,0);
-            ttex = new sf::Texture();
-            ttex->loadFromImage(*timg);
+            //timg = new sf::Image();
+            timg.loadFromFile(turretFn);
+            timg.createMaskFromColor(sf::Color::Cyan,0);
+            //ttex = new sf::Texture();
+            ttex.loadFromImage(timg);
+
+            bsprite.setTexture(btex);
+            tsprite.setTexture(ttex);
             return 0;
         }
 
         sf::Uint32 unload(){
-            delete btex;
+           /* delete btex;
             delete bimg;
 
             delete ttex;
-            delete timg;
+            delete timg;*/
             return 0;
         }
 
-        sf::Image* bimg;
-        sf::Texture* btex;
+        sf::Image bimg;
+        sf::Texture btex;
+        sf::Sprite bsprite;
 
-        sf::Image* timg;
-        sf::Texture* ttex;
+        sf::Image timg;
+        sf::Texture ttex;
+        sf::Sprite tsprite;
     };
 
-    class FloorImage
-    {
-    public:
-        int load(std::string fn){
-            img = new sf::Image();
-            img->loadFromFile(fn);
-            img->createMaskFromColor(sf::Color::Cyan,0);
-            tex = new sf::Texture();
-            tex->loadFromImage(*img);
-            return 0;
-        }
-        sf::Image* img;
-        sf::Texture* tex;
-    };
-
-    class ProjectileImage
-    {
-    public:
-        sf::Uint32 load(std::string fn){
-            img = new sf::Image();
-            img->loadFromFile(fn);
-            img->createMaskFromColor(sf::Color::Cyan,0);
-            
-            tex = new sf::Texture();
-            tex->loadFromImage(*img);
-            
-            return 0;
-        }
-        sf::Uint32 unload(){
-            delete tex;
-            delete img;
-        }
-        sf::Image* img;
-        sf::Texture* tex;
-    };
 
     class Image
     {
     public:
         sf::Uint32 load(std::string fn){
-            img = new sf::Image();
-            img->loadFromFile(fn);
-            img->createMaskFromColor(sf::Color::Cyan,0);
-            tex = new sf::Texture();
-            tex->loadFromImage(*img);
+            img.loadFromFile(fn);
+            img.createMaskFromColor(sf::Color::Cyan,0);
+            tex.loadFromImage(img);
+            sprite.setTexture(tex);
             return 0;
         }
         sf::Uint32 unload(){
-            delete tex;
-            delete img;
+
         }
-        sf::Image* img;
-        sf::Texture* tex;
-    };
-
-  
-
-    class MinionImage
-    {
-    public:
-        sf::Uint32 load(std::string fn){
-            img = new sf::Image();
-            img->loadFromFile(fn);
-            img->createMaskFromColor(sf::Color::Cyan,0);
-            tex = new sf::Texture();
-            tex->loadFromImage(*img);
-            return 0;
-        }
-        sf::Image* img;
-        sf::Texture* tex;
-    };
-
-
-    class MinionSprite
-    {
-    public:
+        sf::Image img;
+        sf::Texture tex;
         sf::Sprite sprite;
-    };
-
-    class TankSprite
-    {
-    public:
-        sf::Sprite sprite;
-    };
-
-    class ProjectileSprite
-    {
-    public:
-        sf::Sprite sprite;
-    };
-
-    class FloorSprite
-    {
-    public:
-        FloorSprite(){
-            id = 0;
-        }
-        sf::Uint32 id;
-        sf::Sprite sprite;
-    };
-
-    class ImageAsset
-    {
-    public:
-        sf::Uint32 load(std::string fn){
-            i.loadFromFile(fn);
-            i.createMaskFromColor(sf::Color::Cyan,0);
-            t.loadFromImage(i);
-            return 0;
-        }
-
-        sf::Texture & getTexture(){
-            return t;
-        }
-        sf::Image & getImage(){return i;}
-    private:
-        sf::Image i;
-        sf::Texture t;
-
     };
 
     struct ExplosionType{
@@ -187,11 +90,13 @@ namespace tg
         Explosion(){
             index = 0;
             type = ExplosionType::None;
+            repeat=false;
         }
         sf::Uint32 type;
         sf::Vector2f position;
         sf::Uint32 index;
         sf::Clock rate;
+        bool repeat;
     };
 };
 

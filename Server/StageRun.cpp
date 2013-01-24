@@ -57,19 +57,22 @@ sf::Uint32 StageRun::doRemoteEvent(Game & g,
 
 
 #define CREEP_SPEED 17
-#define CREEP_SPAWN_MS 1400
+#define CREEP_SPAWN_MS 1200
 #define UPDATE_STATE_MS 50
 #define SEND_STATE_MS 100//110
 #define PIXELS_PER_SECOND 10
 #define CREEP_LIFE_S 75.0f
-#define HEAL_LASER_PROXIMAL 500.0f
+#define HEAL_LASER_PROXIMAL 450.0f
 #define DEATH_LASER_PROXIMAL 1100.0f
-#define BASE_LASER_LIFE_S 0.80f
-#define HEAL_LASER_SPEED 65.0f
-#define DEATH_LASER_SPEED 200.0f
+#define HEAL_LASER_LIFE_S 0.65f
+#define DEATH_LASER_LIFE_S 0.80f
+#define HEAL_LASER_SPEED 55.0f
+#define DEATH_LASER_SPEED 125.0f
 #define HEAL_LASER_SPAWN_S 0.07f
-#define DEATH_LASER_SPAWN_S 0.007f
-
+#define DEATH_LASER_SPAWN_S 0.006f
+#define CREEP_TANK_PROXIMAL 800
+#define CREEP_CREEP_PROXIMAL 700
+//BASE_LASER_LIFE_S
 static int RANDOM_LAG =0;
 //STATE_OF_UNION_MS
 sf::Uint32 StageRun::doLoop(Game & g)
@@ -167,8 +170,8 @@ sf::Uint32 StageRun::doLoop(Game & g)
                         g.teamMan.teams[y].gen[gi].prjctls.back().velocity.x = -DEATH_LASER_SPEED*mindxOther/mag; 
                         g.teamMan.teams[y].gen[gi].prjctls.back().velocity.y = -DEATH_LASER_SPEED*mindyOther/mag;
 
-                        g.teamMan.teams[y].gen[gi].prjctls.back().position.x = g.arenaMan.getGeneratorPosition(y,gi).x;
-                        g.teamMan.teams[y].gen[gi].prjctls.back().position.y = g.arenaMan.getGeneratorPosition(y,gi).y;
+                        g.teamMan.teams[y].gen[gi].prjctls.back().position.x = g.arenaMan.getGeneratorPosition(y,gi).x+32;
+                        g.teamMan.teams[y].gen[gi].prjctls.back().position.y = g.arenaMan.getGeneratorPosition(y,gi).y+32;
 
                         g.teamMan.teams[y].gen[gi].prjctls.back().angle = atan2(mindyOther,mindxOther)*(180.0f/3.141567f)-90.0f;
 
@@ -177,7 +180,7 @@ sf::Uint32 StageRun::doLoop(Game & g)
                     }
                 }
             }
-            //For each generator laser segment, keep it moving. also, remove expired segments.
+            //For each death laser segment, keep it moving. also, remove expired segments.
              for (int gi=0;gi < 2;gi++)
              {
                 for (auto b = g.teamMan.teams[y].gen[gi].prjctls.begin();b != g.teamMan.teams[y].gen[gi].prjctls.end();)
@@ -185,7 +188,7 @@ sf::Uint32 StageRun::doLoop(Game & g)
                     b->position.x = b->position.x + b->velocity.x*loopTime.asSeconds()*PIXELS_PER_SECOND;
                     b->position.y = b->position.y + b->velocity.y*loopTime.asSeconds()*PIXELS_PER_SECOND;
                     CollisionResult cr1;
-                    sf::Vector2u sz = g.assetMan.getProjectileImage("BaseLaser").img->getSize();
+                    sf::Vector2u sz = g.assetMan.getImage(ImageType::ProjectileHealRay).img.getSize();
                     bool yes1 = isTankCollision(b->position, sf::Vector2f((float)sz.x,(float)sz.y), g.teamMan.teams[otherTeam].players,cr1,otherTeam);
                     if (yes1){
                         int ret = doExplosiveStrike(g.teamMan.explosions,
@@ -196,7 +199,7 @@ sf::Uint32 StageRun::doLoop(Game & g)
                                                 b->damage);
                     }
 
-                    if (yes1 || b->creationTime + BASE_LASER_LIFE_S < accumulatedClock)
+                    if (yes1 || b->creationTime + DEATH_LASER_LIFE_S < accumulatedClock)
                     {
                         b = g.teamMan.teams[y].gen[gi].prjctls.erase(b);
                     }else
@@ -237,7 +240,10 @@ sf::Uint32 StageRun::doLoop(Game & g)
 
                 // If closest ally is closer than BASE_LASER_PROXIMAL
                 // fire at it!
-                if (minIndexUs != -1 && g.teamMan.teams[y].base1.health > 0 && g.teamMan.teams[y].players[minIndexUs].tank.health < g.teamMan.teams[y].players[minIndexUs].tank.maxHealth && minDistUs <= HEAL_LASER_PROXIMAL)
+                if (minIndexUs != -1 && 
+                    g.teamMan.teams[y].base1.health > 0 && 
+                    g.teamMan.teams[y].players[minIndexUs].tank.health < g.teamMan.teams[y].players[minIndexUs].tank.maxHealth && 
+                    minDistUs <= HEAL_LASER_PROXIMAL)
                 {
                     g.teamMan.teams[y].base1.prjctls.push_back(Projectile());
                     
@@ -261,7 +267,7 @@ sf::Uint32 StageRun::doLoop(Game & g)
                 b->position.x = b->position.x + b->velocity.x*loopTime.asSeconds()*PIXELS_PER_SECOND;
                 b->position.y = b->position.y + b->velocity.y*loopTime.asSeconds()*PIXELS_PER_SECOND;
                 CollisionResult cr;
-                sf::Vector2u sz = g.assetMan.getProjectileImage("HealLaser").img->getSize();
+                sf::Vector2u sz = g.assetMan.getImage(ImageType::ProjectileHealRay).img.getSize();
                 
                 bool yes1 = isTankCollision(b->position, sf::Vector2f((float)sz.x,(float)sz.y), g.teamMan.teams[y].players,cr,y);
                 if (yes1){
@@ -269,7 +275,7 @@ sf::Uint32 StageRun::doLoop(Game & g)
                     g.teamMan.teams[y].players[cr.slot].tank.health += b->damage;
                     ////////
                 }
-                if (yes1 || b->creationTime + BASE_LASER_LIFE_S < accumulatedClock)
+                if (yes1 || b->creationTime + HEAL_LASER_LIFE_S < accumulatedClock)
                 {
                     b = g.teamMan.teams[y].base1.prjctls.erase(b);
                 }else
@@ -329,6 +335,8 @@ sf::Uint32 StageRun::doLoop(Game & g)
                 c->position.x = c->position.x + c->velocity.x * loopTime.asSeconds()*PIXELS_PER_SECOND;
                 c->position.y = c->position.y + c->velocity.y * loopTime.asSeconds()*PIXELS_PER_SECOND;
 
+                //If creep is near opponent tank, or opponent creep..
+                //go towards it.
                 int teami = (y==1?2:1);
                 for (auto tanki = 0;tanki < g.teamMan.teams[teami].players.size();tanki++)
                 {
@@ -339,7 +347,7 @@ sf::Uint32 StageRun::doLoop(Game & g)
                         float dy = c->position.y - g.teamMan.teams[teami].players[tanki].tank.position.y;
                     
                     
-                        if (sqrt(dx*dx+dy*dy) < 700)
+                        if (sqrt(dx*dx+dy*dy) < CREEP_TANK_PROXIMAL)
                         {
                             float ang =  atan2(dy,dx) / 0.0174531f;
                             c->angle = ang+90.0f;
@@ -350,10 +358,24 @@ sf::Uint32 StageRun::doLoop(Game & g)
                     }
                     
                 }
+                for (auto creepi = 0;creepi < g.teamMan.teams[teami].creep.size();creepi++)
+                {
+                    //sf::FloatRect tankR(g.teamMan.teams[teami].players[tanki].tank.position,
+                    float dx = c->position.x - g.teamMan.teams[teami].creep[creepi].position.x;
+                    float dy = c->position.y - g.teamMan.teams[teami].creep[creepi].position.y;
+                    
+                    if (sqrt(dx*dx+dy*dy) < CREEP_CREEP_PROXIMAL)
+                    {
+                        float ang =  atan2(dy,dx) / 0.0174531f;
+                        c->angle = ang+90.0f;
+                        c->velocity.x = -CREEP_SPEED*cos(ang * (0.0174531f));
+                        c->velocity.y = -CREEP_SPEED*sin(ang * (0.0174531f));
+                    }
+                }
 
                 ////Remove creep that is hit a tank or another creep
                 CollisionResult cr;
-                sf::Vector2u sz = g.assetMan.getMinionImage("Minion1").img->getSize();
+                sf::Vector2u sz = g.assetMan.getImage(ImageType::Minion1).img.getSize();
                 
                 bool yes1 = isTankCollision(c->position, 
                                             sf::Vector2f((float)sz.x,(float)sz.y),
