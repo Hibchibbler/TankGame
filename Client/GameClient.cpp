@@ -136,8 +136,14 @@ sf::Uint32 GameClient::doInit()
     teamMan.load();
     //sf::VideoMode::getFullscreenModes().front().
     
+    char fs;
+    std::cout << "Fullscreen? (y or n):" ;
+    std::cin >> fs;
 
-    window.create(sf::VideoMode(scrWidth, scrHeight, 32), "Mega Blaster Tank Game", sf::Style::Fullscreen);//(sf::VideoMode(scrWidth, scrHeight,32),"Client");//(sf::VideoMode(800,600,32),  "TankGame Client",sf::Style::Fullscreen );
+    if (fs =='y')
+        window.create(sf::VideoMode(scrWidth, scrHeight, 32), "Mega Blaster Tank Game", sf::Style::Fullscreen);
+    else
+        window.create(sf::VideoMode(scrWidth, scrHeight, 32), "Mega Blaster Tank Game");
     
 
     return 0;

@@ -7,6 +7,17 @@
 #include "Dashboard.h"
 namespace tg
 {
+    struct TextureSubInfo{
+        TextureSubInfo(sf::Vector2f p, sf::IntRect r, float a){
+            position = p;
+            rect     = r;
+            angle    = a;
+        }
+        sf::Vector2f position;
+        sf::IntRect rect;
+        float angle;
+    };
+
     class StageRun : public GameStage
     {
     public:
@@ -22,6 +33,8 @@ namespace tg
         sf::Uint32 doLocalInput(sf::RenderWindow & window, Game & g);
         sf::Uint32 doDraw(sf::RenderWindow & window, Game & g, sf::Time ft);
     private:
+        sf::Uint32 prepareAssets(Game &g);
+        sf::Uint32 drawAll(sf::RenderWindow & window, Game & g);
         Dashboard dash;
         Player thisPlayer;
         sf::Vector2f targetPosition;
@@ -74,6 +87,13 @@ namespace tg
 
         std::vector<sf::Sprite> floor;
         bool firstRun;
+
+        std::vector<TextureSubInfo> entities;
+        std::vector<TextureSubInfo> explosionsBig;
+        std::vector<TextureSubInfo> explosionsSmall;
+
+        sf::Text statusOverlay;
+
     };
 };
 

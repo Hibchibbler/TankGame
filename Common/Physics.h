@@ -189,7 +189,7 @@ bool MeAndMyTank___Bitch(Game & g, Player & player, sf::Uint32 playerTeam, bool 
 
             ////Remove projectile that has hit a tank, creep, generator, or base.
             sf::Uint32 damage = (client ? 0 : i->damage);
-            sf::Vector2u sz = g.assetMan.getImage(ImageType::Projectile1).img.getSize();//getProjectileImage("Projectile").img->getSize();
+            sf::Vector2u sz(32,32);// = g.assetMan.getImage(ImageType::Projectile1).img.getSize();//getProjectileImage("Projectile").img->getSize();
             sf::Uint32 otherTeam  = (playerTeam==1 ? 2 : 1);
             CollisionResult cr1;
             CollisionResult cr2;

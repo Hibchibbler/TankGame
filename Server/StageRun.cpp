@@ -57,7 +57,7 @@ sf::Uint32 StageRun::doRemoteEvent(Game & g,
 
 
 #define CREEP_SPEED 17
-#define CREEP_SPAWN_MS 1200
+#define CREEP_SPAWN_MS 900
 #define UPDATE_STATE_MS 50
 #define SEND_STATE_MS 100//110
 #define PIXELS_PER_SECOND 10
@@ -188,7 +188,7 @@ sf::Uint32 StageRun::doLoop(Game & g)
                     b->position.x = b->position.x + b->velocity.x*loopTime.asSeconds()*PIXELS_PER_SECOND;
                     b->position.y = b->position.y + b->velocity.y*loopTime.asSeconds()*PIXELS_PER_SECOND;
                     CollisionResult cr1;
-                    sf::Vector2u sz = g.assetMan.getImage(ImageType::ProjectileHealRay).img.getSize();
+                    sf::Vector2u sz(32,32); //= g.assetMan.getImage(ImageType::ProjectileHealRay).img.getSize();
                     bool yes1 = isTankCollision(b->position, sf::Vector2f((float)sz.x,(float)sz.y), g.teamMan.teams[otherTeam].players,cr1,otherTeam);
                     if (yes1){
                         int ret = doExplosiveStrike(g.teamMan.explosions,
@@ -267,7 +267,7 @@ sf::Uint32 StageRun::doLoop(Game & g)
                 b->position.x = b->position.x + b->velocity.x*loopTime.asSeconds()*PIXELS_PER_SECOND;
                 b->position.y = b->position.y + b->velocity.y*loopTime.asSeconds()*PIXELS_PER_SECOND;
                 CollisionResult cr;
-                sf::Vector2u sz = g.assetMan.getImage(ImageType::ProjectileHealRay).img.getSize();
+                sf::Vector2u sz(32,32) ;//= g.assetMan.getImage(ImageType::ProjectileHealRay).img.getSize();
                 
                 bool yes1 = isTankCollision(b->position, sf::Vector2f((float)sz.x,(float)sz.y), g.teamMan.teams[y].players,cr,y);
                 if (yes1){
@@ -375,7 +375,7 @@ sf::Uint32 StageRun::doLoop(Game & g)
 
                 ////Remove creep that is hit a tank or another creep
                 CollisionResult cr;
-                sf::Vector2u sz = g.assetMan.getImage(ImageType::Minion1).img.getSize();
+                sf::Vector2u sz(32,32);// = g.assetMan.getImage(ImageType::Minion1).img.getSize();
                 
                 bool yes1 = isTankCollision(c->position, 
                                             sf::Vector2f((float)sz.x,(float)sz.y),

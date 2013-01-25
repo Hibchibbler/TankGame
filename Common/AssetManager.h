@@ -21,22 +21,18 @@ namespace tg
             FloorBase2,
             FloorGenerator1,
             FloorGenerator2,
-            FloorTiles,
             Minion1,
             Minion2,
             Dash1,
             Explosion1,
             Explosion2,
-            MAX_IT
-        };
-    };
-
-    struct TankImageType{
-        enum miat{
             TankBlue,
             TankRed,
             TankShadow,
-            MAX_TIT
+            TurretBlue,
+            TurretRed,
+            TurretShadow,
+            MAX_IT
         };
     };
 
@@ -48,8 +44,10 @@ namespace tg
         int load();
 
         sf::Font & getFont();
-        TankImage & getTankImage(int i);
-        Image & getImage(int i);
+        //TankImage & getTankImage(int i);
+        //Image & getImage(int i);
+
+        sf::Sprite & getSprite(int i);
         
     private:
         sf::Font font;
@@ -62,8 +60,11 @@ namespace tg
         Image dashboardImage;*/
 
 
-        Image single_images[ImageType::MAX_IT];
-        TankImage tank_images[TankImageType::MAX_TIT];
+        //Image single_images[ImageType::MAX_IT];
+        Image spriteSheet;
+        Image smallExplosionSheet;
+        Image bigExplosionSheet;
+        //TankImage tank_images[TankImageType::MAX_TIT];
         
     };
 };

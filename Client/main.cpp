@@ -11,7 +11,7 @@ int main()
     std::cin >> xres;
     std::cout << "enter y resolution: ";
     std::cin >> yres;
-    tg::GameClient gameClient(WINDOW_WIDTH,WINDOW_HEIGHT);
+    tg::GameClient gameClient(xres,yres);
     bool done = false;
 
     gameClient.doInit();
