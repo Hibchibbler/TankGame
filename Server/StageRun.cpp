@@ -57,7 +57,7 @@ sf::Uint32 StageRun::doRemoteEvent(Game & g,
 
 
 #define CREEP_SPEED 17
-#define CREEP_SPAWN_MS 900
+#define CREEP_SPAWN_MS 1200
 #define UPDATE_STATE_MS 50
 #define SEND_STATE_MS 100//110
 #define PIXELS_PER_SECOND 10
