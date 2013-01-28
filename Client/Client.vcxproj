@@ -53,7 +53,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>SFGUI_STATIC;SFML_STATIC;WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>C:\SFML\LaurentGomila-SFML-2.0-rc-95-g4c04a0c\LaurentGomila-SFML-4c04a0c\include;C:\SFML\SFGUI\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
@@ -75,6 +75,7 @@
       <PreprocessorDefinitions>SFGUI_STATIC;SFML_STATIC;WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <AdditionalIncludeDirectories>C:\SFML\LaurentGomila-SFML-2.0-rc-95-g4c04a0c\LaurentGomila-SFML-4c04a0c\include;C:\SFML\SFGUI\include</AdditionalIncludeDirectories>
+      <FloatingPointModel>Precise</FloatingPointModel>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -101,7 +102,6 @@
     <ClInclude Include="StageLobby.h" />
     <ClInclude Include="StageRun.h" />
     <ClInclude Include="StageStart.h" />
-    <ClInclude Include="TextBox.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

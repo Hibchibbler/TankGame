@@ -36,6 +36,7 @@ namespace tg
         sf::Uint32 scrHeight;
 
         sfg::SFGUI sfGui;
+        sfg::Desktop desk;
     };
 
 };

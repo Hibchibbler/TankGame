@@ -42,7 +42,7 @@ namespace tg
 
         Element getSummary(sf::Uint16 i);
         void setInput(Element e, sf::Uint16 i);
-        
+        Game & getOwner();
     protected:
         void setSummary(Element e, sf::Uint16 i);
         Element getInput(sf::Uint16 i);

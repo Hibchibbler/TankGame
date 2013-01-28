@@ -104,7 +104,8 @@ sf::Uint32 GameClient::doLocalEvents()
             scrHeight = wevent.size.height;
         }else if (wevent.type == sf::Event::Closed)
         {
-
+            window.close();
+            return 1;
         }
     }
 
@@ -116,35 +117,51 @@ sf::Uint32 GameClient::doLocalEvents()
 sf::Uint32 GameClient::doInit()
 {
     //Initialize Start Stage
-    curStage = &stageStart;
-    curStage->doInit(*this);
+    //curStage = &stageStart;
+    //curStage->doInit(*this);
 
     //Initialize Lobby Stage
-    curStage = &stageLobby;
-    curStage->doInit(*this);
+    //curStage = &stageLobby;
+    //curStage->doInit(*this);
 
     //Initialize Run Stage
-    curStage = &stageRun;
-    curStage->doInit(*this);
+    //curStage = &stageRun;
+    //curStage->doInit(*this);
 
     //Set the start stage..
     curStage = &stageStart;
-
+    curStage->doInit(*this);
 
     assetMan.load();
-    arenaMan.load("Assets\\map5.txt");
+    arenaMan.load("Assets\\map7.txt");
     teamMan.load();
-    //sf::VideoMode::getFullscreenModes().front().
-    
-    char fs;
-    std::cout << "Fullscreen? (y or n):" ;
-    std::cin >> fs;
+   
 
-    if (fs =='y')
-        window.create(sf::VideoMode(scrWidth, scrHeight, 32), "Mega Blaster Tank Game", sf::Style::Fullscreen);
-    else
-        window.create(sf::VideoMode(scrWidth, scrHeight, 32), "Mega Blaster Tank Game");
-    
+    //std::string name;
+    //std::string address;
+    //std::string port;
+    //int resIndex;
+
+    ////Load Start Menu settings from a simple text file
+    //std::ifstream fin;
+    //fin.open( "client_stage_start.txt" ); 
+    //if (fin.is_open())
+    //{
+    //    std::cout << "Read from client_stage_start.txt" << std::endl;
+    //    fin >> name;
+    //    fin >> address;
+    //    fin >> port;
+    //    fin >> resIndex;
+    //}
+
+    //if (resIndex != -1)
+    //{
+    //    std::vector<sf::VideoMode> modes = sf::VideoMode::getFullscreenModes();
+    //    window.create(modes[resIndex], "Mega Blaster Tank Game", sf::Style::Fullscreen);
+    //}else
+    //{
+        window.create(sf::VideoMode(800,600,32), "Mega Blaster Tank Game - Resolution Choosing Mode");
+    //}
 
     return 0;
 }
@@ -163,19 +180,28 @@ sf::Uint32 GameClient::doLoop()
                 //Stage Done
                 //Get summary details
                 //transition to next stage;
+                if (stageStart.getSummary(1).a == 0){
 
-                std::cout << "Start summary: " << stageStart.getSummary(1).b << std::endl;
-                std::cout << "               " << stageStart.getSummary(2).b << std::endl;
-                std::cout << "             @ " << stageStart.getSummary(3).a << std::endl;
+                    std::cout << "Start summary: " << stageStart.getSummary(2).b << std::endl;
+                    std::cout << "               " << stageStart.getSummary(3).b << std::endl;
+                    std::cout << "             @ " << stageStart.getSummary(4).a << std::endl;
 
-                myName = stageStart.getSummary(1).b;
-                myServerIp = stageStart.getSummary(2).b;
-                myServerPort = stageStart.getSummary(3).a;
+                    myName = stageStart.getSummary(2).b;
+                    myServerIp = stageStart.getSummary(3).b;
+                    myServerPort = stageStart.getSummary(4).a;
 
-                client.StartClient(myServerPort, sf::IpAddress(myServerIp));
+                    client.StartClient(myServerPort, sf::IpAddress(myServerIp));
 
-                std::cout << "Switching to StageLobby" << std::endl;
-                curStage = &stageLobby;
+                    std::cout << "Switching to StageLobby" << std::endl;
+                    curStage = &stageLobby;
+                    curStage->doInit(curStage->getOwner());
+
+                }else if (stageStart.getSummary(1).a == 1){
+                    std::cout << "Quitting" << std::endl;
+                    window.close();
+                    client.Stop();
+                    return 1;
+                }
                 break;
             default:
                 //stage still running
@@ -185,14 +211,21 @@ sf::Uint32 GameClient::doLoop()
         case 1://stageLobby
             switch (summary){
             case 0x1://Stage Done, transition to next stage;
-                myTeam = curStage->getSummary(1).a;
-                mySlot = curStage->getSummary(2).a;
+                if (stageLobby.getSummary(1).a == 0){
+                    myTeam = curStage->getSummary(2).a;
+                    mySlot = curStage->getSummary(3).a;
 
-                std::cout << myCID << ", " << myTeam << ", " << mySlot << std::endl;
+                    std::cout << myCID << ", " << myTeam << ", " << mySlot << std::endl;
 
-                std::cout << "Switching to StageRun" << std::endl;
-                curStage = &stageRun;
-                
+                    std::cout << "Switching to StageRun" << std::endl;
+                    curStage = &stageRun;
+                    curStage->doInit(curStage->getOwner());
+                }else if (stageLobby.getSummary(1).a == 1){
+                    std::cout << "Quitting" << std::endl;
+                    window.close();
+                    client.Stop();
+                    return 1;
+                }
                 break;
             default:
                 //stage still running
@@ -202,6 +235,15 @@ sf::Uint32 GameClient::doLoop()
         case 2://stageRun
             switch (summary){
             case 0x1://Stage Done, transition to next stage;
+                if (stageRun.getSummary(1).a == 0){
+
+                }else if (stageRun.getSummary(1).a == 1){
+                    std::cout << "Quitting" << std::endl;
+                    window.close();
+                    client.Stop();
+                    return 1;
+                }
+
                 break;
             default:
                 //stage still running

@@ -32,6 +32,8 @@ namespace tg
         sf::Time currentTime;
         sf::Time deltaTime;
         sf::Time loopTime;
+
+        std::vector<sf::Vector2f> obstructionList;
     };
 
 };

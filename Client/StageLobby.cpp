@@ -43,15 +43,12 @@ sf::Uint32 StageLobby::doInit(Game & g)
 
     //joinButton->GetSignal( sfg::Widget::OnLeftClick ).Connect( &StageStart::doJoin, this );
 
-
-    
     mywindow = sfg::Window::Create();
-
     mywindow->SetTitle("Lobby");
     mywindow->SetPosition(sf::Vector2f(100.0f,100.0f));
     mywindow->Add(box);
 
-    desk.Add(mywindow);
+    g.desk.Add(mywindow);
     return 0;
 }
 
@@ -108,7 +105,7 @@ void StageLobby::doJoinTeam2()
 
 sf::Uint32 StageLobby::doWindowEvent(sf::RenderWindow & window, sf::Event & event)
 {
-    desk.HandleEvent(event);
+    g.desk.HandleEvent(event);
     return 0;
 }
 
@@ -155,7 +152,7 @@ sf::Uint32 StageLobby::doRemoteEvent(Game & g,
             //////////////////////
             Element e1;
             e1.a = mySlot;
-            setSummary(e1,2);
+            setSummary(e1,3);
             ///////////////////////
 
             std::cout << "Got IdAck. We're slot " << mySlot <<   std::endl;
@@ -168,10 +165,17 @@ sf::Uint32 StageLobby::doRemoteEvent(Game & g,
             break;
         case MsgId::Start:
             std::cout << "Got Start" << std::endl;
+            mywindow->Show(false);
             ///////////////////////
+            //Tell game that this stage is finished.
+            Element e0;
+            e0.a = 1;
+            setSummary(e0,0);
+
+            //Tell game why this stage is finished - moving to run stage
             Element e1;
-            e1.a = 1;
-            setSummary(e1,0);
+            e1.a = 0;
+            setSummary(e1,1);
             ///////////////////////
             break;
     }
@@ -182,57 +186,63 @@ sf::Uint32 StageLobby::doRemoteEvent(Game & g,
 
 sf::Uint32 StageLobby::doLoop(Game & g)
 {
-    if (deskUpdateClock.getElapsedTime().asSeconds() >= 0.1f)
-        desk.Update(deskUpdateClock.restart().asSeconds());
-    //    //Get myself onto a team...
-    //1. Have to see how many & who are on each team
-    //1.1 send WhoIs
-    //1.2 wait for WhoIsAck
-    //1.2.1 WhoIsAck contains everyone who is connected, and their team association.
-    //2. Tell server my name and team i'd like.
-    //3. The server will respond with an Ack or a Nack.
-    //3.1. if server Ack's, i move myself to my desired team.
-    //3.1.1 and move my Player object to the appropriate team container.
-    //3.2. if server Nack's, i change my name, or desired team. goto 2.
 
-    tg::Team::PlayerIterator & pi = g.teamMan.teams[0].players.begin();        
-    for (;pi != g.teamMan.teams[0].players.end();pi++){
+    if (loopTime.getElapsedTime().asSeconds() > 0.100f)
+    {
+        g.desk.Update(loopTime.getElapsedTime().asSeconds());
+
+        //    //Get myself onto a team...
+        //1. Have to see how many & who are on each team
+        //1.1 send WhoIs
+        //1.2 wait for WhoIsAck
+        //1.2.1 WhoIsAck contains everyone who is connected, and their team association.
+        //2. Tell server my name and team i'd like.
+        //3. The server will respond with an Ack or a Nack.
+        //3.1. if server Ack's, i move myself to my desired team.
+        //3.1.1 and move my Player object to the appropriate team container.
+        //3.2. if server Nack's, i change my name, or desired team. goto 2.
+
+        tg::Team::PlayerIterator & pi = g.teamMan.teams[0].players.begin();        
+        for (;pi != g.teamMan.teams[0].players.end();pi++){
         
-        if (pi->hasHost == false)
-            continue;
+            if (pi->hasHost == false)
+                continue;
 
-        switch (pi->state){
-            case PlayerState::New:
-                //tg::Messages::sendWhoIs(g.client,g.teamMan, pi->connectionId);
-                pi->state = PlayerState::SendingWhoIs;
-                break;
-            case PlayerState::SendingWhoIs:
-                tg::Messages::sendWhoIs(g.client,g.teamMan, pi->connectionId);
-                pi->state = PlayerState::WaitingForWhoIsAck;
-                break;
-            case PlayerState::WaitingForWhoIsAck:
-                //std::cout << ".";//WaitingForWhoIsAck" << std::endl;
-                break;
-            case PlayerState::SendingId:
-            {
-                Element e1;
-                e1.a = g.myTeam;
-                setSummary(e1,1);
+            switch (pi->state){
+                case PlayerState::New:
+                    //tg::Messages::sendWhoIs(g.client,g.teamMan, pi->connectionId);
+                    pi->state = PlayerState::SendingWhoIs;
+                    break;
+                case PlayerState::SendingWhoIs:
+                    tg::Messages::sendWhoIs(g.client,g.teamMan, pi->connectionId);
+                    pi->state = PlayerState::WaitingForWhoIsAck;
+                    break;
+                case PlayerState::WaitingForWhoIsAck:
+                    //std::cout << ".";//WaitingForWhoIsAck" << std::endl;
+                    break;
+                case PlayerState::SendingId:
+                {
+                    Element e1;
+                    e1.a = g.myTeam;
+                    setSummary(e1,2);
 
-                tg::Messages::sendId(g.client, g.teamMan, pi->connectionId, g.myName, g.myTeam);
-                pi->state = PlayerState::WaitingForIdAck;
-                break;
+                    tg::Messages::sendId(g.client, g.teamMan, pi->connectionId, g.myName, g.myTeam);
+                    pi->state = PlayerState::WaitingForIdAck;
+                    break;
+                }
+                case PlayerState::WaitingForIdAck:
+                    std::cout << "," << std::endl;
+                    break;
+                case PlayerState::Ready:
+                    tg::Messages::sendReady(g.client, g.teamMan, pi->connectionId);
+                    pi->state = PlayerState::WaitingForStart;
+                    break;
             }
-            case PlayerState::WaitingForIdAck:
-                std::cout << "," << std::endl;
-                break;
-            case PlayerState::Ready:
-                tg::Messages::sendReady(g.client, g.teamMan, pi->connectionId);
-                pi->state = PlayerState::WaitingForStart;
-                break;
         }
+        loopTime.restart();
+    }else{
+        sf::sleep(sf::seconds(0.0f));
     }
-
     return getSummary(0).a;
 }
 sf::Uint32 StageLobby::doLocalInput(sf::RenderWindow & window, Game & g)
@@ -245,6 +255,7 @@ sf::Uint32 StageLobby::doDraw(sf::RenderWindow &window,Game & g, sf::Time ft)
 {
     window.clear();
     window.resetGLStates();
+    
     g.sfGui.Display(window);
     window.display();
     return 0;

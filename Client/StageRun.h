@@ -5,6 +5,8 @@
 #include "Common\Player.h"
 #include "Common\Images.h"
 #include "Dashboard.h"
+#include <SFGUI/SFGUI.hpp>
+
 namespace tg
 {
     struct TextureSubInfo{
@@ -22,7 +24,7 @@ namespace tg
     {
     public:
         StageRun(Game & g);
-        sf::Uint32 doInit();
+        sf::Uint32 doInit(Game & g);
         sf::Uint32 doRemoteEvent(Game & g,
                                  CommEvent & cevent,
                                  sf::Uint32 connId,
@@ -33,6 +35,10 @@ namespace tg
         sf::Uint32 doLocalInput(sf::RenderWindow & window, Game & g);
         sf::Uint32 doDraw(sf::RenderWindow & window, Game & g, sf::Time ft);
     private:
+        void doQuit();
+        bool showRunMenu;
+        sfg::Window::Ptr mywindow;
+
         sf::Uint32 prepareAssets(Game &g);
         sf::Uint32 drawAll(sf::RenderWindow & window, Game & g);
         Dashboard dash;
@@ -71,7 +77,7 @@ namespace tg
         bool hasFocus;
 
         bool showShadow;
-
+       
 
         std::list<Explosion> explosions;
 
@@ -93,7 +99,8 @@ namespace tg
         std::vector<TextureSubInfo> explosionsSmall;
 
         sf::Text statusOverlay;
-
+        std::vector<sf::Vector2f> obstructionList;
+        
     };
 };
 

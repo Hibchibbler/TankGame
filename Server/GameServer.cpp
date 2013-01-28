@@ -101,7 +101,7 @@ sf::Uint32 GameServer::doInit()
     stageEst.doInit(*this);
     stageRun.doInit(*this);
 
-    arenaMan.load("Assets\\map5.txt");
+    arenaMan.load("Assets\\map7.txt");
     assetMan.load();
     teamMan.load();
     

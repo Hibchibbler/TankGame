@@ -32,12 +32,16 @@ namespace tg
         std::vector<Projectile> prjctls;
     };
 
-
+    //TODO: max of 5 generators.
+    //Add more, and you will have a cryptic crash.
     class Team
     {
     public:
         Team(){
             players.reserve(5);
+            gen.push_back(Generator());
+            gen.push_back(Generator());
+            gen.push_back(Generator());
             gen.push_back(Generator());
             gen.push_back(Generator());
         }

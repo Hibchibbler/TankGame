@@ -85,6 +85,7 @@ namespace tg
     class Comm;
     class TeamManager;
     class Player;
+    class ArenaManager;
 
     class Messages
     {
@@ -102,7 +103,7 @@ namespace tg
         static int sendIdAck(Comm & comm, TeamManager & teamMan, int cid, sf::Uint32 slot);
         static int sendIdNack(Comm & comm, TeamManager & teamMan, int cid);
 
-        static int sendStateOfUnion(Comm & comm, TeamManager & teamMan);
+        static int sendStateOfUnion(Comm & comm, TeamManager & teamMan, ArenaManager & arenaMan);
         static int sendStart(Comm & comm, TeamManager & teamMan, int cid);
 
         static int sendMap(Comm & comm, std::string name, int cid);

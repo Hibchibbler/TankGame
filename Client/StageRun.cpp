@@ -19,11 +19,26 @@ StageRun::StageRun(Game & g)
     zoom = 1.0;
     showShadow = false;
     firstRun = true;
+    showRunMenu = false;
 }
 
-sf::Uint32 StageRun::doInit()
+sf::Uint32 StageRun::doInit(Game & g)
 {
+    //Load HUD
     dash.load();
+
+    //Construct SFGUI menus for later.
+    sfg::Button::Ptr quitButton = sfg::Button::Create("Quit?");
+    quitButton->GetSignal( sfg::Widget::OnLeftClick ).Connect( &StageRun::doQuit, this );
+
+
+    mywindow = sfg::Window::Create();    
+    mywindow->SetTitle("Mega Blaster Runtime Options");
+    mywindow->SetPosition(sf::Vector2f(200.0f,100.0f));
+    mywindow->SetRequisition(sf::Vector2f(200,50));
+    mywindow->Add(quitButton);
+
+    g.desk.Add(mywindow);
     return 0;
 }
 
@@ -112,7 +127,7 @@ sf::Uint32 StageRun::doRemoteEvent(Game & g,
             }
 
             //  Generator Death Laser
-            for  (int gi = 0;gi < 2;gi++)
+            for  (int gi = 0;gi < g.arenaMan.getGeneratorCount(t);gi++)
             {
                 g.teamMan.teams[t].gen[gi].prjctls.clear();
                 cevent.packet >> cc;
@@ -168,22 +183,31 @@ sf::Uint32 StageRun::doWindowEvent(sf::RenderWindow & w,
     }else if (event.type == sf::Event::MouseWheelMoved){
         if (event.mouseWheel.delta  > 0)
             zoom += 0.5;
-        else
+        else{
             zoom -= 0.5;
+            if (zoom < 1)
+                zoom=1;
+
+        }
     }
+
+    g.desk.HandleEvent(event);
+    
     return 0;
 }
 sf::Uint32 StageRun::doLoop(Game & g)
 {
-    if (loopClock.getElapsedTime().asMilliseconds() > 50)
+    if (loopClock.getElapsedTime().asSeconds() > 0.050f)
     {
+        if (showRunMenu){
+            mywindow->Show(true);
+        }
+        g.desk.Update(loopClock.getElapsedTime().asSeconds());
         previousTime = currentTime;
         currentTime = clock.restart();
         deltaTime = currentTime - previousTime;
         frameTime += deltaTime;
         Player & p = g.teamMan.getPlayerBySlot(g.myTeam,g.mySlot);
-    
-        
 
         switch (p.state){
             case PlayerState::Ready:
@@ -191,11 +215,15 @@ sf::Uint32 StageRun::doLoop(Game & g)
                 break;
             case PlayerState::SendingStateOfPlayer:
                 Messages::sendStateOfPlayer(g.client, g.teamMan, g.myCID, g.myTeam, g.mySlot, thisPlayer, attacking);
+                obstructionList = prepareObstructionList(g.arenaMan);
                 p.state = PlayerState::Running;
             case PlayerState::Running:
-                MeAndMyTank___Bitch(g,thisPlayer, g.myTeam, true, frameTime, accumulatingClock);
+                fireProjectile(thisPlayer, accumulatingClock);
+                updateVelocity(thisPlayer, obstructionList, frameTime);
+                updateProjectilCollisions(g,thisPlayer, g.myTeam, obstructionList, true, frameTime, accumulatingClock);
                 break;
         }
+        loopClock.restart();
     }else{
         sf::sleep(sf::seconds(0.0f));
     }
@@ -203,13 +231,17 @@ sf::Uint32 StageRun::doLoop(Game & g)
 }
 sf::Uint32 StageRun::doLocalInput(sf::RenderWindow & window, Game & g)
 {
-    if (inputClock.getElapsedTime().asSeconds() > 0.075f)
+    if (inputClock.getElapsedTime().asSeconds() > 0.100f)
     {
-        //if (!hasFocus)
-        //    return 0;
+        if (!hasFocus)
+            return 0;
 
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::X)){
             showShadow=!showShadow;
+        }
+
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape)){
+            showRunMenu=!showRunMenu;
         }
         //thisPlayer = g.teamMan.teams[g.myTeam].players[g.mySlot];
         //We poll keyboard 
@@ -278,8 +310,6 @@ sf::Uint32 StageRun::doLocalInput(sf::RenderWindow & window, Game & g)
 #define X_CUT_OFF 1792
 #define Y_CUT_OFF 1792
 
-
-
 sf::Uint32 StageRun::doDraw(sf::RenderWindow & window, Game & g, sf::Time ft)
 {
 
@@ -289,28 +319,33 @@ sf::Uint32 StageRun::doDraw(sf::RenderWindow & window, Game & g, sf::Time ft)
         firstRun = false;
     }
 
-
-    if (drawClock.getElapsedTime().asSeconds() > 0.050f)
+    if (drawClock.getElapsedTime().asSeconds() > 0.020f)
     {
+        window.clear();
         drawAll(window, g);
-        drawClock.restart();
+        window.display();
+
+        if (showRunMenu){
+            window.resetGLStates();
+            g.sfGui.Display(window);
+        }
+
         
+        drawClock.restart();
     }else{
         sf::sleep(sf::seconds(0.0f));
     }
     return 0;
 }
 
-
-
 sf::Uint32 StageRun::prepareAssets(Game &g)
 {
     arenaTexture.create(g.arenaMan.getMapHorizTileNum()*125,g.arenaMan.getMapVertTileNum()*125);
     entitiesTexture.create(g.arenaMan.getMapHorizTileNum()*125,g.arenaMan.getMapVertTileNum()*125);
-    dashTexture.create(500,65);
+    dashTexture.create(512,65);
 
     arenaTexture.clear();
-    
+    //arenaTexture.setSmooth(true);
     for (int i = 0;i < g.arenaMan.getMapHorizTileNum()*g.arenaMan.getMapVertTileNum();i++){
         Tile &tile = g.arenaMan.getTile(i);
             
@@ -319,7 +354,7 @@ sf::Uint32 StageRun::prepareAssets(Game &g)
         {*/
             sf::Sprite s = g.assetMan.getSprite(tile.getId()+4);
             s.setPosition(tile.getPosition());
-
+            
             arenaTexture.draw(s);
         /*}*/
     }
@@ -336,10 +371,6 @@ sf::Uint32 StageRun::prepareAssets(Game &g)
 
 sf::Uint32 StageRun::drawAll(sf::RenderWindow & window, Game & g)
 {
-    window.clear();
-        
-            
-
     //Set view on top of this player...smoothly.
     //TODO: move calculations into doLoop
     sf::Vector2f pos = thisPlayer.tank.position;
@@ -352,7 +383,11 @@ sf::Uint32 StageRun::drawAll(sf::RenderWindow & window, Game & g)
     pos.x  = pos.x / 30.0f;
     pos.y  = pos.y / 30.0f;
 
-    arenaView.reset(sf::FloatRect(pos.x-((g.scrWidth)/2.0f),pos.y-((g.scrHeight)/2.0f),g.scrWidth,g.scrHeight));//sf::FloatRect(0,0,g.scrWidth,g.scrHeight));//
+    //TODO: assumes more wide than tall screen.
+    float aspect = (float)g.scrHeight / (float)g.scrWidth;
+    sf::FloatRect fr = sf::FloatRect(pos.x-((g.scrWidth)/2.0f),pos.y-((g.scrHeight)/2.0f),g.scrWidth*aspect,g.scrHeight*aspect);
+    
+    arenaView.reset(fr);
     arenaView.zoom(zoom);
     window.setView(arenaView);
        
@@ -373,8 +408,8 @@ sf::Uint32 StageRun::drawAll(sf::RenderWindow & window, Game & g)
                     sf::Sprite b = g.assetMan.getSprite((y==1 ? ImageType::TankBlue : ImageType::TankRed));//g.assetMan.getTankImage((y==1 ? 0 : 1)).bsprite;
                     sf::Sprite t = g.assetMan.getSprite((y==1 ? ImageType::TurretBlue : ImageType::TurretRed));//g.assetMan.getTankImage((y==1 ? 0 : 1)).tsprite;
 
-                    b.setOrigin(40,61);
-                    t.setOrigin(27,90);
+                    b.setOrigin(37,58);
+                    t.setOrigin(24,40);
 
                     b.setRotation(thisPlayer.tank.bodyAngle-STD_ROTATE_OFFSET);
                     t.setRotation(thisPlayer.tank.turretAngle-STD_ROTATE_OFFSET);
@@ -394,31 +429,6 @@ sf::Uint32 StageRun::drawAll(sf::RenderWindow & window, Game & g)
                         entitiesTexture.draw(p);
                     }
 
-
-
-                    //if (showShadow)
-                    //{
-                    //    //Draw my Tank with last server update
-                    //    sf::Sprite & b = g.assetMan.getTankImage(TankImageType::TankShadow).bsprite;
-                    //    sf::Sprite & t = g.assetMan.getTankImage(TankImageType::TankShadow).tsprite;
-
-                    //    b.setRotation(g.teamMan.teams[y].players[h].tank.bodyAngle-STD_ROTATE_OFFSET);
-                    //    t.setRotation(g.teamMan.teams[y].players[h].tank.turretAngle-STD_ROTATE_OFFSET);
-
-                    //    b.setPosition(g.teamMan.teams[y].players[h].tank.shadowPos);
-                    //    t.setPosition(g.teamMan.teams[y].players[h].tank.shadowPos);
-
-                    //    entitiesTexture.draw(b);
-                    //    entitiesTexture.draw(t);
-
-                    //    for (int k = 0;k < g.teamMan.teams[y].players[h].prjctls.size();k++)
-                    //    {
-                    //        sf::Sprite & prjctl = g.assetMan.getImage(ImageType::ProjectileShadow).sprite;
-                    //        prjctl.setPosition(g.teamMan.teams[y].players[h].prjctls[k].position);
-                    //        entitiesTexture.draw(prjctl);
-                    //    }
-                    //}
-                        
                 }else{
 
                     //Draw other players' tank with last server update
@@ -427,8 +437,8 @@ sf::Uint32 StageRun::drawAll(sf::RenderWindow & window, Game & g)
                     sf::Sprite b = g.assetMan.getSprite((y==1 ? ImageType::TankBlue : ImageType::TankRed));
                     sf::Sprite t = g.assetMan.getSprite((y==1 ? ImageType::TurretBlue : ImageType::TurretRed));
 
-                    b.setOrigin(40,61);
-                    t.setOrigin(27,90);
+                    b.setOrigin(37,58);
+                    t.setOrigin(24,40);
 
                     b.setRotation(g.teamMan.teams[y].players[h].tank.bodyAngle-STD_ROTATE_OFFSET);
                     t.setRotation(g.teamMan.teams[y].players[h].tank.turretAngle-STD_ROTATE_OFFSET);
@@ -477,7 +487,7 @@ sf::Uint32 StageRun::drawAll(sf::RenderWindow & window, Game & g)
         prjctl.setOrigin(32.0f,32.0f);
         for (int y = 1;y < 3;y++)
         {
-            for (int gi = 0;gi < 2;gi++)
+            for (int gi = 0;gi < g.arenaMan.getGeneratorCount(y);gi++)
             {
                 for (int k = 0;k < g.teamMan.teams[y].gen[gi].prjctls.size();k++)
                 {
@@ -507,8 +517,7 @@ sf::Uint32 StageRun::drawAll(sf::RenderWindow & window, Game & g)
     }
 
     //Draw the Dashboard
-    dashView.reset(sf::FloatRect(0,0, g.scrWidth, g.scrHeight));   
-    window.setView(dashView);//set view to dash mode..
+    
     
     dashTexture.clear(sf::Color(0,0,0,0));
 
@@ -538,9 +547,8 @@ sf::Uint32 StageRun::drawAll(sf::RenderWindow & window, Game & g)
         
     dashTexture.display();
     dashSprite.setTexture(dashTexture.getTexture());
-    window.draw(dashSprite);
+
     
-    window.setView(arenaView);//Set view back to normal mode.
 
     //Draw Explosions!!
     {
@@ -608,11 +616,36 @@ sf::Uint32 StageRun::drawAll(sf::RenderWindow & window, Game & g)
             }
         }
     }
-    entitiesTexture.display();        
     entitiesSprite.setTexture(entitiesTexture.getTexture());
+    entitiesTexture.display();        
     window.draw(entitiesSprite);
+    
+    dashView.reset(sf::FloatRect(0,0, g.scrWidth, g.scrHeight));   
+    window.setView(dashView);//set view to dash mode..
+    window.draw(dashSprite);
+    window.setView(arenaView);//Set view back to normal mode.
+    ////MiniMap
+    //sf::View miniMap;
+    //miniMap.reset(sf::FloatRect(0,0, g.scrWidth, g.scrHeight));
+    //miniMap.zoom(zoom);
+    //miniMap.setViewport(sf::FloatRect(0.8,0.8, 0.2,0.2));
+    //window.setView(miniMap);
+    //window.draw(entitiesSprite);
+    ////window.draw(arenaSprite);
 
-    window.display();
     return 0;
+}
+
+void StageRun::doQuit()
+{
+    //Tell Game that this stage is finished
+    Element e0;
+    e0.a = 1;
+    setSummary(e0,0);
+
+    //Tell game why this stage is finished - user quit
+    Element e1;
+    e1.a = 1;
+    setSummary(e1,1);
 }
 

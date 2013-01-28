@@ -88,47 +88,11 @@ sf::Uint32 Dashboard::setDash(Player & player)
     ss.clear();
     ss.str("");
 
-   
-
-
-
     return 0;
 }
 
 sf::Uint32 Dashboard::draw(sf::RenderWindow & window, AssetManager & assetMan, sf::Uint32 width, sf::Uint32 height)
 {
-    /*sf::View oldView;
-    oldView = window.getView();*/
-    /////////////////////////
-    
-    // sf::FloatRect viewPort;
-    //viewPort.left = 0;//-0.36f;
-    //viewPort.top = 0.800f;
-    //viewPort.width = 0.70f;
-    //viewPort.height = 0.6f;
 
-    //dashView.setCenter(0,0);
-    //dashView.setSize(width, height);
-    //dashView.setViewport(viewPort);
-    //window.setView(dashView);
-    
-  /*  backDrop.setTexture(*assetMan.getDashboardImage().tex);
-    backDrop.setPosition(dashPos);
-    
-    healthText.setFont(assetMan.getFont());
-    healthText.scale(healthTextScale);
-    healthText.setPosition(dashPos);
-    
-    speedText.setFont(assetMan.getFont());
-    speedText.scale(speedTextScale);
-    dashPos.y += 20;
-    speedText.setPosition(dashPos);
-    
-    
-    window.draw(backDrop);
-    window.draw(healthText);
-    window.draw(speedText);*/
-    /////////////////////////
-    /*window.setView(oldView);*/
     return 0;
 }

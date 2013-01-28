@@ -2,6 +2,7 @@
 
 #include "Comm.h"
 #include "TeamManager.h"
+#include "ArenaManager.h"
 
 #include <iostream>
 
@@ -115,7 +116,7 @@ int Messages::sendIdNack(Comm & comm,TeamManager & teamMan, int cid)
 }
 
 
-int Messages::sendStateOfUnion(Comm & comm, TeamManager & teamMan)
+int Messages::sendStateOfUnion(Comm & comm, TeamManager & teamMan, ArenaManager & arenaMan)
 {
     //std::cout << "Sent State" << std::endl;
     tg::CommEvent event;
@@ -166,7 +167,7 @@ int Messages::sendStateOfUnion(Comm & comm, TeamManager & teamMan)
             event.packet << y->angle;
         }
         //Generator death Laser
-        for (int gi = 0;gi < 2;gi++)
+        for (int gi = 0;gi < arenaMan.getGeneratorCount(t);gi++)
         {
             event.packet << teamMan.teams[t].gen[gi].prjctls.size();
             for (auto y= teamMan.teams[t].gen[gi].prjctls.begin();y != teamMan.teams[t].gen[gi].prjctls.end();y++)

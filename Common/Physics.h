@@ -6,6 +6,8 @@
 
 using namespace tg;
 
+#define PIXELS_PER_SECOND 10.0f
+
 //What was struck?
 //And, Where was it?
 class CollisionResult
@@ -118,14 +120,8 @@ int doExplosiveStrike(std::list<Explosion> & explosions, sf::Int32 & health, sf:
     return 0;
 }
 
-bool MeAndMyTank___Bitch(Game & g, Player & player, sf::Uint32 playerTeam, bool client, sf::Time frameTime, sf::Clock & clock)
+sf::Uint32 fireProjectile(Player & player, sf::Clock & clock)
 {
-    const float PIXELS_PER_SECOND = 10.0f;
-    //TODO: perhaps do this is little more similarly to the other notes recieved from client
-    player.tank.velocity.x = player.tank.throttle * (float)cos(player.tank.bodyAngle * (0.0174531f));
-    player.tank.velocity.y = player.tank.throttle * (float)sin(player.tank.bodyAngle * (0.0174531f));
-                        
-                        
     if (player.tank.attacking == AttackAction::Attacking)
     {
         player.prjctls.push_back(Projectile());
@@ -146,7 +142,11 @@ bool MeAndMyTank___Bitch(Game & g, Player & player, sf::Uint32 playerTeam, bool 
 
         player.tank.attacking = AttackAction::Idle;
     }
-                       
+    return 0;
+}
+
+sf::Uint32 updateVelocity(Player & player, std::vector<sf::Vector2f> & obstructionList, sf::Time frameTime)
+{
     if (player.tank.accelerating == AccelerateAction::Forward)
     {
         player.tank.throttle+=2;
@@ -170,14 +170,69 @@ bool MeAndMyTank___Bitch(Game & g, Player & player, sf::Uint32 playerTeam, bool 
     if (player.tank.bodyAngle >= 360.0f || player.tank.bodyAngle <= -360.0f ){
         player.tank.bodyAngle = 0;
     }
-                        
+
+    //TODO: HACK: hardcoded arena boundaries based on debug map and a 125px wide floor tile.
+    if (player.tank.position.x + player.tank.velocity.x *  frameTime.asSeconds()*PIXELS_PER_SECOND < (125) ||
+        player.tank.position.x + player.tank.velocity.x *  frameTime.asSeconds()*PIXELS_PER_SECOND > (59*125) )
+    {
+        player.tank.velocity.x = 0;
+    }
+
+    if (player.tank.position.y + player.tank.velocity.y *  frameTime.asSeconds()*PIXELS_PER_SECOND < (125) ||
+        player.tank.position.y + player.tank.velocity.y *  frameTime.asSeconds()*PIXELS_PER_SECOND > (59*125) )
+    {
+        player.tank.velocity.y = 0;
+    }
+
     player.tank.turningBody = TurnAction::Idle;
     player.tank.accelerating = AccelerateAction::Idle;
+
+    player.tank.velocity.x = player.tank.throttle * (float)cos(player.tank.bodyAngle * (0.0174531f));
+    player.tank.velocity.y = player.tank.throttle * (float)sin(player.tank.bodyAngle * (0.0174531f));
+
+    bool intersects = false;
+    for (auto oi = obstructionList.begin();oi != obstructionList.end();oi++)
+    {
+        sf::FloatRect fr(oi->x,oi->y, 125,125);
+        sf::Vector2f p(player.tank.position.x + player.tank.velocity.x *  frameTime.asSeconds()*PIXELS_PER_SECOND,
+                       player.tank.position.y + player.tank.velocity.y *  frameTime.asSeconds()*PIXELS_PER_SECOND);
+        if (fr.contains(p)){
+            intersects = true;
+            break;
+        }
+    }
+    if (!intersects)
+    {
+        player.tank.position.x = player.tank.position.x + player.tank.velocity.x *  frameTime.asSeconds()*PIXELS_PER_SECOND;
+        player.tank.position.y = player.tank.position.y + player.tank.velocity.y *  frameTime.asSeconds()*PIXELS_PER_SECOND;
+    }
+   
+    return 0;
+}
+
+bool updateProjectilCollisions(Game & g, Player & player, sf::Uint32 playerTeam, std::vector<sf::Vector2f> & obstructionList, bool client, sf::Time frameTime, sf::Clock & clock)
+{
+
 
     for (auto i = player.prjctls.begin();i != player.prjctls.end();)
     {
         float accTime = clock.getElapsedTime().asSeconds();
-        if ( (i->creationTime + 0.56f)  < accTime )
+
+        bool intersects = false;
+        for (auto oi = obstructionList.begin();oi != obstructionList.end();oi++)
+        {
+            sf::FloatRect fr(oi->x,oi->y, 125,125);
+            sf::Vector2f p(i->position.x + i->velocity.x *  frameTime.asSeconds()*PIXELS_PER_SECOND,
+                           i->position.y + i->velocity.y *  frameTime.asSeconds()*PIXELS_PER_SECOND);
+            if (fr.contains(p)){
+                intersects = true;
+                break;
+            }
+        }
+        
+
+
+        if (intersects || (i->creationTime + 0.56f)  < accTime )
         {
             //Remove projectiles who have run out of power.
             i = player.prjctls.erase(i);
@@ -234,8 +289,21 @@ bool MeAndMyTank___Bitch(Game & g, Player & player, sf::Uint32 playerTeam, bool 
                                                 cr1.team,
                                                 cr1.slot,
                                                 damage);
-                    if (ret == 2){
-                        
+                    g.teamMan.teams[cr1.team].players[cr1.slot].tank.health -= damage;
+                    if (g.teamMan.teams[cr1.team].players[cr1.slot].tank.health <= 0 )
+                    {//Server must empower player
+                        Explosion exp;
+                        exp.type = ExplosionType::TankDeath;
+                        exp.position = i->position;
+                        exp.index = 0;
+                        g.teamMan.explosions.push_back(exp);
+                    }else if (g.teamMan.teams[cr1.team].players[cr1.slot].tank.health > 0)
+                    {
+                        Explosion exp;
+                        exp.type = ExplosionType::TankHit;
+                        exp.position = i->position;
+                        exp.index = 0;
+                        g.teamMan.explosions.push_back(exp);
                     }
                     
                 }
@@ -286,35 +354,20 @@ bool MeAndMyTank___Bitch(Game & g, Player & player, sf::Uint32 playerTeam, bool 
             }
         }
     }
-
-    //TODO: HACK: hardcoded arena boundaries based on debug map and a 125px wide floor tile.
-    if (player.tank.position.x + player.tank.velocity.x *  frameTime.asSeconds()*PIXELS_PER_SECOND < (125) ||
-        player.tank.position.x + player.tank.velocity.x *  frameTime.asSeconds()*PIXELS_PER_SECOND > (59*125) )
-    {
-        player.tank.velocity.x = 0;
-    }
-
-    if (player.tank.position.y + player.tank.velocity.y *  frameTime.asSeconds()*PIXELS_PER_SECOND < (125) ||
-        player.tank.position.y + player.tank.velocity.y *  frameTime.asSeconds()*PIXELS_PER_SECOND > (59*125) )
-    {
-        player.tank.velocity.y = 0;
-    }
-
-    player.tank.position.x = player.tank.position.x + player.tank.velocity.x *  frameTime.asSeconds()*PIXELS_PER_SECOND;
-    player.tank.position.y = player.tank.position.y + player.tank.velocity.y *  frameTime.asSeconds()*PIXELS_PER_SECOND;
-
-    sf::Vector2f basePos = g.arenaMan.getStartPosition(playerTeam);
-    if (player.tank.position.x > basePos.x     &&
-        player.tank.position.x < basePos.x+125 &&
-        player.tank.position.y > basePos.y     &&
-        player.tank.position.y < basePos.y+125)
-    {
-        //Tank is in base. 
-        //TODO: Display upgrade dialog
-    }
     return true;
 }
 
+
+std::vector<sf::Vector2f> prepareObstructionList(ArenaManager & arenaMan)
+{
+    std::vector<sf::Vector2f> obstructionList;
+    for (int i = 0;i < arenaMan.getMapHorizTileNum()*arenaMan.getMapVertTileNum();i++){
+        Tile &tile = arenaMan.getTile(i);
+        if (tile.getId() == 0)
+            obstructionList.push_back(tile.getPosition());
+    }
+    return obstructionList;
+}
 
 
 

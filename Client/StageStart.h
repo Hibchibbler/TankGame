@@ -22,11 +22,18 @@ namespace tg
         sf::Uint32 doDraw(sf::RenderWindow &window,Game & g, sf::Time ft);
     private:
         void doJoin();
-        sf::Clock deskUpdateClock;
-        sfg::Desktop desk;
-        sfg::Entry::Ptr ipEntry;
-        sfg::Entry::Ptr portEntry;
-        sfg::Entry::Ptr nameEntry;
+        //void doApply();
+        void doQuit();
+
+        sf::Clock loopTime;
+
+        sfg::Window::Ptr mywindow;//Kept to Show/Hide
+        sfg::ComboBox::Ptr resolutionComboBox;//Kept to retrieve later
+        sfg::Entry::Ptr ipEntry;//Kept to retrieve later
+        sfg::Entry::Ptr portEntry;//Kept to retrieve later
+        sfg::Entry::Ptr nameEntry;//Kept to retrieve later
+
+        int resIndex;//store it so we can check if it changed.
     };
 };
 

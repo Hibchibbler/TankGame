@@ -240,9 +240,7 @@ void tg::Comm::CommLooper(Comm* comm)
                                 comm->SendSystem(CommEventType::Error, RecvPacket.connectionId, std::string("Error on receive"));
                             //we'd better remove the socket from the selector
                             comm->EstablishedSelector.remove(*i->Socket);
-                            delete i->Socket;
-                            delete i->SendMutex;
-                            delete i->RecvMutex;
+                            
                             //i = comm->Established.erase(i);
                             ok=false;
                         }
@@ -250,6 +248,9 @@ void tg::Comm::CommLooper(Comm* comm)
                     if (ok){
                         i++;
                     }else{
+                        delete i->Socket;
+                        delete i->SendMutex;
+                        delete i->RecvMutex;
                         i = comm->Established.erase(i);
                     }
 

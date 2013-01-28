@@ -103,3 +103,9 @@ Element GameStage::getInput(sf::Uint16 i)
     //LogFile::get()->log(0,0,"GameStage::getSummary");
     return inputs[i];
 }
+
+Game & GameStage::getOwner()
+{
+    return g;
+}
+

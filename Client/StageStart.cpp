@@ -5,6 +5,7 @@
 #include "Common\TeamManager.h"
 #include "Common\ArenaManager.h"
 #include <SFGUI/SFGUI.hpp>
+#include <fstream>
 
 using namespace tg;
 
@@ -16,48 +17,97 @@ StageStart::StageStart(Game & g)
 
 sf::Uint32 StageStart::doInit(Game & g)
 {
+    std::string name;
+    std::string address;
+    std::string port;
+    //int resIndex;
+
+    //Load Start Menu settings from a simple text file
+    std::ifstream fin("client_stage_start.txt");
+    if (fin.is_open())
+    {
+        std::cout << "Read from client_stage_start.txt" << std::endl;
+        fin >> name;
+        fin >> address;
+        fin >> port;
+        //fin >> resIndex;
+    }
+    fin.close();
+
+    //Construct Start Menu GUI
     sfg::Table::Ptr table( sfg::Table::Create(  ) );
 
-    sfg::Label::Ptr nameLabel;
-    
+    sfg::Label::Ptr nameLabel;    
     nameLabel = sfg::Label::Create("Name");
-    nameEntry = sfg::Entry::Create("Anon");
+    nameEntry = sfg::Entry::Create(name);
     nameEntry->SetRequisition(sf::Vector2f(120.0f,0.0f));
     table->Attach(nameLabel,sf::Rect<sf::Uint32>(0,0,1,1), 0);
     table->Attach(nameEntry,sf::Rect<sf::Uint32>(1,0,1,1), 3);
 
     sfg::Label::Ptr ipLabel;
     ipLabel = sfg::Label::Create("Address");    
-    ipEntry = sfg::Entry::Create("192.168.1.9");
+    ipEntry = sfg::Entry::Create(address);
     table->Attach(ipLabel, sf::Rect<sf::Uint32>(0,1,1,1), 0);
     table->Attach(ipEntry, sf::Rect<sf::Uint32>(1,1,1,1), 3);
     
     sfg::Label::Ptr portLabel;
     portLabel = sfg::Label::Create("Port");
-    portEntry = sfg::Entry::Create("8280");
+    portEntry = sfg::Entry::Create(port);
     table->Attach(portLabel, sf::Rect<sf::Uint32>(0,2,1,1), 0);
     table->Attach(portEntry, sf::Rect<sf::Uint32>(1,2,1,1), 3);
+
+    sfg::Label::Ptr resolutionLabel;
+    sfg::Button::Ptr applyButton;
+    sfg::Label::Ptr warningLabel;
+    resolutionLabel = sfg::Label::Create("Resolution");
+    resolutionComboBox = sfg::ComboBox::Create();
+    warningLabel = sfg::Label::Create("*Changing Resolution Setting will cause the game to exit. And then you must start it again");
+    warningLabel->SetLineWrap(true);
+    applyButton = sfg::Button::Create("Apply");
+    std::vector<sf::VideoMode> modes = sf::VideoMode::getFullscreenModes();
+    
+    //Populate video modes Combo box
+    for (auto m = 0;m < modes.size();m++){
+        if (modes[m].isValid())
+        {
+            std::stringstream ss;
+            ss << modes[m].width << "x" << modes[m].height << " @ " << modes[m].bitsPerPixel<< std::endl;
+            resolutionComboBox->AppendItem(sf::String(ss.str()));
+            /*if (resIndex == m){
+                resolutionComboBox->SelectItem(m);
+            }*/
+        }
+    }
+    table->Attach(resolutionLabel, sf::Rect<sf::Uint32>(0,3,1,1), 0);
+    table->Attach(resolutionComboBox,sf::Rect<sf::Uint32>(1,3,1,1), 3);
+    table->Attach(warningLabel,sf::Rect<sf::Uint32>(3,3,1,1), 3);
 
     sfg::Button::Ptr joinButton;
     joinButton = sfg::Button::Create("Join");
     joinButton->GetSignal( sfg::Widget::OnLeftClick ).Connect( &StageStart::doJoin, this );
-    table->Attach(joinButton, sf::Rect<sf::Uint32>(0,3,2,1), 3);
+    table->Attach(joinButton, sf::Rect<sf::Uint32>(0,4,2,1), 3);
+
+   /* sfg::Button::Ptr quitButton;
+    quitButton = sfg::Button::Create("Quit");
+    quitButton->GetSignal( sfg::Widget::OnLeftClick ).Connect( &StageStart::doQuit, this );
+    table->Attach(quitButton, sf::Rect<sf::Uint32>(0,5,2,1), 3);*/
 
 
-    sfg::Window::Ptr mywindow;
     mywindow = sfg::Window::Create();
     
     mywindow->SetTitle("Mega Blaster Client");
+    mywindow->SetRequisition(sf::Vector2f(425,300));
     mywindow->SetPosition(sf::Vector2f(100.0f,100.0f));
     mywindow->Add(table);
     
-    desk.Add(mywindow);
-    
+    g.desk.Add(mywindow);
+
     return 0;
 }
 sf::Uint32 StageStart::doWindowEvent(sf::RenderWindow & window, sf::Event & event)
 {
-    desk.HandleEvent(event);
+    g.desk.HandleEvent(event);
+   
     return 0;
 }
 
@@ -72,9 +122,14 @@ sf::Uint32 StageStart::doRemoteEvent(Game & g,
 
 sf::Uint32 StageStart::doLoop(Game & g)
 {
-    //setSummary(1,0);
-    if (deskUpdateClock.getElapsedTime().asSeconds() >= 0.1f)
-        desk.Update(deskUpdateClock.restart().asSeconds());
+    if (loopTime.getElapsedTime().asSeconds() > 0.050f)
+    {
+        g.desk.Update(loopTime.getElapsedTime().asSeconds());
+
+        loopTime.restart();
+    }else{
+        sf::sleep(sf::seconds(0.0f));
+    }
     return getSummary(0).a;
 }
 sf::Uint32 StageStart::doLocalInput(sf::RenderWindow & window, Game & g)
@@ -91,31 +146,66 @@ sf::Uint32 StageStart::doDraw(sf::RenderWindow &window,Game & g, sf::Time ft)
     return 0;
 }
 
-void StageStart::doJoin()
+void StageStart::doQuit()
 {
-    //This tells the Game that we are done
+    //Tell Game that this stage is finished
+    Element e0;
+    e0.a = 1;
+    setSummary(e0,0);
+
+    //Tell game why this stage is finished - we quit
     Element e1;
     e1.a = 1;
-    setSummary(e1,0);
+    setSummary(e1,1);
+}
 
 
-    //And these are the summaries that the client will inspect.
-    Element e2;
-    e2.b = nameEntry->GetText().toAnsiString();
-    setSummary(e2,1);
+void StageStart::doJoin()
+{
+    //Save start menu settings to a simple text file.
+    std::ofstream fout("client_stage_start.txt", std::ios_base::out);
+    if (fout.is_open())
+    {
+        std::cout << "Wrote to client_stage_start.txt" << std::endl;
+        fout << nameEntry->GetText().toAnsiString() << std::endl;
+        fout << ipEntry->GetText().toAnsiString() << std::endl;
+        fout << portEntry->GetText().toAnsiString() << std::endl;
+    }
+    fout.close();
+    sfg::ComboBox::IndexType it = resolutionComboBox->GetSelectedItem();
+    if (it != sfg::ComboBox::NONE)
+    {
+        if (!sf::Keyboard::isKeyPressed(sf::Keyboard::Z))
+        {
+            g.window.close();
+            std::vector<sf::VideoMode> modes = sf::VideoMode::getFullscreenModes();
+            g.window.create(modes[it], "Mega Blaster Tank Game", sf::Style::Fullscreen);
+        }
+        //Tell Game that this stage is finished
+        Element e0;
+        e0.a = 1;
+        setSummary(e0,0);
 
-    Element e3;
-    e3.b = ipEntry->GetText().toAnsiString();
-    setSummary(e3,2);
+        //Tell game why this stage is finished - moving to lobby stage
+        Element e1;
+        e1.a = 0;
+        setSummary(e1,1);
 
+        //And these are the summaries that the client will expect.
+        Element e2;
+        e2.b = nameEntry->GetText().toAnsiString();
+        setSummary(e2,2);
+
+        Element e3;
+        e3.b = ipEntry->GetText().toAnsiString();
+        setSummary(e3,3);
     
-    Element e4;
-    e4.a = atoi(portEntry->GetText().toAnsiString().c_str());//"8280";
-    setSummary(e4,3);
+        Element e4;
+        e4.a = atoi(portEntry->GetText().toAnsiString().c_str());//"8280";
+        setSummary(e4,4);
 
-    desk.RemoveAll();
-    ipEntry.reset();
-    portEntry.reset();
-    nameEntry.reset();
+        mywindow->Show(false);
+ 
+    }
 }
 

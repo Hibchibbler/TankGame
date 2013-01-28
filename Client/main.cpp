@@ -6,12 +6,7 @@
 
 int main()
 {
-    int xres,yres;
-    std::cout << "enter x resolution: ";
-    std::cin >> xres;
-    std::cout << "enter y resolution: ";
-    std::cin >> yres;
-    tg::GameClient gameClient(xres,yres);
+    tg::GameClient gameClient(640,480);
     bool done = false;
 
     gameClient.doInit();
@@ -21,14 +16,23 @@ int main()
 
     sf::sleep(sf::milliseconds(500));
     while (!done){
+        sf::Uint32 ret;
 
-        gameClient.doRemoteEvents();
+        ret = gameClient.doRemoteEvents();
 
-        gameClient.doLocalEvents();
+        ret = gameClient.doLocalEvents();
+        if (ret){
+            done = true;
+            continue;
+        }
 
-        gameClient.doLoop();
+        ret = gameClient.doLoop();
+        if (ret){
+            done = true;
+            continue;
+        }
 
-        gameClient.doDraw(frameTime);
+        ret = gameClient.doDraw(frameTime);
 
         sf::sleep(sf::milliseconds(0));
     }

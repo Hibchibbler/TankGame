@@ -37,20 +37,21 @@ namespace tg
         };
   private:
         sf::Clock whoIsPollClock;
+        sf::Clock loopTime;
 
-        sfg::Window::Ptr nameWindow;
-        sfg::Window::Ptr createNameDialog();
-        sf::Clock deskUpdateClock;
-        sfg::Desktop desk;
-        sfg::Window::Ptr mywindow;
-        sfg::Box::Ptr box;
-        sfg::Button::Ptr joinTeam1Button;
-        sfg::Button::Ptr joinTeam2Button;
+        sfg::Window::Ptr    nameWindow;
+        sfg::Window::Ptr    createNameDialog();
+        sf::Clock           oopTime;
         
-        sf::Uint32 myTeam;
-        sfg::Entry::Ptr yourName;
-        sfg::Entry::Ptr team1[5];
-        sfg::Entry::Ptr team2[5];
+        sfg::Window::Ptr    mywindow;//Kept to Show/Hide
+        sfg::Box::Ptr       box;//kept to add the spinner later.
+        sfg::Button::Ptr    joinTeam1Button;//kept to hide later.
+        sfg::Button::Ptr    joinTeam2Button;//kept to hide later.
+        
+        sf::Uint32          myTeam;
+        sfg::Entry::Ptr     yourName;
+        sfg::Entry::Ptr     team1[5];
+        sfg::Entry::Ptr     team2[5];
     };
 };
 
