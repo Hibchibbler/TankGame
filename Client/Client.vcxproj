@@ -82,8 +82,9 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalOptions>sfgui-s.lib sfml-graphics-s.lib sfml-window-s.lib sfml-system-s.lib sfml-network-s.lib common.lib %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>sfgui-s.lib sfml-graphics-s.lib sfml-window-s.lib sfml-system-s.lib sfml-network-s.lib common.lib Winmm.lib %(AdditionalOptions)</AdditionalOptions>
       <AdditionalLibraryDirectories>C:\SFML\SFML2-rc\lib;C:\SFML\SFGUI\lib;</AdditionalLibraryDirectories>
+      <Profile>true</Profile>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

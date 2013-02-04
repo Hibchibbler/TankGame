@@ -11,7 +11,7 @@ namespace tg
     {
     public:
         sf::Uint32 load();
-        sf::Uint32 setDash(Player & player);
+        sf::Uint32 setDash(Player & player, float fps);
         sf::Uint32 setScore(sf::Uint32 score1, sf::Uint32 score2);
         sf::Uint32 draw(sf::RenderWindow & window, AssetManager & assetMan, sf::Uint32 width, sf::Uint32 height);
 

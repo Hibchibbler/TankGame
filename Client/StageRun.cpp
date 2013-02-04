@@ -15,11 +15,13 @@ StageRun::StageRun(Game & g)
     : GameStage(g)
 {
     hasRxStateOfUnion = false;
-    hasFocus = false;
+    hasFocus = true;
     zoom = 1.0;
     showShadow = false;
     firstRun = true;
     showRunMenu = false;
+    zoomPow = 1;
+    visionRange = 1000;
 }
 
 sf::Uint32 StageRun::doInit(Game & g)
@@ -27,6 +29,9 @@ sf::Uint32 StageRun::doInit(Game & g)
     //Load HUD
     dash.load();
 
+    //Prepare obstruction list(once)
+    obstructionList = prepareObstructionList(g.arenaMan);
+    
     //Construct SFGUI menus for later.
     sfg::Button::Ptr quitButton = sfg::Button::Create("Quit?");
     quitButton->GetSignal( sfg::Widget::OnLeftClick ).Connect( &StageRun::doQuit, this );
@@ -182,13 +187,25 @@ sf::Uint32 StageRun::doWindowEvent(sf::RenderWindow & w,
         hasFocus = true;
     }else if (event.type == sf::Event::MouseWheelMoved){
         if (event.mouseWheel.delta  > 0)
-            zoom += 0.5;
-        else{
-            zoom -= 0.5;
-            if (zoom < 1)
-                zoom=1;
+        {
+            zoom += 1.f;
+            
+            if (zoom > 8.0f){//prevent from getting to zoomed out
+               zoom = 8.0f;
+            }
+        }else{
+            zoom -= 1.f;
+            
+            if (zoom < 1.0f){//prevent from getting too zoomed in
+                zoom=1.0f;
+            }
 
         }
+        std::cout << "Zoom: " << zoom << std::endl;
+    }else if (event.type == sf::Event::MouseEntered){
+        hasFocus = true;
+    }else if (event.type == sf::Event::MouseLeft){
+        hasFocus = false;
     }
 
     g.desk.HandleEvent(event);
@@ -197,16 +214,14 @@ sf::Uint32 StageRun::doWindowEvent(sf::RenderWindow & w,
 }
 sf::Uint32 StageRun::doLoop(Game & g)
 {
-    if (loopClock.getElapsedTime().asSeconds() > 0.050f)
+    if (loopClock.getElapsedTime().asSeconds() > 0.025f)
     {
-        if (showRunMenu){
-            mywindow->Show(true);
-        }
         g.desk.Update(loopClock.getElapsedTime().asSeconds());
         previousTime = currentTime;
         currentTime = clock.restart();
         deltaTime = currentTime - previousTime;
         frameTime += deltaTime;
+        //std::cout << 1.0f/frameTime.asSeconds() << std::endl;
         Player & p = g.teamMan.getPlayerBySlot(g.myTeam,g.mySlot);
 
         switch (p.state){
@@ -215,17 +230,22 @@ sf::Uint32 StageRun::doLoop(Game & g)
                 break;
             case PlayerState::SendingStateOfPlayer:
                 Messages::sendStateOfPlayer(g.client, g.teamMan, g.myCID, g.myTeam, g.mySlot, thisPlayer, attacking);
-                obstructionList = prepareObstructionList(g.arenaMan);
+                
                 p.state = PlayerState::Running;
-            case PlayerState::Running:
-                fireProjectile(thisPlayer, accumulatingClock);
-                updateVelocity(thisPlayer, obstructionList, frameTime);
-                updateProjectilCollisions(g,thisPlayer, g.myTeam, obstructionList, true, frameTime, accumulatingClock);
+            case PlayerState::Running:{
+            
+                        
+                        //sf::Clock c;
+                        fireProjectile(thisPlayer, accumulatingClock);
+                
+                        updateVelocity(thisPlayer, obstructionList, frameTime);
+                        //std::cout << c.getElapsedTime().asSeconds() << std::endl;
+                        updateProjectilCollisions(g,thisPlayer, g.myTeam, obstructionList, true, frameTime, accumulatingClock);
+              
                 break;
+            }
         }
         loopClock.restart();
-    }else{
-        sf::sleep(sf::seconds(0.0f));
     }
     return getSummary(0).a;
 }
@@ -242,6 +262,17 @@ sf::Uint32 StageRun::doLocalInput(sf::RenderWindow & window, Game & g)
 
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape)){
             showRunMenu=!showRunMenu;
+            if (showRunMenu){
+                mywindow->Show(true);
+            }
+        }
+
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::K))
+        {
+            visionRange+=250;
+        }else if (sf::Keyboard::isKeyPressed(sf::Keyboard::M))
+        {
+            visionRange-=250;
         }
         //thisPlayer = g.teamMan.teams[g.myTeam].players[g.mySlot];
         //We poll keyboard 
@@ -296,12 +327,20 @@ sf::Uint32 StageRun::doLocalInput(sf::RenderWindow & window, Game & g)
             thisPlayer.tank.turretAngle = curTurretAngle;
         }
 
-        dash.setDash(thisPlayer);
+        times.push_back(frameTime2.asSeconds());
+        if (times.size() > 20)
+            times.erase(times.begin());
+        float at=0.0f;
+        for (auto k = times.begin();k != times.end();k++){
+            at += *k;
+        }
+        at /= 20.0f;
+        dash.setDash(thisPlayer, 1.0f/at);
+        
+
         g.teamMan.teams[g.myTeam].players[g.mySlot].state = PlayerState::SendingStateOfPlayer;
         
         inputClock.restart();
-    }else{
-        sf::sleep(sf::seconds(0.0f));
     }
     return 0;
 }
@@ -319,47 +358,98 @@ sf::Uint32 StageRun::doDraw(sf::RenderWindow & window, Game & g, sf::Time ft)
         firstRun = false;
     }
 
-    if (drawClock.getElapsedTime().asSeconds() > 0.020f)
+    if (true)//drawClock.getElapsedTime().asSeconds() > 0.001f)
     {
+
         window.clear();
         drawAll(window, g);
-        window.display();
-
+       
         if (showRunMenu){
             window.resetGLStates();
             g.sfGui.Display(window);
         }
+        
+        window.display();
 
         
         drawClock.restart();
-    }else{
-        sf::sleep(sf::seconds(0.0f));
     }
     return 0;
 }
 
+sf::Uint32 addStraightQuad(sf::VertexArray & v, sf::FloatRect c, sf::IntRect t)
+{
+    v.append(sf::Vertex(sf::Vector2f(c.left, c.top),
+                        sf::Vector2f(t.left, t.top)
+                       ));
+
+    v.append(sf::Vertex(sf::Vector2f(c.left+c.width, c.top),
+                        sf::Vector2f(t.left+t.width, t.top)
+                       ));
+
+    v.append(sf::Vertex(sf::Vector2f(c.left+c.width, c.top+c.height),
+                        sf::Vector2f(t.left+t.width, t.top+t.height)
+                       ));
+
+    v.append(sf::Vertex(sf::Vector2f(c.left, c.top+c.height),
+                        sf::Vector2f(t.left, t.top+t.height)
+                       ));
+
+    return 0;
+}
+
+
+sf::Uint32 addRotQuad(sf::VertexArray & v, sf::FloatRect p, sf::IntRect t, float angle)
+{
+
+    float px1,py1;
+    float px2,py2;
+    float px3,py3;
+    float px4,py4;
+
+    angle = angle*(3.14156f/180.0f);
+
+    px1 = ((0-p.width/2.0f) * cos(angle) - (0-p.height/2.0f) * sin(angle)) + p.left;
+    py1 = ((0-p.width/2.0f) * sin(angle) + (0-p.height/2.0f) * cos(angle)) + p.top;
+
+    px2 = ((p.width-p.width/2.0f) * cos(angle) - (0-p.height/2.0f) * sin(angle)) + p.left;
+    py2 = ((p.width-p.width/2.0f) * sin(angle) + (0-p.height/2.0f) * cos(angle)) + p.top;
+
+    px3 = ((p.width-p.width/2.0f) * cos(angle) - (p.height-p.height/2.0f) * sin(angle)) + p.left;
+    py3 = ((p.width-p.width/2.0f) * sin(angle) + (p.height-p.height/2.0f) * cos(angle)) + p.top;
+
+    px4 = ((0-p.width/2.0f) * cos(angle) - (p.height-p.height/2.0f) * sin(angle)) + p.left;
+    py4 = ((0-p.width/2.0f) * sin(angle) + (p.height-p.height/2.0f) * cos(angle)) + p.top;
+
+
+    v.append(sf::Vertex(sf::Vector2f(px1,py1),
+                        sf::Vector2f(t.left, t.top)
+                       ));
+
+    v.append(sf::Vertex(sf::Vector2f(px2,py2),
+                        sf::Vector2f(t.left+t.width, t.top)
+                       ));
+
+    v.append(sf::Vertex(sf::Vector2f(px3,py3),
+                        sf::Vector2f(t.left+t.width, t.top+t.height)
+                       ));
+
+    v.append(sf::Vertex(sf::Vector2f(px4,py4),
+                        sf::Vector2f(t.left, t.top+t.height)
+                       ));
+
+    return 0;
+}
+
+
 sf::Uint32 StageRun::prepareAssets(Game &g)
 {
-    arenaTexture.create(g.arenaMan.getMapHorizTileNum()*125,g.arenaMan.getMapVertTileNum()*125);
-    entitiesTexture.create(g.arenaMan.getMapHorizTileNum()*125,g.arenaMan.getMapVertTileNum()*125);
-    dashTexture.create(512,65);
-
-    arenaTexture.clear();
-    //arenaTexture.setSmooth(true);
-    for (int i = 0;i < g.arenaMan.getMapHorizTileNum()*g.arenaMan.getMapVertTileNum();i++){
-        Tile &tile = g.arenaMan.getTile(i);
-            
-        /*if (abs(tile.getPosition().x - pos.x) < X_CUT_OFF &&
-            abs(tile.getPosition().y - pos.y) < Y_CUT_OFF )
-        {*/
-            sf::Sprite s = g.assetMan.getSprite(tile.getId()+4);
-            s.setPosition(tile.getPosition());
-            
-            arenaTexture.draw(s);
-        /*}*/
-    }
-    arenaTexture.display();
-    arenaSprite.setTexture(arenaTexture.getTexture());
+    floorVertices = sf::VertexArray(sf::PrimitiveType::Quads);
+    //entitiesTexture.create(g.arenaMan.getMapHorizTileNum()*128,g.arenaMan.getMapVertTileNum()*128);
+    entityVertices = sf::VertexArray(sf::PrimitiveType::Quads);
+    //dashTexture.create(512,65);
+    explosionSmallVertices = sf::VertexArray(sf::PrimitiveType::Quads);
+    explosionBigVertices = sf::VertexArray(sf::PrimitiveType::Quads);
 
     statusOverlay.setFont(g.assetMan.getFont());
     statusOverlay.setScale(2.0,2.0);
@@ -367,10 +457,15 @@ sf::Uint32 StageRun::prepareAssets(Game &g)
     return 0;
 }
 
-
+#define VISION_RANGE 1000
 
 sf::Uint32 StageRun::drawAll(sf::RenderWindow & window, Game & g)
-{
+{   
+
+    previousTime2 = currentTime2;
+    currentTime2 = clock2.restart();
+    frameTime2 += currentTime2 - previousTime2;
+    //std::cout << 1.0f/frameTime2.asSeconds() << std::endl;
     //Set view on top of this player...smoothly.
     //TODO: move calculations into doLoop
     sf::Vector2f pos = thisPlayer.tank.position;
@@ -383,19 +478,97 @@ sf::Uint32 StageRun::drawAll(sf::RenderWindow & window, Game & g)
     pos.x  = pos.x / 30.0f;
     pos.y  = pos.y / 30.0f;
 
-    //TODO: assumes more wide than tall screen.
-    float aspect = (float)g.scrHeight / (float)g.scrWidth;
-    sf::FloatRect fr = sf::FloatRect(pos.x-((g.scrWidth)/2.0f),pos.y-((g.scrHeight)/2.0f),g.scrWidth*aspect,g.scrHeight*aspect);
-    
+    pos = thisPlayer.tank.position;
+
+    sf::FloatRect fr = sf::FloatRect(::floor(pos.x-(g.scrWidth/2.0f)),::floor(pos.y-((g.scrHeight)/2.0f)),g.scrWidth,g.scrHeight);
     arenaView.reset(fr);
     arenaView.zoom(zoom);
     window.setView(arenaView);
-       
-    window.draw(arenaSprite);
-    entitiesTexture.clear(sf::Color(0,0,0,0));
-        
-       
-    //Draw the tanks
+
+
+    if (updateFloorClock.getElapsedTime().asMilliseconds() > 400)
+    {
+        sf::Sprite fog = g.assetMan.getSprite(ImageType::FogOfWar);
+        floorVertices.clear();
+        for (int i = 0;i < g.arenaMan.getMapHorizTileNum()*g.arenaMan.getMapVertTileNum();i++){
+            Tile &tile = g.arenaMan.getTile(i);
+            sf::Sprite s = g.assetMan.getSprite(tile.getId()+4);
+            float dx,dy;
+            dx = tile.getPosition().x+64 - pos.x;
+            dy = tile.getPosition().y+64 - pos.y;
+
+            /*float dxb, dyb;
+            dxb = tile.getPosition().x - g.arenaMan.getStartPosition(g.myTeam).x;
+            dyb = tile.getPosition().y - g.arenaMan.getStartPosition(g.myTeam).y;*/
+
+            if (abs(dx) < (g.scrWidth-257)*zoom &&
+                abs(dy) < (g.scrHeight-257)*zoom)
+            {
+                addStraightQuad(floorVertices, sf::FloatRect(tile.getPosition().x,tile.getPosition().y, 128,128), s.getTextureRect());
+                if (sqrt(dx*dx+dy*dy) > visionRange)// || sqrt(dxb*dxb+dyb*dyb) < visionRange*1.75f)
+                {
+                    addStraightQuad(floorVertices, sf::FloatRect(tile.getPosition().x,tile.getPosition().y, 128,128), s.getTextureRect());
+                    addStraightQuad(floorVertices, sf::FloatRect(tile.getPosition().x,tile.getPosition().y, 128,128), fog.getTextureRect());
+                }
+            }
+        }
+        updateFloorClock.restart();
+    }
+    window.draw(floorVertices, &g.assetMan.getTexture(0));
+
+
+    //Draw the tanks    
+    //  Draw My Locally Predicted Tank
+    entityVertices.clear();
+    //Remote Players Tanks
+    for (int y=1;y < 3;y++)
+    {
+        sf::Sprite b = g.assetMan.getSprite((y==1 ? ImageType::TankBlue : ImageType::TankRed));
+        sf::Sprite t = g.assetMan.getSprite((y==1 ? ImageType::TurretBlue : ImageType::TurretRed));
+
+        for (int h = 0;h < g.teamMan.teams[y].players.size();h++)
+        {
+            if (g.teamMan.teams[y].players[h].hasHost)
+            {
+                
+                if (g.myTeam == y && g.mySlot == h)
+                {
+                    //Draw You
+                    addRotQuad(entityVertices,
+                               sf::FloatRect(thisPlayer.tank.position.x, thisPlayer.tank.position.y, 73,116),
+                               b.getTextureRect(),
+                               thisPlayer.tank.bodyAngle-STD_ROTATE_OFFSET);
+
+                    addRotQuad(entityVertices,
+                               sf::FloatRect(thisPlayer.tank.position.x,thisPlayer.tank.position.y, 47,176),
+                               t.getTextureRect(),
+                               thisPlayer.tank.turretAngle-STD_ROTATE_OFFSET);
+                    
+                }else
+                {
+                    //Draw Them
+                    float dx,dy;
+                    dx = g.teamMan.teams[y].players[h].tank.position.x - pos.x;
+                    dy = g.teamMan.teams[y].players[h].tank.position.y - pos.y;
+
+                    if (sqrt(dx*dx+dy*dy) < visionRange || g.myTeam == y)
+                    {
+                        addRotQuad(entityVertices,
+                                   sf::FloatRect(g.teamMan.teams[y].players[h].tank.position.x, g.teamMan.teams[y].players[h].tank.position.y, 73,116),
+                                   b.getTextureRect(),
+                                   g.teamMan.teams[y].players[h].tank.bodyAngle-STD_ROTATE_OFFSET);
+
+                        addRotQuad(entityVertices,
+                                   sf::FloatRect(g.teamMan.teams[y].players[h].tank.position.x, g.teamMan.teams[y].players[h].tank.position.y, 47,176),
+                                   t.getTextureRect(),
+                                   g.teamMan.teams[y].players[h].tank.turretAngle-STD_ROTATE_OFFSET);
+                    }
+                }
+            }
+        }
+    }
+
+    sf::Sprite p = g.assetMan.getSprite(ImageType::Projectile1);
     for (int y=1;y < 3;y++)
     {
         for (int h = 0;h < g.teamMan.teams[y].players.size();h++)
@@ -404,57 +577,29 @@ sf::Uint32 StageRun::drawAll(sf::RenderWindow & window, Game & g)
             {
                 if (g.myTeam == y && g.mySlot == h)
                 {
-                    //Draw My Locally Predicted Tank
-                    sf::Sprite b = g.assetMan.getSprite((y==1 ? ImageType::TankBlue : ImageType::TankRed));//g.assetMan.getTankImage((y==1 ? 0 : 1)).bsprite;
-                    sf::Sprite t = g.assetMan.getSprite((y==1 ? ImageType::TurretBlue : ImageType::TurretRed));//g.assetMan.getTankImage((y==1 ? 0 : 1)).tsprite;
-
-                    b.setOrigin(37,58);
-                    t.setOrigin(24,40);
-
-                    b.setRotation(thisPlayer.tank.bodyAngle-STD_ROTATE_OFFSET);
-                    t.setRotation(thisPlayer.tank.turretAngle-STD_ROTATE_OFFSET);
-
-                    b.setPosition(thisPlayer.tank.position);
-                    t.setPosition(thisPlayer.tank.position);
-
-                    entitiesTexture.draw(b);
-                    entitiesTexture.draw(t);
-                    
                     //Draw Projectiles
                     for (int k = 0;k < thisPlayer.prjctls.size();k++)
                     {
-                        sf::Sprite p = g.assetMan.getSprite(ImageType::Projectile1);//.getImage(ImageType::Projectile1).sprite;
-                        p.setOrigin(16.0f,16.0f);
-                        p.setPosition(thisPlayer.prjctls[k].position);
-                        entitiesTexture.draw(p);
+
+                        addRotQuad(entityVertices,
+                                   sf::FloatRect(thisPlayer.prjctls[k].position.x, thisPlayer.prjctls[k].position.y, 32,32),
+                                   p.getTextureRect(),
+                                   0.0f);
                     }
-
                 }else{
-
-                    //Draw other players' tank with last server update
-
-                   
-                    sf::Sprite b = g.assetMan.getSprite((y==1 ? ImageType::TankBlue : ImageType::TankRed));
-                    sf::Sprite t = g.assetMan.getSprite((y==1 ? ImageType::TurretBlue : ImageType::TurretRed));
-
-                    b.setOrigin(37,58);
-                    t.setOrigin(24,40);
-
-                    b.setRotation(g.teamMan.teams[y].players[h].tank.bodyAngle-STD_ROTATE_OFFSET);
-                    t.setRotation(g.teamMan.teams[y].players[h].tank.turretAngle-STD_ROTATE_OFFSET);
-
-                    b.setPosition(g.teamMan.teams[y].players[h].tank.position);
-                    t.setPosition(g.teamMan.teams[y].players[h].tank.position);
-
-                    entitiesTexture.draw(b);
-                    entitiesTexture.draw(t);
-
                     for (int k = 0;k < g.teamMan.teams[y].players[h].prjctls.size();k++)
                     {
-                        sf::Sprite p = g.assetMan.getSprite(ImageType::Projectile1);//.getImage(ImageType::Projectile1).sprite;
-                        p.setOrigin(16.0f,16.0f);
-                        p.setPosition(g.teamMan.teams[y].players[h].prjctls[k].position);
-                        entitiesTexture.draw(p);
+                        float dx,dy;
+                        dx = g.teamMan.teams[y].players[h].prjctls[k].position.x - pos.x;
+                        dy = g.teamMan.teams[y].players[h].prjctls[k].position.y - pos.y;
+
+                        if (sqrt(dx*dx+dy*dy) < visionRange)
+                        {
+                            addRotQuad(entityVertices,
+                                       sf::FloatRect(g.teamMan.teams[y].players[h].prjctls[k].position.x, g.teamMan.teams[y].players[h].prjctls[k].position.y, 32,32),
+                                       p.getTextureRect(),
+                                       0.0f);
+                        }
                     }
                 }
             }
@@ -469,14 +614,22 @@ sf::Uint32 StageRun::drawAll(sf::RenderWindow & window, Game & g)
             creep.setOrigin(16.0f,16.0f);
             for (int lk = 0;lk < g.teamMan.teams[y].creep.size();lk++)
             {
-                /*if (abs(g.teamMan.teams[y].creep[lk].position.x - pos.x) < X_CUT_OFF &&
-                    abs(g.teamMan.teams[y].creep[lk].position.y - pos.y) < Y_CUT_OFF )
-                {*/
-               
-                    creep.setRotation(g.teamMan.teams[y].creep[lk].angle);
-                    creep.setPosition(g.teamMan.teams[y].creep[lk].position);
-                    entitiesTexture.draw(creep);
-                /*}*/
+                float dx,dy;
+                dx = g.teamMan.teams[y].creep[lk].position.x - pos.x;
+                dy = g.teamMan.teams[y].creep[lk].position.y - pos.y;
+
+           /*     float dxb, dyb;
+                dxb = g.teamMan.teams[y].creep[lk].position.x - g.arenaMan.getStartPosition(g.myTeam).x;
+                dyb = g.teamMan.teams[y].creep[lk].position.y - g.arenaMan.getStartPosition(g.myTeam).y;
+                */
+
+                if (sqrt(dx*dx+dy*dy) < visionRange)// || sqrt(dxb*dxb+dyb*dyb) < visionRange*1.75f)
+                {
+                    addRotQuad(entityVertices,
+                               sf::FloatRect(g.teamMan.teams[y].creep[lk].position.x, g.teamMan.teams[y].creep[lk].position.y, 64,64),
+                               creep.getTextureRect(),
+                               g.teamMan.teams[y].creep[lk].angle);
+                }
             }
         }
     }
@@ -491,10 +644,17 @@ sf::Uint32 StageRun::drawAll(sf::RenderWindow & window, Game & g)
             {
                 for (int k = 0;k < g.teamMan.teams[y].gen[gi].prjctls.size();k++)
                 {
-                
-                    prjctl.setPosition(g.teamMan.teams[y].gen[gi].prjctls[k].position);
-                    prjctl.setRotation(g.teamMan.teams[y].gen[gi].prjctls[k].angle);
-                    entitiesTexture.draw(prjctl);
+                    float dx,dy;
+                    dx = g.teamMan.teams[y].gen[gi].prjctls[k].position.x - pos.x;
+                    dy = g.teamMan.teams[y].gen[gi].prjctls[k].position.y - pos.y;
+
+                    if (sqrt(dx*dx+dy*dy) < visionRange)
+                    {
+                        addRotQuad(entityVertices,
+                                   sf::FloatRect(g.teamMan.teams[y].gen[gi].prjctls[k].position.x, g.teamMan.teams[y].gen[gi].prjctls[k].position.y, 64,64),
+                                   prjctl.getTextureRect(),
+                                   g.teamMan.teams[y].gen[gi].prjctls[k].angle);
+                    }
                 }
             }
         }
@@ -508,73 +668,98 @@ sf::Uint32 StageRun::drawAll(sf::RenderWindow & window, Game & g)
         {
             for (int k = 0;k < g.teamMan.teams[y].base1.prjctls.size();k++)
             {
-            
-                prjctl.setPosition(g.teamMan.teams[y].base1.prjctls[k].position);
-                prjctl.setRotation(g.teamMan.teams[y].base1.prjctls[k].angle);
-                entitiesTexture.draw(prjctl);
+                float dx,dy;
+                dx = g.teamMan.teams[y].base1.prjctls[k].position.x - pos.x;
+                dy = g.teamMan.teams[y].base1.prjctls[k].position.y - pos.y;
+
+                if (sqrt(dx*dx+dy*dy) < visionRange)
+                {
+                    addRotQuad(entityVertices,
+                               sf::FloatRect(g.teamMan.teams[y].base1.prjctls[k].position.x, g.teamMan.teams[y].base1.prjctls[k].position.y, 64,64),
+                               prjctl.getTextureRect(),
+                               g.teamMan.teams[y].base1.prjctls[k].angle);
+                }
             }
         }
     }
 
-    //Draw the Dashboard
     
-    
-    dashTexture.clear(sf::Color(0,0,0,0));
-
-    dash.dashPos.x = 0;
-    dash.dashPos.y = 0;//g.scrHeight-130;//65 is height of dashboard backdrop image.
-
-    sf::Sprite bd = g.assetMan.getSprite(ImageType::Dash1);//dash.backDrop.setTexture(g.assetMan.getImage(ImageType::Dash1).tex);
-    bd.setPosition(dash.dashPos);
-    
-    dash.healthText.setFont(g.assetMan.getFont());
-    dash.healthText.setScale(dash.healthTextScale);
-    dash.healthText.setPosition(dash.dashPos.x, dash.dashPos.y+8);
-    
-    dash.speedText.setFont(g.assetMan.getFont());
-    dash.speedText.setScale(dash.speedTextScale);
-    dash.speedText.setPosition(dash.dashPos.x, dash.dashPos.y+33);
-
-    dash.powerText.setFont(g.assetMan.getFont());
-    dash.powerText.setScale(dash.powerTextScale);
-    dash.powerText.setPosition(dash.dashPos.x+135, dash.dashPos.y+8);
-
-
-    dashTexture.draw(bd);
-    dashTexture.draw(dash.healthText);
-    dashTexture.draw(dash.speedText);
-    dashTexture.draw(dash.powerText);
-        
-    dashTexture.display();
-    dashSprite.setTexture(dashTexture.getTexture());
-
+    window.draw(entityVertices, &g.assetMan.getTexture(0));
     
 
-    //Draw Explosions!!
-    {
-        for (auto e = explosions.begin();e != explosions.end();){
-            sf::Sprite exp;
-            if (e->type == ExplosionType::TankHit      ||
-                e->type == ExplosionType::CreepHit     ||
-                e->type == ExplosionType::GeneratorHit ||
-                e->type == ExplosionType::BaseHit)
-            {
-                exp = g.assetMan.getSprite(ImageType::Explosion2);//.setTexture(g.assetMan.getImage(ImageType::Explosion2).tex);
-            }else{
-                exp = g.assetMan.getSprite(ImageType::Explosion1);
-            }
+    //Draw Hit Explosions!!
+    explosionSmallVertices.clear();
+    for (auto e = explosions.begin();e != explosions.end();){
+        sf::Sprite exp;
+
+        if (e->type == ExplosionType::TankHit      ||
+            e->type == ExplosionType::CreepHit     ||
+            e->type == ExplosionType::GeneratorHit ||
+            e->type == ExplosionType::BaseHit)
+        {
             
-            exp.setScale(4.0f,4.0f);
+            exp = g.assetMan.getSprite(ImageType::ExplosionSmall);
             int xi,yi;
 
             xi = (e->index % 4) * 64;
             yi = (e->index / 4) * 64;
-            exp.setTextureRect(sf::IntRect(xi,yi,64,64));
-            exp.setOrigin(32,32);
-            exp.setPosition(e->position);
+           
+            float dx,dy;
+            dx = e->position.x-128 - pos.x;
+            dy = e->position.y-128 - pos.y;
 
-            entitiesTexture.draw(exp);
+            if (sqrt(dx*dx+dy*dy) < visionRange)
+            {
 
+                addStraightQuad(explosionSmallVertices,
+                            sf::FloatRect(e->position.x-128, e->position.y-128, 256,256),
+                            sf::IntRect(xi,yi,64,64));
+            }
+            bool done = false;
+            if (e->rate.getElapsedTime().asMilliseconds() > 75){
+                //std::cout << xi << ", " << yi << std::endl;
+                e->index = (e->index + 1) % 20;
+                if (e->index == 19){
+                    done = true;
+                }
+                e->rate.restart();
+            }
+
+            if (done){
+                e = explosions.erase(e);
+            }else
+                e++;
+            continue;
+        }
+        e++;
+    }
+    window.draw(explosionSmallVertices, &g.assetMan.getTexture(1));
+
+    explosionBigVertices.clear();
+    for (auto e = explosions.begin();e != explosions.end();){
+        sf::Sprite exp;
+
+        if (e->type == ExplosionType::TankDeath      ||
+            e->type == ExplosionType::CreepDeath     ||
+            e->type == ExplosionType::GeneratorDeath ||
+            e->type == ExplosionType::BaseDeath)
+        {
+            exp = g.assetMan.getSprite(ImageType::ExplosionBig);
+            int xi,yi;
+
+            xi = (e->index % 4) * 64;
+            yi = (e->index / 4) * 64;
+            
+            float dx,dy;
+            dx = e->position.x-128 - pos.x;
+            dy = e->position.y-128 - pos.y;
+
+            if (sqrt(dx*dx+dy*dy) < visionRange)
+            {
+                addStraightQuad(explosionBigVertices,
+                            sf::FloatRect(e->position.x-128, e->position.y-128, 256,256),
+                            sf::IntRect(xi,yi,64,64));
+            }
             bool done = false;
             if (e->rate.getElapsedTime().asMilliseconds() > 75){
                 //std::cout << xi << ", " << yi << std::endl;
@@ -589,8 +774,11 @@ sf::Uint32 StageRun::drawAll(sf::RenderWindow & window, Game & g)
                 e = explosions.erase(e);
             }else
                 e++;
+            continue;
         }
+        e++;
     }
+    window.draw(explosionBigVertices, &g.assetMan.getTexture(2));
 
     //Draw  status overlays
     for (int y=1;y < 3;y++)
@@ -605,33 +793,53 @@ sf::Uint32 StageRun::drawAll(sf::RenderWindow & window, Game & g)
                     ss << thisPlayer.tank.health ;
                     statusOverlay.setString(ss.str());
                     statusOverlay.setPosition(thisPlayer.tank.position.x-55,thisPlayer.tank.position.y-120);
-                    entitiesTexture.draw(statusOverlay);
+                    window.draw(statusOverlay);
                 }else{
                     //Draw Health Overlay
                     ss << g.teamMan.teams[y].players[h].tank.health ;
                     statusOverlay.setString(ss.str());
                     statusOverlay.setPosition(g.teamMan.teams[y].players[h].tank.position.x-55,g.teamMan.teams[y].players[h].tank.position.y-120);
-                    entitiesTexture.draw(statusOverlay);
+                    window.draw(statusOverlay);
                 }
             }
         }
     }
-    entitiesSprite.setTexture(entitiesTexture.getTexture());
-    entitiesTexture.display();        
-    window.draw(entitiesSprite);
     
-    dashView.reset(sf::FloatRect(0,0, g.scrWidth, g.scrHeight));   
+    //Draw the Dashboard
+    dash.dashPos.x = 0.0f;
+    dash.dashPos.y = 0.0f;//g.scrHeight-130;//65 is height of dashboard backdrop image.
+
+    dash.healthText.setFont(g.assetMan.getFont());
+    dash.healthText.setScale(dash.healthTextScale);
+    dash.healthText.setPosition(dash.dashPos.x, dash.dashPos.y+8.0f);
+    
+    dash.speedText.setFont(g.assetMan.getFont());
+    dash.speedText.setScale(dash.speedTextScale);
+    dash.speedText.setPosition(dash.dashPos.x, dash.dashPos.y+33.0f);
+
+    dash.powerText.setFont(g.assetMan.getFont());
+    dash.powerText.setScale(dash.powerTextScale);
+    dash.powerText.setPosition(dash.dashPos.x+135.0f, dash.dashPos.y+8.0f);
+
+    dash.bodyAngleText.setFont(g.assetMan.getFont());
+    dash.bodyAngleText.setScale(dash.powerTextScale);
+    dash.bodyAngleText.setPosition(dash.dashPos.x+135.0f, dash.dashPos.y+33.0f);
+    
+    dashView.reset(sf::FloatRect(0.0f,0.0f, (float)g.scrWidth, (float)g.scrHeight));   
     window.setView(dashView);//set view to dash mode..
-    window.draw(dashSprite);
-    window.setView(arenaView);//Set view back to normal mode.
-    ////MiniMap
-    //sf::View miniMap;
-    //miniMap.reset(sf::FloatRect(0,0, g.scrWidth, g.scrHeight));
-    //miniMap.zoom(zoom);
-    //miniMap.setViewport(sf::FloatRect(0.8,0.8, 0.2,0.2));
-    //window.setView(miniMap);
-    //window.draw(entitiesSprite);
-    ////window.draw(arenaSprite);
+    window.draw(dash.healthText);
+    window.draw(dash.speedText);
+    window.draw(dash.powerText);
+    window.draw(dash.bodyAngleText);
+    //    
+    //dashTexture.display();
+    //dashSprite.setTexture(dashTexture.getTexture());
+    //
+    //dashView.reset(sf::FloatRect(0.0f,0.0f, (float)g.scrWidth, (float)g.scrHeight));   
+    //window.setView(dashView);//set view to dash mode..
+    //window.draw(dashSprite);
+    //window.setView(arenaView);//Set view back to normal mode.
+
 
     return 0;
 }

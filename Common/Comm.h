@@ -82,7 +82,7 @@ namespace tg
         void Send(tg::CommEvent &p);
         bool Receive(tg::CommEvent &p);
 
-        std::vector<sf::Uint32> getConnectionIds();
+        /*std::vector<sf::Uint32> getConnectionIds();*/
     protected:
         sf::IpAddress address;
         sf::Uint16 port;

@@ -58,10 +58,9 @@ namespace tg
             return -1;//No team had less than 5 players..
         }
         Player & getPlayerBySlot(int team, int slot){
-            
             return teams[team].players[slot];
-            //"WARNING:  this function sucks"
         }
+
         tg::Player & getPlayer(int cid){
             for (int i = 0;i < 3;i++){
                 for (auto y = teams[i].players.begin();y != teams[i].players.end();y++){

@@ -49,7 +49,9 @@ namespace tg
         sf::View arenaView;
         sf::View dashView;
         float zoom;
-
+        float zoomPow;
+        sf::Uint32 visionRange;
+        
         sf::Uint32 scrWidth;
         sf::Uint32 scrHeight;
 
@@ -71,6 +73,13 @@ namespace tg
         sf::Time frameTime;
         sf::Clock clock;
 
+        sf::Clock clock2;
+    sf::Time frameTime2;
+    sf::Time previousTime2;
+    sf::Time currentTime2;
+    float avgFrameTime;
+    std::list<float> times;
+
         std::vector<sf::Vector2f> posTrack;
         
         bool hasRxStateOfUnion;
@@ -81,12 +90,21 @@ namespace tg
 
         std::list<Explosion> explosions;
 
-        sf::Sprite arenaSprite;
-        sf::RenderTexture arenaTexture;
+        sf::Sprite arenaSprite1;
+        sf::RenderTexture arenaTexture1;
+
+        sf::Sprite arenaSprite2;
+        sf::RenderTexture arenaTexture2;
+
+        sf::Sprite arenaSprite3;
+        sf::RenderTexture arenaTexture3;
+
+        sf::Sprite arenaSprite4;
+        sf::RenderTexture arenaTexture4;
 
         sf::Sprite entitiesSprite;
         sf::RenderTexture entitiesTexture;
-
+        
         sf::Sprite dashSprite;
         sf::RenderTexture dashTexture;
 
@@ -100,7 +118,12 @@ namespace tg
 
         sf::Text statusOverlay;
         std::vector<sf::Vector2f> obstructionList;
-        
+        sf::VertexArray floorVertices;
+        sf::VertexArray entityVertices;
+        sf::VertexArray explosionSmallVertices;
+        sf::VertexArray explosionBigVertices;
+
+        sf::Clock updateFloorClock;
     };
 };
 

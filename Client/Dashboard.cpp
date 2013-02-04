@@ -35,7 +35,7 @@ sf::Uint32 Dashboard::setScore(sf::Uint32 score1, sf::Uint32 score2)
 
     return 0;
 }
-sf::Uint32 Dashboard::setDash(Player & player)
+sf::Uint32 Dashboard::setDash(Player & player, float fps)
 {
     std::stringstream ss;
     
@@ -74,7 +74,7 @@ sf::Uint32 Dashboard::setDash(Player & player)
     ss.clear();
     ss.str("");
 
-    ss << "     Body: " << std::fixed << std::setprecision(1) << player.tank.bodyAngle << std::endl << std::endl;
+    ss << "      FPS: " << std::fixed << std::setprecision(1) << fps ;
     bodyAngleText.setString(ss.str());
     bodyAngleText.setColor(sf::Color::Green);
     bodyAngleTextScale = sf::Vector2f(0.6f,0.6f);

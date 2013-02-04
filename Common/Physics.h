@@ -68,9 +68,9 @@ int isGeneratorCollision(sf::Vector2f projPos, sf::Vector2f projSize, std::vecto
         sf::Vector2f genPos = gens[gi];
 
         if (projPos.x > genPos.x &&
-            projPos.x < genPos.x+125.0f &&
+            projPos.x < genPos.x+128.0f &&
             projPos.y > genPos.y && 
-            projPos.y < genPos.y+125.0f )
+            projPos.y < genPos.y+128.0f )
         {
             
             cr.team = team;
@@ -85,9 +85,9 @@ bool isBaseCollision(sf::Vector2f projPos, sf::Vector2f projSize, sf::Vector2f b
 {
     ////TODO: assumes size of base.
     if (projPos.x > basePos.x &&
-        projPos.x < basePos.x+125.0f &&
+        projPos.x < basePos.x+128.0f &&
         projPos.y > basePos.y && 
-        projPos.y < basePos.y+125.0f )
+        projPos.y < basePos.y+128.0f )
     {
         cr.team = team;
         cr.slot = -1;//Only one base per team.
@@ -207,77 +207,71 @@ sf::Uint32 updateVelocity(Player & player, std::vector<sf::Vector2f> & obstructi
         player.tank.position.y = player.tank.position.y + player.tank.velocity.y *  frameTime.asSeconds()*PIXELS_PER_SECOND;
     }
    
+    //player.tank.position.x = floor(player.tank.position.x);
+    //player.tank.position.y = floor(player.tank.position.y);
     return 0;
 }
 
 bool updateProjectilCollisions(Game & g, Player & player, sf::Uint32 playerTeam, std::vector<sf::Vector2f> & obstructionList, bool client, sf::Time frameTime, sf::Clock & clock)
 {
-
-
     for (auto i = player.prjctls.begin();i != player.prjctls.end();)
     {
         float accTime = clock.getElapsedTime().asSeconds();
 
-        bool intersects = false;
+        bool obstructed = false;
+        sf::Vector2f p(i->position.x + i->velocity.x *  frameTime.asSeconds()*PIXELS_PER_SECOND,
+                       i->position.y + i->velocity.y *  frameTime.asSeconds()*PIXELS_PER_SECOND);
+        
+        
         for (auto oi = obstructionList.begin();oi != obstructionList.end();oi++)
         {
             sf::FloatRect fr(oi->x,oi->y, 125,125);
-            sf::Vector2f p(i->position.x + i->velocity.x *  frameTime.asSeconds()*PIXELS_PER_SECOND,
-                           i->position.y + i->velocity.y *  frameTime.asSeconds()*PIXELS_PER_SECOND);
             if (fr.contains(p)){
-                intersects = true;
+                obstructed = true;
                 break;
             }
         }
         
+        
+        
+        ////Remove projectile that has hit a tank, creep, generator, or base.
+        sf::Uint32 damage = (client ? 0 : i->damage);
+        sf::Vector2u sz(32,32);
+        sf::Uint32 otherTeam  = (playerTeam==1 ? 2 : 1);
+        CollisionResult cr1;
+        CollisionResult cr2;
+        CollisionResult cr3;
+        CollisionResult cr4;
+
+        bool yes1 = isTankCollision(i->position, 
+                                    sf::Vector2f((float)sz.x,(float)sz.y),
+                                    g.teamMan.teams[otherTeam].players,
+                                    cr1,
+                                    otherTeam);
+
+        bool yes2 = isCreepCollision(i->position, 
+                                    sf::Vector2f((float)sz.x,(float)sz.y),
+                                    g.teamMan.teams[otherTeam].creep, 
+                                    cr2,
+                                    otherTeam);
+
+        bool yes3 = isGeneratorCollision(i->position,
+                                    sf::Vector2f((float)sz.x,(float)sz.y) ,
+                                    g.arenaMan.getGenerator(otherTeam),
+                                    cr3,
+                                    otherTeam);
+
+        bool yes4 = isBaseCollision(i->position,
+                                    sf::Vector2f((float)sz.x,(float)sz.y),
+                                    g.arenaMan.getStartPosition(otherTeam),//g.teamMan.teams[otherTeam].base1,
+                                    cr4,
+                                    otherTeam);
 
 
-        if (intersects || (i->creationTime + 0.56f)  < accTime )
+        if (yes1 || yes2 || yes3 || yes4 || obstructed || (i->creationTime + 0.56f)  < accTime )
         {
-            //Remove projectiles who have run out of power.
-            i = player.prjctls.erase(i);
-        }else
-        {
-            i->position.x = i->position.x + i->velocity.x * frameTime.asSeconds()*PIXELS_PER_SECOND;
-            i->position.y = i->position.y + i->velocity.y * frameTime.asSeconds()*PIXELS_PER_SECOND;
-            i->totalDistance+=1;
-
-            ////Remove projectile that has hit a tank, creep, generator, or base.
-            sf::Uint32 damage = (client ? 0 : i->damage);
-            sf::Vector2u sz(32,32);// = g.assetMan.getImage(ImageType::Projectile1).img.getSize();//getProjectileImage("Projectile").img->getSize();
-            sf::Uint32 otherTeam  = (playerTeam==1 ? 2 : 1);
-            CollisionResult cr1;
-            CollisionResult cr2;
-            CollisionResult cr3;
-            CollisionResult cr4;
-
-            bool yes1 = isTankCollision(i->position, 
-                                        sf::Vector2f((float)sz.x,(float)sz.y),
-                                        g.teamMan.teams[otherTeam].players,
-                                        cr1,
-                                        otherTeam);
-
-            bool yes2 = isCreepCollision(i->position, 
-                                         sf::Vector2f((float)sz.x,(float)sz.y),
-                                         g.teamMan.teams[otherTeam].creep, 
-                                         cr2,
-                                         otherTeam);
-
-            bool yes3 = isGeneratorCollision(i->position,
-                                             sf::Vector2f((float)sz.x,(float)sz.y) ,
-                                             g.arenaMan.getGenerator(otherTeam),
-                                             cr3,
-                                             otherTeam);
-
-            bool yes4 = isBaseCollision(i->position,
-                                        sf::Vector2f((float)sz.x,(float)sz.y),
-                                        g.arenaMan.getStartPosition(otherTeam),//g.teamMan.teams[otherTeam].base1,
-                                        cr4,
-                                        otherTeam);
-                            
-            if (yes1 || yes2 || yes3 || yes4)
-            {
-                Explosion exp;
+            //Remove projectiles who have run their course..
+            Explosion exp;
                 exp.type = ExplosionType::None;
                 exp.position = i->position;
                 exp.index=0;
@@ -346,12 +340,13 @@ bool updateProjectilCollisions(Game & g, Player & player, sf::Uint32 playerTeam,
                         
                     }
                 }
-                i = player.prjctls.erase(i);
-            }
-            else//No hit; goto next projectile
-            {
-                i++;
-            }
+            i = player.prjctls.erase(i);
+        }else //It keeps going...
+        {
+            i->position.x = i->position.x + i->velocity.x * frameTime.asSeconds()*PIXELS_PER_SECOND;
+            i->position.y = i->position.y + i->velocity.y * frameTime.asSeconds()*PIXELS_PER_SECOND;
+            i->totalDistance+=1;
+            i++;
         }
     }
     return true;

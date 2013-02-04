@@ -5,6 +5,7 @@
 
 int main()
 {
+
     tg::GameServer gameServer;
     bool done = false;
 
@@ -18,7 +19,7 @@ int main()
 
         gameServer.doLoop();
 
-        sf::sleep(sf::milliseconds(0));
+        //sf::sleep(sf::milliseconds(0));
     }
 
     gameServer.doCleanup();

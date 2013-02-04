@@ -98,12 +98,12 @@ sf::Uint32 GameServer::doLocalEvents()
 
 sf::Uint32 GameServer::doInit()
 {
-    stageEst.doInit(*this);
-    stageRun.doInit(*this);
-
     arenaMan.load("Assets\\map7.txt");
     assetMan.load();
     teamMan.load();
+    
+    stageEst.doInit(*this);
+    stageRun.doInit(*this);
     
     server.StartServer(8280);
 

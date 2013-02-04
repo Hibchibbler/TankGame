@@ -135,34 +135,17 @@ sf::Uint32 GameClient::doInit()
     assetMan.load();
     arenaMan.load("Assets\\map7.txt");
     teamMan.load();
-   
 
-    //std::string name;
-    //std::string address;
-    //std::string port;
-    //int resIndex;
+    window.create(sf::VideoMode(800,600,32), "Mega Blaster Tank Game - Resolution Choosing Mode");
+    sf::ContextSettings cs = window.getSettings();
 
-    ////Load Start Menu settings from a simple text file
-    //std::ifstream fin;
-    //fin.open( "client_stage_start.txt" ); 
-    //if (fin.is_open())
-    //{
-    //    std::cout << "Read from client_stage_start.txt" << std::endl;
-    //    fin >> name;
-    //    fin >> address;
-    //    fin >> port;
-    //    fin >> resIndex;
-    //}
-
-    //if (resIndex != -1)
-    //{
-    //    std::vector<sf::VideoMode> modes = sf::VideoMode::getFullscreenModes();
-    //    window.create(modes[resIndex], "Mega Blaster Tank Game", sf::Style::Fullscreen);
-    //}else
-    //{
-        window.create(sf::VideoMode(800,600,32), "Mega Blaster Tank Game - Resolution Choosing Mode");
-    //}
-
+    std::cout << "depthBits=" << cs.depthBits << std::endl;
+    std::cout << "stencilBits=" << cs.stencilBits << std::endl;
+    std::cout << "antialiasingLevel=" << cs.antialiasingLevel << std::endl;
+    std::cout << "majorVersion=" << cs.majorVersion << std::endl;
+    std::cout << "minVersion=" << cs.minorVersion << std::endl;
+    window.setVerticalSyncEnabled(true);
+    //window.setFramerateLimit(30);
     return 0;
 }
 

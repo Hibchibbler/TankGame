@@ -16,8 +16,8 @@ int AssetManager::load()
 {
     font.loadFromFile("Assets\\digital-7mono.ttf");
     spriteSheet.load("Assets\\FloorTiles.png");
-    smallExplosionSheet.load("Assets\\explosion2.png");
-    bigExplosionSheet.load("Assets\\explosion3.png");
+    smallExplosionSheet.load("Assets\\smallExplosion.png");
+    bigExplosionSheet.load("Assets\\bigExplosion.png");
     //LogFile::get()->log(0,0,"Loaded explosion1");
     return 0;
 }
@@ -76,22 +76,26 @@ sf::Sprite & AssetManager::getSprite(int i)
         spriteSheet.sprite.setTextureRect(sf::IntRect(128,256,128,128));
         return spriteSheet.sprite;
         break;
-    case ImageType::Minion1:
-        spriteSheet.sprite.setTextureRect(sf::IntRect(256,323,57,70));
+    case ImageType::FogOfWar:
+        spriteSheet.sprite.setTextureRect(sf::IntRect(386,314,128,128));
         return spriteSheet.sprite;
         break;
     case ImageType::Minion2:
-        spriteSheet.sprite.setTextureRect(sf::IntRect(319,327,66,62));
+        spriteSheet.sprite.setTextureRect(sf::IntRect(257,314,64,64));
+        return spriteSheet.sprite;
+        break;
+    case ImageType::Minion1:
+        spriteSheet.sprite.setTextureRect(sf::IntRect(320,314,64,64));
         return spriteSheet.sprite;
         break;
     case ImageType::Dash1:
         spriteSheet.sprite.setTextureRect(sf::IntRect(0,447,512,65));
         return spriteSheet.sprite;
         break;
-    case ImageType::Explosion1:
+    case ImageType::ExplosionSmall:
         return smallExplosionSheet.sprite;
         break;
-    case ImageType::Explosion2:
+    case ImageType::ExplosionBig:
         return bigExplosionSheet.sprite;
         break;
     case ImageType::TankBlue:
@@ -102,20 +106,30 @@ sf::Sprite & AssetManager::getSprite(int i)
         spriteSheet.sprite.setTextureRect(sf::IntRect(384,128,73,116));
         return spriteSheet.sprite;
         break;
-    case ImageType::TankShadow:
-        return spriteSheet.sprite;
-        break;
     case ImageType::TurretBlue:
-        spriteSheet.sprite.setTextureRect(sf::IntRect(331,128,47,164));
+        spriteSheet.sprite.setTextureRect(sf::IntRect(331,128,47,176));
         return spriteSheet.sprite;
         break;
     case ImageType::TurretRed:
-        spriteSheet.sprite.setTextureRect(sf::IntRect(459,128,47,164));
-        return spriteSheet.sprite;
-        break;
-    case ImageType::TurretShadow:
+        spriteSheet.sprite.setTextureRect(sf::IntRect(459,128,47,176));
         return spriteSheet.sprite;
         break;
     }
+}
+
+
+sf::Texture & AssetManager::getTexture(int i)
+{
+    switch (i)
+    {
+    case 0:
+        return spriteSheet.tex;
+    case 1:
+        return smallExplosionSheet.tex; 
+    case 2:
+        return bigExplosionSheet.tex;
+    default:
+        return bigExplosionSheet.tex;
+    };
 }
 

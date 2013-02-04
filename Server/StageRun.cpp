@@ -18,6 +18,15 @@ StageRun::StageRun(Game & g)
 {
     loopTime = sf::Time();
     stateUpdated = false;
+
+
+}
+
+sf::Uint32 StageRun::doInit(Game &g)
+{
+    //Prepare obstruction list(once)
+    obstructionList = prepareObstructionList(g.arenaMan);
+    return 0;
 }
 
 sf::Uint32 StageRun::doRemoteEvent(Game & g,
@@ -57,7 +66,7 @@ sf::Uint32 StageRun::doRemoteEvent(Game & g,
 
 
 #define CREEP_SPEED 17
-#define CREEP_SPAWN_MS 900
+#define CREEP_SPAWN_MS 1000
 #define UPDATE_STATE_MS 50
 #define SEND_STATE_MS 100//110
 #define PIXELS_PER_SECOND 10
@@ -142,6 +151,7 @@ sf::Uint32 StageRun::doLoop(Game & g)
         currentTime = velocityClock.restart();
         deltaTime = currentTime - previousTime;
         loopTime += deltaTime;
+
         //std::cout << loopTime.asSeconds() << std::endl;
         for (int y = 1; y < 3 ; y++)
         {
@@ -163,7 +173,7 @@ sf::Uint32 StageRun::doLoop(Game & g)
                         break;
                     case PlayerState::Ready:
                         Messages::sendStart(g.server, g.teamMan, pi->connectionId);
-                        obstructionList = prepareObstructionList(g.arenaMan);
+
                         pi->state = PlayerState::Running;
                         break;
                     case PlayerState::Running:
@@ -575,8 +585,7 @@ sf::Uint32 StageRun::doLoop(Game & g)
             deathLaserClock.restart();
         
         updateStateTimer.restart();
-    }else{//not time to update state.
-        sf::sleep(sf::milliseconds(0));
+        //sf::sleep(sf::milliseconds(0));
     }
 
     if (sendStateTimer.getElapsedTime().asMilliseconds() > SEND_STATE_MS && stateUpdated)

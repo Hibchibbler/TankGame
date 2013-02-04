@@ -9,6 +9,7 @@ namespace tg
     {
     public:
         StageRun(Game & g);
+        sf::Uint32 doInit(Game &g);
         sf::Uint32 doRemoteEvent(Game & g,
                                  CommEvent & cevent,
                                  sf::Uint32 connId,

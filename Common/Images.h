@@ -10,6 +10,7 @@ Daniel Ferguson
 #define Images_h_
 
 #include <SFML/Graphics.hpp>
+#include <iostream>
 
 namespace tg
 {
@@ -17,10 +18,17 @@ namespace tg
     {
     public:
         sf::Uint32 load(std::string fn){
+            std::cout << "sf::Texture::getMaximumSize() == " << sf::Texture::getMaximumSize() << std::endl;
+
             img.loadFromFile(fn);
+            
             img.createMaskFromColor(sf::Color::Cyan,0);
+            
             tex.loadFromImage(img);
+            tex.setSmooth(false);
+            std::cout << tex.getSize().x << ", " << tex.getSize().y <<  std::endl;
             sprite.setTexture(tex);
+            
             return 0;
         }
         sf::Uint32 unload(){

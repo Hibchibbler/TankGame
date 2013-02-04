@@ -240,8 +240,6 @@ sf::Uint32 StageLobby::doLoop(Game & g)
             }
         }
         loopTime.restart();
-    }else{
-        sf::sleep(sf::seconds(0.0f));
     }
     return getSummary(0).a;
 }

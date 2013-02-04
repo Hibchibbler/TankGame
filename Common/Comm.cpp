@@ -67,7 +67,7 @@ void tg::Comm::Stop()
  //Send operates on the Established connections container
 void tg::Comm::Send(tg::CommEvent &gpacket)
 {
-    EstablishedMutex.lock();
+    //EstablishedMutex.lock();
     std::vector<tg::Connection>::iterator i = Established.begin();
     for (;i != Established.end();i++){
         if (gpacket.connectionId == -1 || gpacket.connectionId == i->connectionId){
@@ -76,7 +76,7 @@ void tg::Comm::Send(tg::CommEvent &gpacket)
             i->SendMutex->unlock();
         }
     }
-    EstablishedMutex.unlock();
+    //EstablishedMutex.unlock();
 }
 
 //Receive operates on the Established connections container
@@ -95,7 +95,7 @@ bool tg::Comm::Receive(tg::CommEvent &gpacket)
 
 
     //now check for data
-    EstablishedMutex.lock();
+    //EstablishedMutex.lock();
     std::vector<tg::Connection>::iterator i = Established.begin();
     for (;i != Established.end();i++){
         i->RecvMutex->lock();
@@ -109,7 +109,7 @@ bool tg::Comm::Receive(tg::CommEvent &gpacket)
         }
         i->RecvMutex->unlock();
     }
-    EstablishedMutex.unlock();
+    //EstablishedMutex.unlock();
     return false;
 }
 
@@ -122,16 +122,16 @@ void tg::Comm::AddConnection(tg::Connection &client)
 }
 
 
-std::vector<sf::Uint32> tg::Comm::getConnectionIds()
-{
-    EstablishedMutex.lock();
-    std::vector<sf::Uint32> cids;
-    for (auto i = Established.begin();i != Established.end();i++){
-        cids.push_back(i->connectionId);
-    }
-    EstablishedMutex.unlock();
-    return cids;
-}
+//std::vector<sf::Uint32> tg::Comm::getConnectionIds()
+//{
+//    EstablishedMutex.lock();
+//    std::vector<sf::Uint32> cids;
+//    for (auto i = Established.begin();i != Established.end();i++){
+//        cids.push_back(i->connectionId);
+//    }
+//    EstablishedMutex.unlock();
+//    return cids;
+//}
 
 void tg::Comm::CommLooper(Comm* comm)
 {
@@ -209,7 +209,7 @@ void tg::Comm::CommLooper(Comm* comm)
         }comm->ConnectingMutex.unlock();
         
 
-        comm->EstablishedMutex.lock();
+        //comm->EstablishedMutex.lock();
         {
             //Retrieve new incoming data
             if ( comm->EstablishedSelector.wait(sf::milliseconds(3)) ) {
@@ -257,8 +257,12 @@ void tg::Comm::CommLooper(Comm* comm)
                 }
             }
             //Send any pending outgoing data
-            
+        }//comm->EstablishedMutex.unlock();
 
+        sf::sleep(sf::milliseconds(0));
+
+        //comm->EstablishedMutex.lock();
+        {
             std::vector<tg::Connection>::iterator connection =  comm->Established.begin();
             for (;connection != comm->Established.end();){
                 bool ok = true;
@@ -291,9 +295,8 @@ void tg::Comm::CommLooper(Comm* comm)
                     delete connection->RecvMutex;
                     connection = comm->Established.erase(connection);
                 }
-                
             }
-        }comm->EstablishedMutex.unlock();
+         }//comm->EstablishedMutex.unlock();
             
       
 

@@ -61,7 +61,7 @@ sf::Uint32 StageStart::doInit(Game & g)
     sfg::Label::Ptr warningLabel;
     resolutionLabel = sfg::Label::Create("Resolution");
     resolutionComboBox = sfg::ComboBox::Create();
-    warningLabel = sfg::Label::Create("*Changing Resolution Setting will cause the game to exit. And then you must start it again");
+    warningLabel = sfg::Label::Create("Choose Wisely");
     warningLabel->SetLineWrap(true);
     applyButton = sfg::Button::Create("Apply");
     std::vector<sf::VideoMode> modes = sf::VideoMode::getFullscreenModes();
@@ -127,8 +127,6 @@ sf::Uint32 StageStart::doLoop(Game & g)
         g.desk.Update(loopTime.getElapsedTime().asSeconds());
 
         loopTime.restart();
-    }else{
-        sf::sleep(sf::seconds(0.0f));
     }
     return getSummary(0).a;
 }
@@ -179,7 +177,7 @@ void StageStart::doJoin()
         {
             g.window.close();
             std::vector<sf::VideoMode> modes = sf::VideoMode::getFullscreenModes();
-            g.window.create(modes[it], "Mega Blaster Tank Game", sf::Style::Fullscreen);
+            g.window.create(modes[it], "Mega Blaster Tank Game");//, sf::Style::Fullscreen);
         }
         //Tell Game that this stage is finished
         Element e0;

@@ -1,11 +1,17 @@
 #include "GameClient.h"
 #include <SFML/Window.hpp>
 
+#include <MMSystem.h>
+
 #define WINDOW_WIDTH 1366
 #define WINDOW_HEIGHT 768
 
 int main()
 {
+    //std::cout << "sf::Texture::getMaximumSize() == " << sf::Texture::getMaximumSize() << std::endl;
+    
+    //std::cout << timeBeginPeriod(2) << std::endl;
+
     tg::GameClient gameClient(640,480);
     bool done = false;
 
@@ -33,11 +39,10 @@ int main()
         }
 
         ret = gameClient.doDraw(frameTime);
-
-        sf::sleep(sf::milliseconds(0));
     }
 
     gameClient.doCleanup();
+    //timeEndPeriod(2);
     return 0;
 }
 
