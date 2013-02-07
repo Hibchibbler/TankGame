@@ -122,7 +122,8 @@ int doExplosiveStrike(std::list<Explosion> & explosions, sf::Int32 & health, sf:
 
 sf::Uint32 fireProjectile(Player & player, sf::Clock & clock)
 {
-    if (player.tank.attacking == AttackAction::Attacking)
+    if (player.tank.attacking == AttackAction::Attacking &&
+        player.tank.health > 0)
     {
         player.prjctls.push_back(Projectile());
         player.prjctls.back().velocity.x = 200.0f*((float)cos(player.tank.turretAngle*(0.0174531f))) + player.tank.velocity.x;
@@ -171,15 +172,15 @@ sf::Uint32 updateVelocity(Player & player, std::vector<sf::Vector2f> & obstructi
         player.tank.bodyAngle = 0;
     }
 
-    //TODO: HACK: hardcoded arena boundaries based on debug map and a 125px wide floor tile.
-    if (player.tank.position.x + player.tank.velocity.x *  frameTime.asSeconds()*PIXELS_PER_SECOND < (125) ||
-        player.tank.position.x + player.tank.velocity.x *  frameTime.asSeconds()*PIXELS_PER_SECOND > (59*125) )
+    //TODO: HACK: hardcoded arena boundaries based on debug map and a 128px wide floor tile.
+    if (player.tank.position.x + player.tank.velocity.x *  frameTime.asSeconds()*PIXELS_PER_SECOND < (128) ||
+        player.tank.position.x + player.tank.velocity.x *  frameTime.asSeconds()*PIXELS_PER_SECOND > (59*128) )
     {
         player.tank.velocity.x = 0;
     }
 
-    if (player.tank.position.y + player.tank.velocity.y *  frameTime.asSeconds()*PIXELS_PER_SECOND < (125) ||
-        player.tank.position.y + player.tank.velocity.y *  frameTime.asSeconds()*PIXELS_PER_SECOND > (59*125) )
+    if (player.tank.position.y + player.tank.velocity.y *  frameTime.asSeconds()*PIXELS_PER_SECOND < (128) ||
+        player.tank.position.y + player.tank.velocity.y *  frameTime.asSeconds()*PIXELS_PER_SECOND > (59*128) )
     {
         player.tank.velocity.y = 0;
     }
@@ -193,7 +194,7 @@ sf::Uint32 updateVelocity(Player & player, std::vector<sf::Vector2f> & obstructi
     bool intersects = false;
     for (auto oi = obstructionList.begin();oi != obstructionList.end();oi++)
     {
-        sf::FloatRect fr(oi->x,oi->y, 125,125);
+        sf::FloatRect fr(oi->x,oi->y, 128,128);
         sf::Vector2f p(player.tank.position.x + player.tank.velocity.x *  frameTime.asSeconds()*PIXELS_PER_SECOND,
                        player.tank.position.y + player.tank.velocity.y *  frameTime.asSeconds()*PIXELS_PER_SECOND);
         if (fr.contains(p)){
@@ -225,7 +226,7 @@ bool updateProjectilCollisions(Game & g, Player & player, sf::Uint32 playerTeam,
         
         for (auto oi = obstructionList.begin();oi != obstructionList.end();oi++)
         {
-            sf::FloatRect fr(oi->x,oi->y, 125,125);
+            sf::FloatRect fr(oi->x,oi->y, 128,128);
             if (fr.contains(p)){
                 obstructed = true;
                 break;

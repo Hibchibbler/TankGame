@@ -11,8 +11,8 @@ Daniel Ferguson
 
 #include <SFML/Graphics.hpp>
 
-#define ARENAMAN_TILE_WIDTH  125
-#define ARENAMAN_TILE_HEIGHT 125
+#define ARENAMAN_TILE_WIDTH  128
+#define ARENAMAN_TILE_HEIGHT 128
 
 #include <iostream>
 #include <fstream>
@@ -23,6 +23,11 @@ namespace tg
     class Tile
     {
     public:
+        Tile(){
+            fog = true;
+            visited = false;
+
+        }
         void setId(sf::Uint32 i){
             id = i;
         }
@@ -39,12 +44,14 @@ namespace tg
             return id;
         }
 
-        void setName(std::string n){name=n;}
-        std::string getName(){return name;}
-    private:
+        //void setName(std::string n){name=n;}
+        //std::string getName(){return name;}
+    //private:
         sf::Vector2f position;
         sf::Uint32 id;
-        std::string name;
+        bool fog;
+        bool visited;
+        //std::string name;
     };
 
     struct TileType{
@@ -123,23 +130,30 @@ namespace tg
             return 0;
         }
 
-        /*bool indexToRC(int index, int & r, int & c)
+        bool indexToPos(int index, int & r, int & c)
         {
-            sf::Vector2f pos;
-
-            int row = index / horizTileNum;
-
             r = (index % horizTileNum) * ARENAMAN_TILE_WIDTH;
-            c = row * ARENAMAN_TILE_HEIGHT;
-
+            c = (index / horizTileNum) * ARENAMAN_TILE_HEIGHT;
             return true;
         }
 
-        bool posToIndex(sf::Vector2f pos, int & index)
+        void posToIndex(sf::Vector2f pos, int & index)
         {
-            index = (pos.x / horizTileNum) * (pos.y / vertTileNum);
-            return true;
-        }*/
+            int w,h;
+            w = ARENAMAN_TILE_WIDTH;
+            h = ARENAMAN_TILE_HEIGHT;
+
+            //quantize
+            int gridCoordX = (((int)pos.x / w) * w);
+            int gridCoordY = (((int)pos.y / h) * h);
+            
+            //normalize
+            int mapCoordX = gridCoordX / w;
+            int mapCoordY = gridCoordY / h;
+
+            //convert
+            index = mapCoordX + (mapCoordY*horizTileNum);
+        }
 
         sf::Uint32 setSprites(AssetManager & am, int screenWidth, int screenHeight);
         sf::Vector2f getStartPosition(int team){
@@ -195,8 +209,9 @@ namespace tg
     
         sf::Uint32 horizTileNum;
         sf::Uint32 vertTileNum;
-private:
+
         std::vector<Tile>  arenaData;
+private:
         std::vector<sf::Vector2f> team1GenPos;
         std::vector<sf::Vector2f> team2GenPos;
         sf::Vector2f team1BasePos;
