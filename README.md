@@ -1,5 +1,9 @@
 TankGame - Redux
 ================
+![logo](https://raw.github.com/Hibchibbler/TankGame/master/Screenshots/MapEditor.png?login=Hibchibbler&token=205db478f6e85c6c326d88b18a855816)
+------------------------
+![logo](https://raw.github.com/Hibchibbler/TankGame/master/Screenshots/bigMap_SmootherFoW.png?login=Hibchibbler&token=9493ea88231920c48cfecee08fde2004)
+------------------------
 ![logo](https://raw.github.com/Hibchibbler/TankGame/master/Screenshots/FullSize_TugOfWar.png?login=Hibchibbler&token=c0f589085fe571c10a3d66c25ef18ca1)
 ------------------------
 ![logo](https://raw.github.com/Hibchibbler/TankGame/master/Screenshots/LaserBlasted_windowed.png?login=Hibchibbler&token=70f8be01129e6356f3c7fc8de4e0a8d4)
