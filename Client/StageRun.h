@@ -41,6 +41,9 @@ namespace tg
 
         sf::Uint32 prepareAssets(Game &g);
         sf::Uint32 drawAll(sf::RenderWindow & window, Game & g);
+        sf::Uint32 StageRun::addStraightQuad(sf::VertexArray & v, sf::FloatRect c, sf::IntRect t);
+        sf::Uint32 StageRun::addRotQuad(sf::VertexArray & v, sf::FloatRect p, sf::IntRect t, float angle);
+
         Dashboard dash;
         Player thisPlayer;
         sf::Vector2f targetPosition;
@@ -124,6 +127,14 @@ namespace tg
         sf::VertexArray explosionBigVertices;
 
         sf::Clock updateFloorClock;
+
+        sf::FloatRect viewRect;
+
+        sf::Clock fireClock;
+        sf::Clock scrollClock;
+
+        int viewPreset;
+        
     };
 };
 

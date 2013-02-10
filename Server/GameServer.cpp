@@ -98,7 +98,7 @@ sf::Uint32 GameServer::doLocalEvents()
 
 sf::Uint32 GameServer::doInit()
 {
-    arenaMan.load("Assets\\map7.txt");
+    arenaMan.load("Assets\\12_full.map");
     assetMan.load();
     teamMan.load();
     

@@ -22,6 +22,7 @@ StageRun::StageRun(Game & g)
     showRunMenu = false;
     zoomPow = 1;
     visionRange = 1000;
+    viewPreset = 0;
 }
 
 sf::Uint32 StageRun::doInit(Game & g)
@@ -32,6 +33,8 @@ sf::Uint32 StageRun::doInit(Game & g)
     //Prepare obstruction list(once)
     obstructionList = prepareObstructionList(g.arenaMan);
     
+    //viewRect = sf::FloatRect((int)(g.arenaMan.getStartPosition(g.myTeam).x-(g.scrWidth/2.0f)),(int)(g.arenaMan.getStartPosition(g.myTeam).y-(g.scrHeight/2.0f)),g.scrWidth,g.scrHeight);
+
     //Construct SFGUI menus for later.
     sfg::Button::Ptr quitButton = sfg::Button::Create("Quit?");
     quitButton->GetSignal( sfg::Widget::OnLeftClick ).Connect( &StageRun::doQuit, this );
@@ -188,7 +191,7 @@ sf::Uint32 StageRun::doWindowEvent(sf::RenderWindow & w,
     }else if (event.type == sf::Event::MouseWheelMoved){
         if (event.mouseWheel.delta  > 0)
         {
-            if (zoom == 1)
+            /*if (zoom == 1)
                 zoom = 3;
             else if (zoom == 3)
                 zoom = 5;
@@ -196,15 +199,25 @@ sf::Uint32 StageRun::doWindowEvent(sf::RenderWindow & w,
                 zoom = 7;
             else if (zoom == 7)
                 zoom = 9;
+            else if (zoom == 9)
+                zoom = 11;
+            else if (zoom == 11)
+                zoom = 13;*/
+            zoom +=1;
         }else{
-            if (zoom == 9)
-                zoom = 7;
-            else if (zoom == 7)
-                zoom = 5;
-            else if (zoom == 5)
-                zoom = 3;
-            else if (zoom == 3)
-                zoom = 1;
+            //if (zoom == 13)
+            //    zoom = 11;
+            //else if (zoom == 11)
+            //    zoom = 9;
+            //else if (zoom == 9)
+            //    zoom = 7;
+            //else if (zoom == 7)
+            //    zoom = 5;
+            //else if (zoom == 5)
+            //    zoom = 3;
+            //else if (zoom == 3)
+            //    zoom = 1;
+            zoom -= 1;
 
         }
         std::cout << "Zoom: " << zoom << std::endl;
@@ -212,8 +225,10 @@ sf::Uint32 StageRun::doWindowEvent(sf::RenderWindow & w,
         hasFocus = true;
     }else if (event.type == sf::Event::MouseLeft){
         hasFocus = false;
+    }else if (event.type == sf::Event::Resized){
+        
     }
-
+    
     g.desk.HandleEvent(event);
     
     return 0;
@@ -247,6 +262,8 @@ sf::Uint32 StageRun::doLoop(Game & g)
                         updateVelocity(thisPlayer, obstructionList, frameTime);
                         //std::cout << c.getElapsedTime().asSeconds() << std::endl;
                         updateProjectilCollisions(g,thisPlayer, g.myTeam, obstructionList, true, frameTime, accumulatingClock);
+
+
               
                 break;
             }
@@ -257,7 +274,50 @@ sf::Uint32 StageRun::doLoop(Game & g)
 }
 sf::Uint32 StageRun::doLocalInput(sf::RenderWindow & window, Game & g)
 {
-    if (inputClock.getElapsedTime().asSeconds() > 0.100f)
+    //Window Scrolling 
+    if (scrollClock.getElapsedTime().asSeconds() > 0.06)
+    {
+        sf::Vector2i mousePos = sf::Mouse::getPosition(window);
+        sf::Vector2f mousePosWorld = window.convertCoords(mousePos,arenaView);
+
+        //If view shifts, then next time spacebar is hit, snap to tank...
+        //hence, viewPreset=0;
+        if (mousePosWorld.x > (arenaView.getCenter().x+(g.scrWidth/4)*zoom) ){
+            arenaView.move(100.0f, 0);
+            viewPreset = 0;
+        }else if (mousePosWorld.x < (arenaView.getCenter().x-(g.scrWidth/4)*zoom) ){
+            arenaView.move(-100.0f, 0);
+            viewPreset = 0;
+        }
+
+    
+        if (mousePosWorld.y > (arenaView.getCenter().y+(g.scrHeight/4)*zoom) ){
+            arenaView.move(0, 100.0f);
+            viewPreset = 0;
+        }else if (mousePosWorld.y < (arenaView.getCenter().y-(g.scrHeight/4)*zoom) ){
+            arenaView.move(0, -100.0f);
+            viewPreset = 0;
+        }
+
+
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space)){
+            if (viewPreset == 0){
+                arenaView.setCenter(thisPlayer.tank.position);
+                viewPreset = (viewPreset + 1) % 2;
+            }else if (viewPreset == 1)
+            {
+                arenaView.setCenter(g.arenaMan.getStartPosition(g.myTeam));
+                viewPreset = (viewPreset + 1) % 2;
+            }
+        }
+
+        scrollClock.restart();
+    }
+
+    
+
+
+    if (inputClock.getElapsedTime().asSeconds() > 0.075f)
     {
         if (!hasFocus)
             return 0;
@@ -273,14 +333,6 @@ sf::Uint32 StageRun::doLocalInput(sf::RenderWindow & window, Game & g)
             }
         }
 
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::K))
-        {
-            visionRange+=250;
-        }else if (sf::Keyboard::isKeyPressed(sf::Keyboard::M))
-        {
-            visionRange-=250;
-        }
-        //thisPlayer = g.teamMan.teams[g.myTeam].players[g.mySlot];
         //We poll keyboard 
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)){
             thisPlayer.tank.accelerating = AccelerateAction::Forward;
@@ -304,12 +356,14 @@ sf::Uint32 StageRun::doLocalInput(sf::RenderWindow & window, Game & g)
            //it to the server.
         }
     
-        if (sf::Mouse::isButtonPressed(sf::Mouse::Left)){
+        if (sf::Mouse::isButtonPressed(sf::Mouse::Left) && fireClock.getElapsedTime().asSeconds() > 0.250f){
             thisPlayer.tank.attacking = AttackAction::Attacking;
+            fireClock.restart();
         }else{
-          //doLoop will nullify this action after sending
-          //it to the server.
+            //doLoop will nullify this action after sending
+            //it to the server.
         }
+        
 
         lastMousePos = curMousePos;
         curMousePos = sf::Mouse::getPosition(window);
@@ -334,13 +388,13 @@ sf::Uint32 StageRun::doLocalInput(sf::RenderWindow & window, Game & g)
         }
 
         times.push_back(frameTime2.asSeconds());
-        if (times.size() > 20)
+        if (times.size() > 100)
             times.erase(times.begin());
         float at=0.0f;
         for (auto k = times.begin();k != times.end();k++){
             at += *k;
         }
-        at /= 20.0f;
+        at /= 100.0f;
         dash.setDash(thisPlayer, 1.0f/at);
         
 
@@ -383,7 +437,7 @@ sf::Uint32 StageRun::doDraw(sf::RenderWindow & window, Game & g, sf::Time ft)
     return 0;
 }
 
-sf::Uint32 addStraightQuad(sf::VertexArray & v, sf::FloatRect c, sf::IntRect t)
+sf::Uint32 StageRun::addStraightQuad(sf::VertexArray & v, sf::FloatRect c, sf::IntRect t)
 {
     v.append(sf::Vertex(sf::Vector2f(c.left, c.top),
                         sf::Vector2f(t.left, t.top)
@@ -405,7 +459,7 @@ sf::Uint32 addStraightQuad(sf::VertexArray & v, sf::FloatRect c, sf::IntRect t)
 }
 
 
-sf::Uint32 addRotQuad(sf::VertexArray & v, sf::FloatRect p, sf::IntRect t, float angle)
+sf::Uint32 StageRun::addRotQuad(sf::VertexArray & v, sf::FloatRect p, sf::IntRect t, float angle)
 {
 
     float px1,py1;
@@ -460,10 +514,108 @@ sf::Uint32 StageRun::prepareAssets(Game &g)
     statusOverlay.setFont(g.assetMan.getFont());
     statusOverlay.setScale(2.0,2.0);
     statusOverlay.setColor(sf::Color::Green);
+
+    //viewRect = sf::FloatRect((int)(g.arenaMan.getStartPosition(g.myTeam).x-(g.scrWidth/2.0f)),(int)(g.arenaMan.getStartPosition(g.myTeam).y-(g.scrHeight/2.0f)),g.scrWidth,g.scrHeight);
+    arenaView.setCenter((int)(g.arenaMan.getStartPosition(g.myTeam).x-(g.scrWidth/2.0f)),
+                        (int)(g.arenaMan.getStartPosition(g.myTeam).y-(g.scrHeight/2.0f)));
     return 0;
 }
 
-#define BASE_VISION_RANGE 1000
+#define BASE_VISION_RANGE 700
+#define CENTER sf::Vector2i( 0, 0)
+#define NIL    sf::Vector2i( 0, 0)
+//
+sf::Vector2i fogMask0[] = 
+{
+            NIL        ,         NIL        ,         NIL        ,        NIL         ,         NIL        ,         NIL        ,         NIL        ,         NIL        ,         NIL        ,         NIL        ,         NIL        ,
+            NIL        ,         NIL        ,         NIL        , sf::Vector2i(-2,-4), sf::Vector2i(-1,-4), sf::Vector2i( 0,-4), sf::Vector2i( 1,-4), sf::Vector2i( 2,-4),         NIL        ,         NIL        ,         NIL        ,
+            NIL        ,         NIL        , sf::Vector2i(-3,-3), sf::Vector2i(-2,-3), sf::Vector2i(-1,-3), sf::Vector2i( 0,-3), sf::Vector2i( 1,-3), sf::Vector2i( 2,-3), sf::Vector2i( 3,-3),         NIL        ,         NIL        ,
+            NIL        , sf::Vector2i(-4,-2), sf::Vector2i(-3,-2), sf::Vector2i(-2,-2), sf::Vector2i(-1,-2), sf::Vector2i( 0,-2), sf::Vector2i( 1,-2), sf::Vector2i( 2,-2), sf::Vector2i( 3,-2), sf::Vector2i( 4,-2),         NIL        ,
+            NIL        , sf::Vector2i(-4,-1), sf::Vector2i(-3,-1), sf::Vector2i(-2,-1), sf::Vector2i(-1,-1), sf::Vector2i( 0,-1), sf::Vector2i( 1,-1), sf::Vector2i( 2,-1), sf::Vector2i( 3,-1), sf::Vector2i( 4,-1),         NIL        ,
+            NIL        , sf::Vector2i(-4, 0), sf::Vector2i(-3, 0), sf::Vector2i(-2, 0), sf::Vector2i(-1, 0),        CENTER      , sf::Vector2i( 1, 0), sf::Vector2i( 2, 0), sf::Vector2i( 3, 0), sf::Vector2i( 4, 0),         NIL        ,
+            NIL        , sf::Vector2i(-4, 1), sf::Vector2i(-3, 1), sf::Vector2i(-2, 1), sf::Vector2i(-1, 1), sf::Vector2i( 0, 1), sf::Vector2i( 1, 1), sf::Vector2i( 2, 1), sf::Vector2i( 3, 1), sf::Vector2i( 4, 1),         NIL        ,
+            NIL        , sf::Vector2i(-4, 2), sf::Vector2i(-3, 2), sf::Vector2i(-2, 2), sf::Vector2i(-1, 2), sf::Vector2i( 0, 2), sf::Vector2i( 1, 2), sf::Vector2i( 2, 2), sf::Vector2i( 3, 2), sf::Vector2i( 4, 2),         NIL        ,
+            NIL        ,         NIL        , sf::Vector2i(-3, 3), sf::Vector2i(-2, 3), sf::Vector2i(-1, 3), sf::Vector2i( 0, 3), sf::Vector2i( 1, 3), sf::Vector2i( 2, 3), sf::Vector2i( 3, 3),         NIL        ,         NIL        ,
+            NIL        ,         NIL        ,         NIL        , sf::Vector2i(-2, 4), sf::Vector2i(-1, 4), sf::Vector2i( 0, 4), sf::Vector2i( 1, 4), sf::Vector2i( 2, 4),         NIL        ,         NIL        ,         NIL        ,
+            NIL        ,         NIL        ,         NIL        ,        NIL         ,         NIL        ,         NIL        ,         NIL        ,         NIL        ,         NIL        ,         NIL        ,         NIL        
+};
+
+sf::Vector2i fogMask1[] = 
+{
+            NIL        ,         NIL        ,         NIL        ,        NIL         , sf::Vector2i(-1,-5), sf::Vector2i( 0,-5), sf::Vector2i( 1,-5),         NIL        ,         NIL        ,         NIL        ,         NIL        ,
+            NIL        ,         NIL        ,         NIL        , sf::Vector2i(-2,-4), sf::Vector2i(-1,-4), sf::Vector2i( 0,-4), sf::Vector2i( 1,-4), sf::Vector2i( 2,-4),         NIL        ,         NIL        ,         NIL        ,
+            NIL        ,         NIL        , sf::Vector2i(-3,-3), sf::Vector2i(-2,-3), sf::Vector2i(-1,-3), sf::Vector2i( 0,-3), sf::Vector2i( 1,-3), sf::Vector2i( 2,-3), sf::Vector2i( 3,-3),         NIL        ,         NIL        ,
+            NIL        , sf::Vector2i(-4,-2), sf::Vector2i(-3,-2), sf::Vector2i(-2,-2), sf::Vector2i(-1,-2), sf::Vector2i( 0,-2), sf::Vector2i( 1,-2), sf::Vector2i( 2,-2), sf::Vector2i( 3,-2), sf::Vector2i( 4,-2),         NIL        ,
+    sf::Vector2i(-5,-1), sf::Vector2i(-4,-1), sf::Vector2i(-3,-1), sf::Vector2i(-2,-1), sf::Vector2i(-1,-1), sf::Vector2i( 0,-1), sf::Vector2i( 1,-1), sf::Vector2i( 2,-1), sf::Vector2i( 3,-1), sf::Vector2i( 4,-1), sf::Vector2i( 5,-1),
+    sf::Vector2i(-5, 0), sf::Vector2i(-4, 0), sf::Vector2i(-3, 0), sf::Vector2i(-2, 0), sf::Vector2i(-1, 0),        CENTER      , sf::Vector2i( 1, 0), sf::Vector2i( 2, 0), sf::Vector2i( 3, 0), sf::Vector2i( 4, 0), sf::Vector2i( 5, 0),
+    sf::Vector2i(-5, 1), sf::Vector2i(-4, 1), sf::Vector2i(-3, 1), sf::Vector2i(-2, 1), sf::Vector2i(-1, 1), sf::Vector2i( 0, 1), sf::Vector2i( 1, 1), sf::Vector2i( 2, 1), sf::Vector2i( 3, 1), sf::Vector2i( 4, 1), sf::Vector2i( 5, 1),
+            NIL        , sf::Vector2i(-4, 2), sf::Vector2i(-3, 2), sf::Vector2i(-2, 2), sf::Vector2i(-1, 2), sf::Vector2i( 0, 2), sf::Vector2i( 1, 2), sf::Vector2i( 2, 2), sf::Vector2i( 3, 2), sf::Vector2i( 4, 2),         NIL        ,
+            NIL        ,         NIL        , sf::Vector2i(-3, 3), sf::Vector2i(-2, 3), sf::Vector2i(-1, 3), sf::Vector2i( 0, 3), sf::Vector2i( 1, 3), sf::Vector2i( 2, 3), sf::Vector2i( 3, 3),         NIL        ,         NIL        ,
+            NIL        ,         NIL        ,         NIL        , sf::Vector2i(-2, 4), sf::Vector2i(-1, 4), sf::Vector2i( 0, 4), sf::Vector2i( 1, 4), sf::Vector2i( 2, 4),         NIL        ,         NIL        ,         NIL        ,
+            NIL        ,         NIL        ,         NIL        ,        NIL         , sf::Vector2i(-1, 5), sf::Vector2i( 0, 5), sf::Vector2i( 1, 5),         NIL        ,         NIL        ,         NIL        ,         NIL        
+};
+//11*11 elements
+
+sf::Vector2i fogMask2[] = 
+{
+            NIL        ,         NIL        ,         NIL        ,         NIL        ,        NIL         ,        NIL         , sf::Vector2i(-1,-7), sf::Vector2i( 0,-7), sf::Vector2i( 1,-7),        NIL         ,         NIL        ,         NIL        ,         NIL        ,         NIL        ,         NIL        ,
+            NIL        ,         NIL        ,         NIL        ,         NIL        ,        NIL         , sf::Vector2i(-2,-6), sf::Vector2i(-1,-6), sf::Vector2i( 0,-6), sf::Vector2i( 1,-6), sf::Vector2i( 2,-6),         NIL        ,         NIL        ,         NIL        ,         NIL        ,         NIL        ,
+            NIL        ,         NIL        ,         NIL        ,         NIL        , sf::Vector2i(-3,-5), sf::Vector2i(-2,-5), sf::Vector2i(-1,-5), sf::Vector2i( 0,-5), sf::Vector2i( 1,-5), sf::Vector2i( 2,-5), sf::Vector2i( 3,-5),         NIL        ,         NIL        ,         NIL        ,         NIL        ,
+            NIL        ,         NIL        ,         NIL        , sf::Vector2i(-4,-4), sf::Vector2i(-3,-4), sf::Vector2i(-2,-4), sf::Vector2i(-1,-4), sf::Vector2i( 0,-4), sf::Vector2i( 1,-4), sf::Vector2i( 2,-4), sf::Vector2i( 3,-4), sf::Vector2i( 4,-4),         NIL        ,         NIL        ,         NIL        ,
+            NIL        ,         NIL        , sf::Vector2i(-5,-3), sf::Vector2i(-4,-3), sf::Vector2i(-3,-3), sf::Vector2i(-2,-3), sf::Vector2i(-1,-3), sf::Vector2i( 0,-3), sf::Vector2i( 1,-3), sf::Vector2i( 2,-3), sf::Vector2i( 3,-3), sf::Vector2i( 4,-3), sf::Vector2i( 5,-3),         NIL        ,         NIL        ,
+            NIL        , sf::Vector2i(-6,-2), sf::Vector2i(-5,-2), sf::Vector2i(-4,-2), sf::Vector2i(-3,-2), sf::Vector2i(-2,-2), sf::Vector2i(-1,-2), sf::Vector2i( 0,-2), sf::Vector2i( 1,-2), sf::Vector2i( 2,-2), sf::Vector2i( 3,-2), sf::Vector2i( 4,-2), sf::Vector2i( 5,-2), sf::Vector2i( 6,-2),         NIL        ,
+    sf::Vector2i(-7,-1), sf::Vector2i(-6,-1), sf::Vector2i(-5,-1), sf::Vector2i(-4,-1), sf::Vector2i(-3,-1), sf::Vector2i(-2,-1), sf::Vector2i(-1,-1), sf::Vector2i( 0,-1), sf::Vector2i( 1,-1), sf::Vector2i( 2,-1), sf::Vector2i( 3,-1), sf::Vector2i( 4,-1), sf::Vector2i( 5,-1), sf::Vector2i( 6,-1), sf::Vector2i( 7,-1),
+    sf::Vector2i(-7, 0), sf::Vector2i(-6, 0), sf::Vector2i(-5, 0), sf::Vector2i(-4, 0), sf::Vector2i(-3, 0), sf::Vector2i(-2, 0), sf::Vector2i(-1, 0),        CENTER      , sf::Vector2i( 1, 0), sf::Vector2i( 2, 0), sf::Vector2i( 3, 0), sf::Vector2i( 4, 0), sf::Vector2i( 5, 0), sf::Vector2i( 6, 0), sf::Vector2i( 7, 0),
+    sf::Vector2i(-7, 1), sf::Vector2i(-6, 1), sf::Vector2i(-5, 1), sf::Vector2i(-4, 1), sf::Vector2i(-3, 1), sf::Vector2i(-2, 1), sf::Vector2i(-1, 1), sf::Vector2i( 0, 1), sf::Vector2i( 1, 1), sf::Vector2i( 2, 1), sf::Vector2i( 3, 1), sf::Vector2i( 4, 1), sf::Vector2i( 5, 1), sf::Vector2i( 6, 1), sf::Vector2i( 7, 1),
+            NIL        , sf::Vector2i(-6, 2), sf::Vector2i(-5, 2), sf::Vector2i(-4, 2), sf::Vector2i(-3, 2), sf::Vector2i(-2, 2), sf::Vector2i(-1, 2), sf::Vector2i( 0, 2), sf::Vector2i( 1, 2), sf::Vector2i( 2, 2), sf::Vector2i( 3, 2), sf::Vector2i( 4, 2), sf::Vector2i( 5, 2), sf::Vector2i( 6, 2),         NIL        ,
+            NIL        ,         NIL        , sf::Vector2i(-5, 3), sf::Vector2i(-4, 3), sf::Vector2i(-3, 3), sf::Vector2i(-2, 3), sf::Vector2i(-1, 3), sf::Vector2i( 0, 3), sf::Vector2i( 1, 3), sf::Vector2i( 2, 3), sf::Vector2i( 3, 3), sf::Vector2i( 4, 3), sf::Vector2i( 5, 3),         NIL        ,         NIL        ,
+            NIL        ,         NIL        ,         NIL        , sf::Vector2i(-4, 4), sf::Vector2i(-3, 4), sf::Vector2i(-2, 4), sf::Vector2i(-1, 4), sf::Vector2i( 0, 4), sf::Vector2i( 1, 4), sf::Vector2i( 2, 4), sf::Vector2i( 3, 4), sf::Vector2i( 4, 4),         NIL        ,         NIL        ,         NIL        ,
+            NIL        ,         NIL        ,         NIL        ,         NIL        , sf::Vector2i(-3, 5), sf::Vector2i(-2, 5), sf::Vector2i(-1, 5), sf::Vector2i( 0, 5), sf::Vector2i( 1, 5), sf::Vector2i( 2, 5), sf::Vector2i( 3, 5),         NIL        ,         NIL        ,         NIL        ,         NIL        ,
+            NIL        ,         NIL        ,         NIL        ,         NIL        ,        NIL         , sf::Vector2i(-2, 6), sf::Vector2i(-1, 6), sf::Vector2i( 0, 6), sf::Vector2i( 1, 6), sf::Vector2i( 2, 6),         NIL        ,         NIL        ,         NIL        ,         NIL        ,         NIL        ,
+            NIL        ,         NIL        ,         NIL        ,         NIL        ,        NIL         ,        NIL         , sf::Vector2i(-1, 7), sf::Vector2i( 0, 7), sf::Vector2i( 1, 7),        NIL         ,         NIL        ,         NIL        ,         NIL        ,         NIL        ,         NIL        
+};
+//225
+
+void partFogQuick(sf::Vector2f pos, Game & g, sf::Vector2i fogMask[], int num)
+{
+    int index;
+    sf::Vector2f p;
+    
+    //We skip zeros...for efficiency, but we can't skip the Zero
+    //that is implied by the tanks CURRENT location
+    g.arenaMan.posToIndex(pos,index);
+    if (index >= 0 && index < g.arenaMan.getMapHorizTileNum()*g.arenaMan.getMapVertTileNum())
+    {
+        g.arenaMan.getTile(index).fog = false;
+        g.arenaMan.getTile(index).fogFalseIndex = 0;
+        g.arenaMan.getTile(index).fogClock.restart();
+    }
+
+    for (int i = 0;i < num;i++)
+    {
+        if (fogMask[i].x == 0 && fogMask[i].y == 0)
+            continue;
+        p.x = pos.x + 128*fogMask[i].x;
+        p.y = pos.y + 128*fogMask[i].y;
+        g.arenaMan.posToIndex(p,index);
+        if (index >= 0 && index < g.arenaMan.getMapHorizTileNum()*g.arenaMan.getMapVertTileNum())
+        {
+            g.arenaMan.getTile(index).fog = false;
+            g.arenaMan.getTile(index).fogFalseIndex = 0;
+            g.arenaMan.getTile(index).fogClock.restart();
+        }
+
+    }
+}
+
+void partFog(Tile & t)
+{
+    t.fog = false;
+    t.fogFalseIndex = 0;//It is present, and diminishing
+    t.fogClock.restart();
+}
+
+
 
 sf::Uint32 StageRun::drawAll(sf::RenderWindow & window, Game & g)
 {   
@@ -472,48 +624,16 @@ sf::Uint32 StageRun::drawAll(sf::RenderWindow & window, Game & g)
     currentTime2 = clock2.restart();
     frameTime2 += currentTime2 - previousTime2;
     //std::cout << 1.0f/frameTime2.asSeconds() << std::endl;
-    //Set view on top of this player...smoothly.
-    //TODO: move calculations into doLoop
+
     sf::Vector2f pos = thisPlayer.tank.position;
-    posTrack.push_back(pos);
-    if (posTrack.size() > 30)
-        posTrack.erase(posTrack.begin());
-    pos = sf::Vector2f(0,0);
-    for (auto m = 0;m < posTrack.size();m++)
-        pos += posTrack[m];
-    pos.x  = pos.x / 30.0f;
-    pos.y  = pos.y / 30.0f;
 
-    
-
-    sf::FloatRect fr = sf::FloatRect((int)(pos.x-(g.scrWidth/2.0f)),(int)(pos.y-((g.scrHeight)/2.0f)),g.scrWidth,g.scrHeight);
-    arenaView.reset(fr);
+    arenaView.setSize(g.scrWidth,g.scrHeight);
     arenaView.zoom(zoom);
     window.setView(arenaView);
     
     pos = thisPlayer.tank.position;
 
-    //Reset Fog; pick it off as we go
-    for (int i = 0;i < g.arenaMan.getMapHorizTileNum()*g.arenaMan.getMapVertTileNum();i++)
-    {
-        Tile &tile = g.arenaMan.getTile(i);
-        tile.fog = true;
-    }
-
-
-    //Clear fog for my base
-    for (int i = 0;i < g.arenaMan.getMapHorizTileNum()*g.arenaMan.getMapVertTileNum();i++)
-    {
-        Tile &tile = g.arenaMan.getTile(i);
-
-        float dx,dy;
-        dx = tile.getPosition().x+64 - g.arenaMan.getStartPosition(g.myTeam).x;
-        dy = tile.getPosition().y+64 - g.arenaMan.getStartPosition(g.myTeam).y;
-        if (sqrt(dx*dx+dy*dy) < BASE_VISION_RANGE)
-        {
-            tile.fog = false;
-        }
-    }
+    partFogQuick(g.arenaMan.getStartPosition(g.myTeam), g, fogMask2, 121);
 
     entityVertices.clear();
     //My Tanks
@@ -540,10 +660,6 @@ sf::Uint32 StageRun::drawAll(sf::RenderWindow & window, Game & g)
                             sf::FloatRect(thisPlayer.tank.position.x,thisPlayer.tank.position.y, 47,176),
                             blueTurret.getTextureRect(),
                             thisPlayer.tank.turretAngle-STD_ROTATE_OFFSET);
-                int index;
-                g.arenaMan.posToIndex(curPos, index);
-                //std::cout << g.arenaMan.arenaData.size() << std::endl;
-                g.arenaMan.getTile(index).fog = true;
             }else
             {
                 //Draw my team
@@ -560,18 +676,21 @@ sf::Uint32 StageRun::drawAll(sf::RenderWindow & window, Game & g)
         
             }
 
-            //Clear fog for my team tanks
-            for (int i = 0;i < g.arenaMan.getMapHorizTileNum()*g.arenaMan.getMapVertTileNum();i++)
-            {
-                Tile &tile = g.arenaMan.getTile(i);
+            //We ain't dead, so be visible.
+            g.teamMan.teams[curTeam].players[h].tank.visible = true;
 
-                float dx,dy;
-                dx = tile.getPosition().x+64 - curPos.x;
-                dy = tile.getPosition().y+64 - curPos.y;
-                if (sqrt(dx*dx+dy*dy) < BASE_VISION_RANGE)
-                {
-                    tile.fog = false;
-                }
+            //Clear fog for my team tanks
+            partFogQuick(curPos, g, fogMask2, 225);
+            //partFog(curPos,g);
+        }else
+        {
+            g.teamMan.teams[curTeam].players[h].tank.visible = false;
+            if (g.mySlot == h )
+            {
+                addRotQuad(entityVertices,
+                            sf::FloatRect(thisPlayer.tank.position.x, thisPlayer.tank.position.y, 64,64),
+                            g.assetMan.getSprite(ImageType::Ghost).getTextureRect(),
+                            thisPlayer.tank.bodyAngle-STD_ROTATE_OFFSET);
             }
         }
     }
@@ -617,18 +736,7 @@ sf::Uint32 StageRun::drawAll(sf::RenderWindow & window, Game & g)
                     g.teamMan.teams[curTeam].creep[lk].angle);
             
         //Clear fog for my team minion
-        for (int i = 0;i < g.arenaMan.getMapHorizTileNum()*g.arenaMan.getMapVertTileNum();i++)
-        {
-            Tile &tile = g.arenaMan.getTile(i);
-
-            float dx,dy;
-            dx = tile.getPosition().x+64 - g.teamMan.teams[curTeam].creep[lk].position.x;
-            dy = tile.getPosition().y+64 - g.teamMan.teams[curTeam].creep[lk].position.y;
-            if (sqrt(dx*dx+dy*dy) < BASE_VISION_RANGE)
-            {
-                tile.fog = false;
-            }
-        }
+        partFogQuick(g.teamMan.teams[curTeam].creep[lk].position, g, fogMask0, 121);
     }
 
     //Opponent Tanks
@@ -643,7 +751,7 @@ sf::Uint32 StageRun::drawAll(sf::RenderWindow & window, Game & g)
         {
             int index;
             g.arenaMan.posToIndex(g.teamMan.teams[curTeam].players[h].tank.position, index);
-            if (index >= 0 && index < 31*60 && !g.arenaMan.getTile(index).fog)
+            if (index >= 0 && index < g.arenaMan.getMapHorizTileNum()*g.arenaMan.getMapVertTileNum() && !g.arenaMan.getTile(index).fog)
             {
                 //Draw their tanks
                 addRotQuad(entityVertices,
@@ -657,8 +765,13 @@ sf::Uint32 StageRun::drawAll(sf::RenderWindow & window, Game & g)
                                 g.teamMan.teams[curTeam].players[h].tank.turretAngle-STD_ROTATE_OFFSET);
                 g.teamMan.teams[curTeam].players[h].tank.visible = true;
             }else{
+                //Opponent tank is under fog - don't draw
                 g.teamMan.teams[curTeam].players[h].tank.visible = false;
             }
+        }else
+        {
+            //Opponent tank has no health - don't draw
+            g.teamMan.teams[curTeam].players[h].tank.visible = false;
         }
     }
 
@@ -671,7 +784,7 @@ sf::Uint32 StageRun::drawAll(sf::RenderWindow & window, Game & g)
             {
                 int index;
                 g.arenaMan.posToIndex(g.teamMan.teams[curTeam].players[h].prjctls[k].position, index);
-                if (index >= 0 && index < 31*60 && !g.arenaMan.getTile(index).fog)
+                if (index >= 0 && index < g.arenaMan.getMapHorizTileNum()*g.arenaMan.getMapVertTileNum() && !g.arenaMan.getTile(index).fog)
                 {
                     addRotQuad(entityVertices,
                                 sf::FloatRect(g.teamMan.teams[curTeam].players[h].prjctls[k].position.x, g.teamMan.teams[curTeam].players[h].prjctls[k].position.y, 32,32),
@@ -688,7 +801,7 @@ sf::Uint32 StageRun::drawAll(sf::RenderWindow & window, Game & g)
     {
         int index;
         g.arenaMan.posToIndex(g.teamMan.teams[curTeam].creep[lk].position, index);
-        if (index >= 0 && index < 31*60 && !g.arenaMan.getTile(index).fog)
+        if (index >= 0 && index < g.arenaMan.getMapHorizTileNum()*g.arenaMan.getMapVertTileNum() && !g.arenaMan.getTile(index).fog)
         {
 
             addRotQuad(entityVertices,
@@ -708,17 +821,17 @@ sf::Uint32 StageRun::drawAll(sf::RenderWindow & window, Game & g)
         {
             for (int k = 0;k < g.teamMan.teams[y].gen[gi].prjctls.size();k++)
             {
-                float dx,dy;
+               /* float dx,dy;
                 dx = g.teamMan.teams[y].gen[gi].prjctls[k].position.x - pos.x;
                 dy = g.teamMan.teams[y].gen[gi].prjctls[k].position.y - pos.y;
 
                 if (sqrt(dx*dx+dy*dy) < visionRange)
-                {
+                {*/
                     addRotQuad(entityVertices,
                                 sf::FloatRect(g.teamMan.teams[y].gen[gi].prjctls[k].position.x, g.teamMan.teams[y].gen[gi].prjctls[k].position.y, 64,64),
                                 prjctl.getTextureRect(),
                                 g.teamMan.teams[y].gen[gi].prjctls[k].angle);
-                }
+               /* }*/
             }
         }
     }
@@ -729,39 +842,72 @@ sf::Uint32 StageRun::drawAll(sf::RenderWindow & window, Game & g)
     {
         for (int k = 0;k < g.teamMan.teams[y].base1.prjctls.size();k++)
         {
-            float dx,dy;
+            /*float dx,dy;
             dx = g.teamMan.teams[y].base1.prjctls[k].position.x - pos.x;
             dy = g.teamMan.teams[y].base1.prjctls[k].position.y - pos.y;
 
             if (sqrt(dx*dx+dy*dy) < visionRange)
-            {
+            {*/
                 addRotQuad(entityVertices,
                             sf::FloatRect(g.teamMan.teams[y].base1.prjctls[k].position.x, g.teamMan.teams[y].base1.prjctls[k].position.y, 64,64),
                             prjctl.getTextureRect(),
                             g.teamMan.teams[y].base1.prjctls[k].angle);
-            }
+          /*  }*/
         }
     }
     
     //Draw the floor and fog
     if (updateFloorClock.getElapsedTime().asMilliseconds() > 100)
     {
-        sf::Sprite fog = g.assetMan.getSprite(ImageType::FogOfWar);
+        sf::Sprite fog15 = g.assetMan.getSprite(ImageType::FogOfWar15);
+        sf::Sprite fog30 = g.assetMan.getSprite(ImageType::FogOfWar30);
+        sf::Sprite fog45 = g.assetMan.getSprite(ImageType::FogOfWar45);
+        sf::Sprite fog60 = g.assetMan.getSprite(ImageType::FogOfWar60);
+        sf::Sprite fog75 = g.assetMan.getSprite(ImageType::FogOfWar75);
+
         floorVertices.clear();
         for (int i = 0;i < g.arenaMan.getMapHorizTileNum()*g.arenaMan.getMapVertTileNum();i++){
             Tile &tile = g.arenaMan.getTile(i);
-            sf::Sprite s = g.assetMan.getSprite(tile.getId()+4);
+            sf::Sprite s = g.assetMan.getSprite(tile.getId());
 
-            if (abs(tile.getPosition().x - pos.x) < g.scrWidth*zoom &&
-                abs(tile.getPosition().y - pos.y) < g.scrHeight*zoom)
+            if (abs(tile.getPosition().x - window.getView().getCenter().x) < g.scrWidth*zoom &&
+                abs(tile.getPosition().y - window.getView().getCenter().y) < g.scrHeight*zoom)
             {
                 addStraightQuad(floorVertices, sf::FloatRect(tile.getPosition().x,tile.getPosition().y, 128,128), s.getTextureRect());
-                if (tile.fog)
-                {
-                    addStraightQuad(floorVertices, sf::FloatRect(tile.getPosition().x,tile.getPosition().y, 128,128), fog.getTextureRect());
+
+                int index = tile.fogFalseIndex;// tile.fog ?  tile.fogTrueIndex :  tile.fogFalseIndex;
+                switch (index){
+                case 0:
+                    //No Fog
+                    break;
+                case 1:
+                    addStraightQuad(floorVertices, sf::FloatRect(tile.getPosition().x,tile.getPosition().y, 128,128), fog15.getTextureRect());
+                    break;
+                case 2:
+                    addStraightQuad(floorVertices, sf::FloatRect(tile.getPosition().x,tile.getPosition().y, 128,128), fog30.getTextureRect());
+                    break;
+                case 3:
+                    addStraightQuad(floorVertices, sf::FloatRect(tile.getPosition().x,tile.getPosition().y, 128,128), fog45.getTextureRect());
+                    break;
+                case 4:
+                    addStraightQuad(floorVertices, sf::FloatRect(tile.getPosition().x,tile.getPosition().y, 128,128), fog60.getTextureRect());
+                    break;
+                case 5:
+                    addStraightQuad(floorVertices, sf::FloatRect(tile.getPosition().x,tile.getPosition().y, 128,128), fog75.getTextureRect());
+                    break;
+                }
+      
+               if (tile.fogClock.getElapsedTime().asSeconds() > 0.1f){
+                    tile.fog = true;
+                    tile.fogFalseIndex++;
+                    if (tile.fogFalseIndex > 5){
+                        tile.fogFalseIndex = 5;
+                       
+                    }
+
+                    tile.fogClock.restart();
                 }
             }
-
         }
         updateFloorClock.restart();
     }
@@ -785,11 +931,11 @@ sf::Uint32 StageRun::drawAll(sf::RenderWindow & window, Game & g)
             xi = (e->index % 4) * 64;
             yi = (e->index / 4) * 64;
            
-            float dx,dy;
+            /*float dx,dy;
             dx = e->position.x-128 - pos.x;
             dy = e->position.y-128 - pos.y;
 
-            /*if (sqrt(dx*dx+dy*dy) < visionRange)
+            if (sqrt(dx*dx+dy*dy) < visionRange)
             {*/
 
                 addStraightQuad(explosionSmallVertices,
@@ -831,11 +977,11 @@ sf::Uint32 StageRun::drawAll(sf::RenderWindow & window, Game & g)
             xi = (e->index % 4) * 64;
             yi = (e->index / 4) * 64;
             
-            float dx,dy;
+            /*float dx,dy;
             dx = e->position.x-128 - pos.x;
             dy = e->position.y-128 - pos.y;
 
-            /*if (sqrt(dx*dx+dy*dy) < visionRange)
+            if (sqrt(dx*dx+dy*dy) < visionRange)
             {*/
                 addStraightQuad(explosionBigVertices,
                             sf::FloatRect(e->position.x-128, e->position.y-128, 256,256),
@@ -910,6 +1056,18 @@ sf::Uint32 StageRun::drawAll(sf::RenderWindow & window, Game & g)
     dash.bodyAngleText.setFont(g.assetMan.getFont());
     dash.bodyAngleText.setScale(dash.powerTextScale);
     dash.bodyAngleText.setPosition(dash.dashPos.x+135.0f, dash.dashPos.y+33.0f);
+
+    dash.turretAngleText.setFont(g.assetMan.getFont());
+    dash.turretAngleText.setScale(dash.turretAngleTextScale);
+    dash.turretAngleText.setPosition(dash.dashPos.x+200.0f, dash.dashPos.y+100.0f);
+
+    dash.velText.setFont(g.assetMan.getFont());
+    dash.velText.setScale(dash.velTextScale);
+    dash.velText.setPosition(dash.dashPos.x+200.0f, dash.dashPos.y+100.0f);
+
+    dash.posText.setFont(g.assetMan.getFont());
+    dash.posText.setScale(dash.posTextScale);
+    dash.posText.setPosition(dash.dashPos.x+200.0f, dash.dashPos.y+100.0f);
     
     dashView.reset(sf::FloatRect(0.0f,0.0f, (float)g.scrWidth, (float)g.scrHeight));   
     window.setView(dashView);//set view to dash mode..
@@ -917,7 +1075,20 @@ sf::Uint32 StageRun::drawAll(sf::RenderWindow & window, Game & g)
     window.draw(dash.speedText);
     window.draw(dash.powerText);
     window.draw(dash.bodyAngleText);
-    //    
+
+    /*if (g.teamMan.teams[g.myTeam].base1.health <= 0 && g.teamMan.teams[(g.myTeam==1 ? 2 : 1)].base1.health > 0)
+    {
+         window.draw(dash.turretAngleText);
+    }
+    else if (g.teamMan.teams[(g.myTeam==1 ? 2 : 1)].base1.health <= 0 && g.teamMan.teams[g.myTeam].base1.health > 0)
+    {
+        window.draw(dash.velText);
+    }else if (g.teamMan.teams[g.myTeam].base1.health <= 0 && g.teamMan.teams[(g.myTeam==1 ? 2 : 1)].base1.health <= 0)
+    {
+        window.draw(dash.posText);
+    }*/
+    
+    //
     //dashTexture.display();
     //dashSprite.setTexture(dashTexture.getTexture());
     //
@@ -926,7 +1097,14 @@ sf::Uint32 StageRun::drawAll(sf::RenderWindow & window, Game & g)
     //window.draw(dashSprite);
     //window.setView(arenaView);//Set view back to normal mode.
 
-
+    
+    /*sf::View miniView = arenaView;
+    miniView.setViewport(sf::FloatRect(0.75,0.75,0.25,0.25));
+    miniView.zoom(15);
+    window.setView(miniView);
+    window.draw(entityVertices, &g.assetMan.getTexture(0));
+    window.setView(arenaView);*/
+    
     return 0;
 }
 

@@ -139,7 +139,7 @@ sf::Uint32 fireProjectile(Player & player, sf::Clock & clock)
         //std::cout << player.prjctls.back().position.x << ", " << player.prjctls.back().position.y << std::endl;
         player.prjctls.back().creationTime = clock.getElapsedTime().asSeconds();
         player.prjctls.back().angle = player.tank.turretAngle;
-        player.prjctls.back().damage = 1+player.tank.power/10.0f;
+        player.prjctls.back().damage = 3+player.tank.power/10.0f;
 
         player.tank.attacking = AttackAction::Idle;
     }
@@ -359,7 +359,7 @@ std::vector<sf::Vector2f> prepareObstructionList(ArenaManager & arenaMan)
     std::vector<sf::Vector2f> obstructionList;
     for (int i = 0;i < arenaMan.getMapHorizTileNum()*arenaMan.getMapVertTileNum();i++){
         Tile &tile = arenaMan.getTile(i);
-        if (tile.getId() == 0)
+        if (tile.getId() == 4)
             obstructionList.push_back(tile.getPosition());
     }
     return obstructionList;

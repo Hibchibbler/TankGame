@@ -25,8 +25,8 @@ namespace tg
     public:
         Tile(){
             fog = true;
-            visited = false;
-
+            fogTrueIndex = 5;
+            fogFalseIndex=0;
         }
         void setId(sf::Uint32 i){
             id = i;
@@ -44,14 +44,18 @@ namespace tg
             return id;
         }
 
-        //void setName(std::string n){name=n;}
-        //std::string getName(){return name;}
+       
+
+
     //private:
         sf::Vector2f position;
         sf::Uint32 id;
         bool fog;
-        bool visited;
-        //std::string name;
+        sf::Uint32 fogTrueIndex;
+        sf::Uint32 fogFalseIndex;
+        sf::Clock fogClock;
+        std::vector<int> attributes;
+
     };
 
     struct TileType{
@@ -62,8 +66,23 @@ namespace tg
             Base1,
             Base2,
             Generator1,
-            Generator2
+            Generator2,
+            Waypoint1_1,
+            Waypoint2_1,
+            Waypoint3_1,
+            Waypoint1_2,
+            Waypoint2_2,
+            Waypoint3_2
         };
+    };
+
+    class Waypoint
+    {
+    public:
+        int wpType;
+        int wpId;
+        sf::Vector2f pos;
+        std::vector<int> attributes;
     };
 
     class AssetManager;
@@ -85,17 +104,25 @@ namespace tg
                 arenaData.reserve(horizTileNum*vertTileNum);
                 while (!fin.eof()){
 
-                    sf::Uint32 id;
-                    fin.read((char*)&id, 4);
+                    sf::Uint32 tileType;
+                    fin.read((char*)&tileType, 4);
                     arenaData.push_back(Tile());
-                    arenaData[index].setId(id);
+                    int attrNum=0;
+                    fin.read((char*)&attrNum, 4);
+                    for (int k = 0;k < attrNum;k++){
+                        int a;
+                        fin.read((char*)&a, 4);
+                        arenaData.back().attributes.push_back(a);
+                    }
+
+                    arenaData[index].setId(getImageType(tileType));
 
                     sf::Vector2f pos;
                     pos.x = (float)((index % horizTileNum) * ARENAMAN_TILE_WIDTH);
                     pos.y = (float)((index / horizTileNum) * ARENAMAN_TILE_HEIGHT);
                     
                     arenaData[index].setPosition(pos);
-                    switch (id){
+                    switch (tileType){
                     case TileType::Wall:
                         break;
                     case TileType::Floor1:
@@ -118,8 +145,42 @@ namespace tg
                     case TileType::Generator2:
                         team2GenPos.push_back(pos);
                         break;
+                    case TileType::Waypoint1_1:{
+                        Waypoint wp;
+                        wp.wpId = arenaData.back().attributes[0];
+                        wp.wpType = 1;
+                        wp.pos = pos;
+                        
+                        team1Waypoints.push_back(wp);
+                        break;
+                                               }
+                    case TileType::Waypoint1_2:{
+                        Waypoint wp;
+                        wp.wpId = arenaData.back().attributes[0];
+                        wp.wpType = 1;
+                        wp.pos = pos;
+                        team2Waypoints.push_back(wp);
+                        break;
+                                               }
+                    case TileType::Waypoint2_1:{
+                        Waypoint wp;
+                        wp.wpId = arenaData.back().attributes[0];
+                        wp.wpType = 2;
+                        wp.pos = pos;
+                        team1Waypoints.push_back(wp);
+                        break;
+                                               }
+                    case TileType::Waypoint2_2:{
+                        Waypoint wp;
+                        wp.wpId = arenaData.back().attributes[0];
+                        wp.wpType = 2;
+                        wp.pos = pos;
+                        team2Waypoints.push_back(wp);
+                        break;
+                                               }
                     }
-
+                    
+                    
                     index++;
 
                 }
@@ -128,6 +189,38 @@ namespace tg
                 return 1;
             }
             return 0;
+        }
+         sf::Uint32 getImageType(sf::Uint32 tt){
+            //This maps the tile id to the imagetype..
+            //in StageRun.cpp => sf::Sprite s = g.assetMan.getSprite(tile.getId());
+            switch (tt){
+            case 0:
+                return 4;
+            case 1:
+                return 5;
+            case 2:
+                return 6;
+            case 3:
+                return 7;
+            case 4:
+                return 8;
+            case 5:
+                return 9;
+            case 6:
+                return 10;
+            case 7:
+                return 5;
+            case 8:
+                return 5;
+            case 9:
+                return 5;
+            case 10:
+                return 5;
+            case 11:
+                return 5;
+            case 12:
+                return 5;
+            }
         }
 
         bool indexToPos(int index, int & r, int & c)
@@ -195,6 +288,16 @@ namespace tg
             }
         }
 
+        std::vector<Waypoint> & getWaypoints(int team){
+            if (team == 1)
+            {
+                return team1Waypoints;
+            }else// if (team == 2)
+            {
+                return team2Waypoints;
+            }
+        }
+
         sf::Uint32 getMapHorizTileNum(){
             return horizTileNum;
         }
@@ -214,6 +317,10 @@ namespace tg
 private:
         std::vector<sf::Vector2f> team1GenPos;
         std::vector<sf::Vector2f> team2GenPos;
+
+        std::vector<Waypoint> team1Waypoints;
+        std::vector<Waypoint> team2Waypoints;
+
         sf::Vector2f team1BasePos;
         sf::Vector2f team2BasePos;
         

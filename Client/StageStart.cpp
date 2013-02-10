@@ -71,8 +71,9 @@ sf::Uint32 StageStart::doInit(Game & g)
         if (modes[m].isValid())
         {
             std::stringstream ss;
-            ss << modes[m].width << "x" << modes[m].height << " @ " << modes[m].bitsPerPixel<< std::endl;
-            resolutionComboBox->AppendItem(sf::String(ss.str()));
+            ss << modes[m].width << "x" << modes[m].height << " @ " << modes[m].bitsPerPixel<< " - " <<  (float)modes[m].width/(float)modes[m].height <<std::endl;
+            if (modes[m].bitsPerPixel == 32)
+                resolutionComboBox->AppendItem(sf::String(ss.str()));
             /*if (resIndex == m){
                 resolutionComboBox->SelectItem(m);
             }*/
@@ -176,8 +177,10 @@ void StageStart::doJoin()
         if (!sf::Keyboard::isKeyPressed(sf::Keyboard::Z))
         {
             g.window.close();
+            sf::ContextSettings cs;
+            cs.antialiasingLevel = 0;
             std::vector<sf::VideoMode> modes = sf::VideoMode::getFullscreenModes();
-            g.window.create(modes[it], "Mega Blaster Tank Game");//, sf::Style::Fullscreen);
+            g.window.create(modes[it], "Mega Blaster Tank Game", sf::Style::Default,cs);//, sf::Style::Fullscreen);
         }
         //Tell Game that this stage is finished
         Element e0;

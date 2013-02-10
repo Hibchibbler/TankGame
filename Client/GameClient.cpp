@@ -133,10 +133,10 @@ sf::Uint32 GameClient::doInit()
     curStage->doInit(*this);
 
     assetMan.load();
-    arenaMan.load("Assets\\map7.txt");
+    arenaMan.load("Assets\\12_full.map");
     teamMan.load();
 
-    window.create(sf::VideoMode(800,600,32), "Mega Blaster Tank Game - Resolution Choosing Mode");
+
     sf::ContextSettings cs = window.getSettings();
 
     std::cout << "depthBits=" << cs.depthBits << std::endl;
@@ -144,7 +144,11 @@ sf::Uint32 GameClient::doInit()
     std::cout << "antialiasingLevel=" << cs.antialiasingLevel << std::endl;
     std::cout << "majorVersion=" << cs.majorVersion << std::endl;
     std::cout << "minVersion=" << cs.minorVersion << std::endl;
+
+    window.create(sf::VideoMode(800,600,32), "Mega Blaster Tank Game - Resolution Choosing Mode");
+    
     window.setVerticalSyncEnabled(true);
+    
     //window.setFramerateLimit(30);
     return 0;
 }

@@ -81,8 +81,9 @@ sf::Uint32 StageRun::doRemoteEvent(Game & g,
 #define DEATH_LASER_SPAWN_S 0.005f
 #define CREEP_TANK_PROXIMAL 800
 #define CREEP_CREEP_PROXIMAL 700
-#define CREEP_GENERATOR_PROXIMAL 3500
-#define CREEP_BASE_PROXIMAL 4000
+#define CREEP_GENERATOR_PROXIMAL 500
+#define CREEP_BASE_PROXIMAL 500
+#define CREEP_WAYPOINT_PROXIMAL 100
 
 int getNewCreepAngle1(sf::Uint32 team)
 {
@@ -116,23 +117,27 @@ int getNewCreepAngle2(sf::Uint32 team)
     int r=30;
     if (team==1)
     {
-        int q = rand()%2;
+        int q = rand()%3;
         if (q == 0)
         {
-            r = 22+(rand()%10);
+            r = 14+(rand()%10);
         }else if (q==1)
         {
-            r = -22-(rand()%10);
+            r = -14-(rand()%10);
+        }else{
+            r = -5+(rand()%10);
         }
     }else// if (team ==2)
     {
-       int q = rand()%2;
+       int q = rand()%3;
         if (q == 0)
         {
-            r = 22+(rand()%10);
+            r = 14+(rand()%10);
         }else if (q==1)
         {
-            r = -22-(rand()%10);
+            r = -14-(rand()%10);
+        }else{
+            r = -5+(rand()%10);
         }
         r+=180;//team 1 is opposite..
     }
@@ -173,7 +178,6 @@ sf::Uint32 StageRun::doLoop(Game & g)
                         break;
                     case PlayerState::Ready:
                         Messages::sendStart(g.server, g.teamMan, pi->connectionId);
-
                         pi->state = PlayerState::Running;
                         break;
                     case PlayerState::Running:
@@ -227,21 +231,21 @@ sf::Uint32 StageRun::doLoop(Game & g)
 
                     for (auto p = 0;p < g.teamMan.teams[otherTeam].players.size();p++){
                         Player & player = g.teamMan.teams[otherTeam].players[p];
-                        if (player.hasHost == false)
-                            continue;
-
+                        if (player.hasHost == true &&
+                            player.tank.health > 0)
+                        {                
+                            //Calc distance between generator and player
+                            float dx,dy;
+                            dx = g.arenaMan.getGeneratorPosition(y,gi).x - player.tank.position.x;
+                            dy = g.arenaMan.getGeneratorPosition(y,gi).y - player.tank.position.y;
+                            float dist = sqrt(dx*dx+dy*dy);
                 
-                        //Calc distance between generator and player
-                        float dx,dy;
-                        dx = g.arenaMan.getGeneratorPosition(y,gi).x - player.tank.position.x;
-                        dy = g.arenaMan.getGeneratorPosition(y,gi).y - player.tank.position.y;
-                        float dist = sqrt(dx*dx+dy*dy);
-                
-                        if (dist < minDistOther){
-                            minDistOther = dist;
-                            minIndexOther = p;
-                            mindxOther = dx;
-                            mindyOther = dy;
+                            if (dist < minDistOther){
+                                minDistOther = dist;
+                                minIndexOther = p;
+                                mindxOther = dx;
+                                mindyOther = dy;
+                            }
                         }
 
                     }
@@ -338,21 +342,20 @@ sf::Uint32 StageRun::doLoop(Game & g)
 
                 for (auto p = 0;p < g.teamMan.teams[y].players.size();p++){
                     Player & player = g.teamMan.teams[y].players[p];
-                    if (player.hasHost == false)
-                        continue;
-
+                    if (player.hasHost == true)
+                    {
+                        //Calc distance between generator and player
+                        float dx,dy;
+                        dx = basePos.x - player.tank.position.x;
+                        dy = basePos.y - player.tank.position.y;
+                        float dist = sqrt(dx*dx+dy*dy);
                 
-                    //Calc distance between generator and player
-                    float dx,dy;
-                    dx = basePos.x - player.tank.position.x;
-                    dy = basePos.y - player.tank.position.y;
-                    float dist = sqrt(dx*dx+dy*dy);
-                
-                    if (dist < minDistUs){
-                        minDistUs = dist;
-                        minIndexUs = p;
-                        mindxUs = dx;
-                        mindyUs = dy;
+                        if (dist < minDistUs){
+                            minDistUs = dist;
+                            minIndexUs = p;
+                            mindxUs = dx;
+                            mindyUs = dy;
+                        }
                     }
 
                 }
@@ -413,6 +416,7 @@ sf::Uint32 StageRun::doLoop(Game & g)
                     newCreep.position = g.arenaMan.getStartPosition(y);
                     newCreep.health = 8;
                     newCreep.creationTime = accumulatedClock;
+                    newCreep.wpType = (rand()%2)+1;
 
                     ////randomly spawn to the right, or left. stay away from center.
                     ////Team 2 is 180 rotated, but the same.
@@ -436,9 +440,9 @@ sf::Uint32 StageRun::doLoop(Game & g)
                 c->position.x = c->position.x + c->velocity.x * loopTime.asSeconds()*PIXELS_PER_SECOND;
                 c->position.y = c->position.y + c->velocity.y * loopTime.asSeconds()*PIXELS_PER_SECOND;
 
-                 int teami = (y==1?2:1);
+                int teami = (y==1?2:1);
 
-                ////Creep attacks base #4  priority
+                ////Creep attacks base #5  priority
                 //{
                 //    float dx = c->position.x - g.arenaMan.getStartPosition(teami).x;
                 //    float dy = c->position.y - g.arenaMan.getStartPosition(teami).y;
@@ -452,11 +456,35 @@ sf::Uint32 StageRun::doLoop(Game & g)
                 //    }
                 //}
 
+
+                //Creep goes towards their waypoint - #4  priority
+                for (auto w = 0;w < g.arenaMan.getWaypoints(y).size();w++)
+                {//For each waypoint
+                    int wayId = g.arenaMan.getWaypoints(y)[w].wpId;
+                    int wayType = g.arenaMan.getWaypoints(y)[w].wpType;
+                    if (c->wpType == wayType && c->lastWP == wayId)
+                    {
+                        float dx = c->position.x - g.arenaMan.getWaypoints(y)[w].pos.x;
+                        float dy = c->position.y - g.arenaMan.getWaypoints(y)[w].pos.y;
+                        float dist = sqrt(dx*dx+dy*dy);
+                        if (dist > CREEP_WAYPOINT_PROXIMAL)//  && c->creationTime +3.0f < accumulatedClock)
+                        {
+                            float ang =  atan2(dy,dx) / 0.0174531f;
+                            c->angle = ang+90.0f;
+                            c->velocity.x = -CREEP_SPEED*cos(ang * (0.0174531f));
+                            c->velocity.y = -CREEP_SPEED*sin(ang * (0.0174531f));
+                        }else{
+                            c->lastWP++;
+                        }
+                    }
+                   
+                }
+
                 //Creep attacks generator #3  priority
                 for (auto geni = 0;geni < g.arenaMan.getGeneratorCount(teami);geni++)
                 {
-                    float dx = c->position.x - g.arenaMan.getGeneratorPosition(teami,geni).x;
-                    float dy = c->position.y - g.arenaMan.getGeneratorPosition(teami,geni).y;
+                    float dx = c->position.x - g.arenaMan.getGeneratorPosition(teami,geni).x+64;
+                    float dy = c->position.y - g.arenaMan.getGeneratorPosition(teami,geni).y+64;
                     
                     if (sqrt(dx*dx+dy*dy) < CREEP_GENERATOR_PROXIMAL)
                     {
@@ -471,11 +499,12 @@ sf::Uint32 StageRun::doLoop(Game & g)
                 //Creep attacks tanks #2  priority               
                 for (auto tanki = 0;tanki < g.teamMan.teams[teami].players.size();tanki++)
                 {
-                    if (g.teamMan.teams[teami].players[tanki].hasHost)
+                    if (g.teamMan.teams[teami].players[tanki].hasHost &&
+                        g.teamMan.teams[teami].players[tanki].tank.health > 0)
                     {
                         //sf::FloatRect tankR(g.teamMan.teams[teami].players[tanki].tank.position,
-                        float dx = c->position.x - g.teamMan.teams[teami].players[tanki].tank.position.x;
-                        float dy = c->position.y - g.teamMan.teams[teami].players[tanki].tank.position.y;
+                        float dx = c->position.x - g.teamMan.teams[teami].players[tanki].tank.position.x+12;
+                        float dy = c->position.y - g.teamMan.teams[teami].players[tanki].tank.position.y+12;
                     
                     
                         if (sqrt(dx*dx+dy*dy) < CREEP_TANK_PROXIMAL)
@@ -494,8 +523,8 @@ sf::Uint32 StageRun::doLoop(Game & g)
                 for (auto creepi = 0;creepi < g.teamMan.teams[teami].creep.size();creepi++)
                 {
                     //sf::FloatRect tankR(g.teamMan.teams[teami].players[tanki].tank.position,
-                    float dx = c->position.x - g.teamMan.teams[teami].creep[creepi].position.x;
-                    float dy = c->position.y - g.teamMan.teams[teami].creep[creepi].position.y;
+                    float dx = c->position.x - g.teamMan.teams[teami].creep[creepi].position.x+32;
+                    float dy = c->position.y - g.teamMan.teams[teami].creep[creepi].position.y+32;
                     
                     if (sqrt(dx*dx+dy*dy) < CREEP_CREEP_PROXIMAL)
                     {

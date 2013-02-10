@@ -60,19 +60,9 @@ sf::Uint32 Dashboard::setDash(Player & player, float fps)
     ss.clear();
     ss.str("");
 
-    ss << " Position: " << std::setfill(' ') << std::setw(3)  << player.tank.position.x << ", " << player.tank.position.y;
-    posText.setString(ss.str());
-    posText.setColor(sf::Color::Green);
-    posTextScale = sf::Vector2f(0.6f,0.6f);
-    ss.clear();
-    ss.str("");
+    
 
-    ss << " Velocity: " << std::setfill(' ') << std::setw(3)  << player.tank.velocity.x << ", " << player.tank.velocity.y;
-    velText.setString(ss.str());
-    velText.setColor(sf::Color::Green);
-    velTextScale = sf::Vector2f(0.6f,0.6f);
-    ss.clear();
-    ss.str("");
+
 
     ss << "      FPS: " << std::fixed << std::setprecision(1) << fps ;
     bodyAngleText.setString(ss.str());
@@ -81,10 +71,24 @@ sf::Uint32 Dashboard::setDash(Player & player, float fps)
     ss.clear();
     ss.str("");
 
-    ss << "   Turret: " << std::fixed << std::setprecision(1) << player.tank.turretAngle;
+    ss << "YOU LOST!";// << std::fixed << std::setprecision(1) << player.tank.turretAngle;
     turretAngleText.setString(ss.str());
-    turretAngleText.setColor(sf::Color::Green);
-    turretAngleTextScale = sf::Vector2f(0.6f,0.6f);
+    turretAngleText.setColor(sf::Color::Red);
+    turretAngleTextScale = sf::Vector2f(5.6f,5.6f);
+    ss.clear();
+    ss.str("");
+
+    ss << "YOU WON!";// << std::setfill(' ') << std::setw(3)  << player.tank.velocity.x << ", " << player.tank.velocity.y;
+    velText.setString(ss.str());
+    velText.setColor(sf::Color::Green);
+    velTextScale = sf::Vector2f(5.6f,5.6f);
+    ss.clear();
+    ss.str("");
+
+    ss << "TIE!";// << std::setfill(' ') << std::setw(3)  << player.tank.position.x << ", " << player.tank.position.y;
+    posText.setString(ss.str());
+    posText.setColor(sf::Color::Yellow);
+    posTextScale = sf::Vector2f(5.6f,5.6f);
     ss.clear();
     ss.str("");
 

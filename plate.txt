@@ -1421,6 +1421,45 @@ sf::Uint32 StageRun::drawAll(sf::RenderWindow & window, Game & g)
 
 
 -----------------------------------------------------------------------------------------
+                if (tile.fog){
+                    switch (tile.fogIndex){
+                    case 0:
+                        addStraightQuad(floorVertices, sf::FloatRect(tile.getPosition().x,tile.getPosition().y, 128,128), fog15.getTextureRect());
+                        break;
+                    case 1:
+                        addStraightQuad(floorVertices, sf::FloatRect(tile.getPosition().x,tile.getPosition().y, 128,128), fog30.getTextureRect());
+                        break;
+                    case 2:
+                        addStraightQuad(floorVertices, sf::FloatRect(tile.getPosition().x,tile.getPosition().y, 128,128), fog45.getTextureRect());
+                        break;
+                    case 3:
+                        addStraightQuad(floorVertices, sf::FloatRect(tile.getPosition().x,tile.getPosition().y, 128,128), fog60.getTextureRect());
+                        break;
+                    default:
+                        addStraightQuad(floorVertices, sf::FloatRect(tile.getPosition().x,tile.getPosition().y, 128,128), fog75.getTextureRect());
+                        break;
+                    }
+                }
+
+                if (!tile.fog){
+                    if (tile.fogIndex > 0){
+
+                    }
+                    switch (tile.fogIndex){
+
+                    }
+                }
+      
+                if (tile.fogClock.getElapsedTime().asSeconds() > 0.05f){
+                    tile.fog = true;
+                    tile.fogIndex++;
+                    if (tile.fogIndex > 4){
+                        tile.fogIndex = 4;
+                       
+                    }
+
+                    tile.fogClock.restart();
+                }
 -----------------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------------
