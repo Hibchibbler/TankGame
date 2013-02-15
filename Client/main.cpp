@@ -11,7 +11,7 @@ int main()
     //std::cout << "sf::Texture::getMaximumSize() == " << sf::Texture::getMaximumSize() << std::endl;
     
     //std::cout << timeBeginPeriod(2) << std::endl;
-
+    srand( time(NULL));
     tg::GameClient gameClient(640,480);
     bool done = false;
 

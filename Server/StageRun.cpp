@@ -67,10 +67,10 @@ sf::Uint32 StageRun::doRemoteEvent(Game & g,
 
 #define CREEP_SPEED 17
 #define CREEP_SPAWN_MS 1000
-#define UPDATE_STATE_MS 50
+#define UPDATE_STATE_MS 25
 #define SEND_STATE_MS 100//110
 #define PIXELS_PER_SECOND 10
-#define CREEP_LIFE_S 75.0f
+#define CREEP_LIFE_S 130.0f
 #define HEAL_LASER_PROXIMAL 450.0f
 #define DEATH_LASER_PROXIMAL 1100.0f
 #define HEAL_LASER_LIFE_S 0.65f
@@ -214,7 +214,7 @@ sf::Uint32 StageRun::doLoop(Game & g)
                     for (auto c = 0;c < g.teamMan.teams[otherTeam].creep.size();c++){
                         Creep & creep = g.teamMan.teams[otherTeam].creep[c];
                         
-                        //Calc distance between generator and player
+                        //Calc distance between generator and creep
                         float dx,dy;
                         dx = g.arenaMan.getGeneratorPosition(y,gi).x - creep.position.x;
                         dy = g.arenaMan.getGeneratorPosition(y,gi).y - creep.position.y;
@@ -261,8 +261,8 @@ sf::Uint32 StageRun::doLoop(Game & g)
                         g.teamMan.teams[y].gen[gi].prjctls.back().velocity.x = -DEATH_LASER_SPEED*mindxOther/mag; 
                         g.teamMan.teams[y].gen[gi].prjctls.back().velocity.y = -DEATH_LASER_SPEED*mindyOther/mag;
 
-                        g.teamMan.teams[y].gen[gi].prjctls.back().position.x = g.arenaMan.getGeneratorPosition(y,gi).x+32;
-                        g.teamMan.teams[y].gen[gi].prjctls.back().position.y = g.arenaMan.getGeneratorPosition(y,gi).y+32;
+                        g.teamMan.teams[y].gen[gi].prjctls.back().position.x = g.arenaMan.getGeneratorPosition(y,gi).x+0;
+                        g.teamMan.teams[y].gen[gi].prjctls.back().position.y = g.arenaMan.getGeneratorPosition(y,gi).y+0;
 
                         g.teamMan.teams[y].gen[gi].prjctls.back().angle = atan2(mindyOther,mindxOther)*(180.0f/3.141567f)-90.0f;
 
@@ -411,12 +411,48 @@ sf::Uint32 StageRun::doLoop(Game & g)
             {
                 if (g.teamMan.teams[y].base1.health > 0)
                 {
+                    float avgPwr = 0;
+                    for (auto ti = 0;ti < g.teamMan.teams[y].players.size();ti++){
+                        avgPwr += g.teamMan.teams[y].players[ti].tank.power;
+                    }
+                    avgPwr /=g.teamMan.teams[y].players.size();
+
                     int r=0;
                     Creep newCreep;
                     newCreep.position = g.arenaMan.getStartPosition(y);
-                    newCreep.health = 8;
+
+                    newCreep.lastWP = 0;
                     newCreep.creationTime = accumulatedClock;
-                    newCreep.wpType = (rand()%2)+1;
+
+                    if (y == 1){
+                        if (rand()%2 == 0){
+                            newCreep.creepType = ImageType::Minion1;
+                            newCreep.wpType = (rand()%2) == 0 ? 0 : 2;
+                            newCreep.health = 8 + avgPwr;///30;
+                            newCreep.worth = 1;
+                        }else{
+                            newCreep.creepType = ImageType::Minion3;
+                            newCreep.wpType = 1;
+                            newCreep.health = 15 + avgPwr;///20;
+                            newCreep.worth = 3;
+                        }
+                    }else if (y == 2){
+                        if (rand()%2 == 0){
+                            newCreep.creepType = ImageType::Minion2;
+                            newCreep.wpType = (rand()%2) == 0 ? 0 : 2;
+                            newCreep.health = 8 + avgPwr;///30;
+                            newCreep.worth = 1;
+                        }else{
+                            newCreep.creepType = ImageType::Minion4;
+                            newCreep.wpType = 1;
+                            newCreep.health = 15 + avgPwr;///20;
+                            newCreep.worth = 3;
+                        }
+                    }
+
+                    /*if (y==1)
+                        std::cout << y << ", " << newCreep.wpType << std::endl;;*/
+
 
                     ////randomly spawn to the right, or left. stay away from center.
                     ////Team 2 is 180 rotated, but the same.
@@ -441,73 +477,57 @@ sf::Uint32 StageRun::doLoop(Game & g)
                 c->position.y = c->position.y + c->velocity.y * loopTime.asSeconds()*PIXELS_PER_SECOND;
 
                 int teami = (y==1?2:1);
+                bool yes1 = false;
+                bool yes2 = false;
+                
+                    
+                    ////Creep attacks base #5  priority
+                    //{
+                    //    float dx = c->position.x - g.arenaMan.getStartPosition(teami).x;
+                    //    float dy = c->position.y - g.arenaMan.getStartPosition(teami).y;
+                    //    
+                    //    if (sqrt(dx*dx+dy*dy) < CREEP_BASE_PROXIMAL)
+                    //    {
+                    //        float ang =  atan2(dy,dx) / 0.0174531f;
+                    //        c->angle = ang+90.0f;
+                    //        c->velocity.x = -CREEP_SPEED*cos(ang * (0.0174531f));
+                    //        c->velocity.y = -CREEP_SPEED*sin(ang * (0.0174531f));
+                    //    }
+                    //}
 
-                ////Creep attacks base #5  priority
-                //{
-                //    float dx = c->position.x - g.arenaMan.getStartPosition(teami).x;
-                //    float dy = c->position.y - g.arenaMan.getStartPosition(teami).y;
-                //    
-                //    if (sqrt(dx*dx+dy*dy) < CREEP_BASE_PROXIMAL)
-                //    {
-                //        float ang =  atan2(dy,dx) / 0.0174531f;
-                //        c->angle = ang+90.0f;
-                //        c->velocity.x = -CREEP_SPEED*cos(ang * (0.0174531f));
-                //        c->velocity.y = -CREEP_SPEED*sin(ang * (0.0174531f));
-                //    }
-                //}
 
-
-                //Creep goes towards their waypoint - #4  priority
-                for (auto w = 0;w < g.arenaMan.getWaypoints(y).size();w++)
-                {//For each waypoint
-                    int wayId = g.arenaMan.getWaypoints(y)[w].wpId;
-                    int wayType = g.arenaMan.getWaypoints(y)[w].wpType;
-                    if (c->wpType == wayType && c->lastWP == wayId)
-                    {
-                        float dx = c->position.x - g.arenaMan.getWaypoints(y)[w].pos.x;
-                        float dy = c->position.y - g.arenaMan.getWaypoints(y)[w].pos.y;
-                        float dist = sqrt(dx*dx+dy*dy);
-                        if (dist > CREEP_WAYPOINT_PROXIMAL)//  && c->creationTime +3.0f < accumulatedClock)
+                    //Creep goes towards their waypoint - #4  priority
+                    for (auto w = 0;w < g.arenaMan.getWaypoints(y).size();w++)
+                    {//For each waypoint
+                        int wayId = g.arenaMan.getWaypoints(y)[w].number;
+                        int wayType = g.arenaMan.getWaypoints(y)[w].type;
+                        /*if (y == 2)
+                            std::cout << y << ", " << wayType << std::endl;*/
+                        if (c->wpType == wayType && c->lastWP == wayId)
                         {
-                            float ang =  atan2(dy,dx) / 0.0174531f;
-                            c->angle = ang+90.0f;
-                            c->velocity.x = -CREEP_SPEED*cos(ang * (0.0174531f));
-                            c->velocity.y = -CREEP_SPEED*sin(ang * (0.0174531f));
-                        }else{
-                            c->lastWP++;
+                            float dx = c->position.x - g.arenaMan.getWaypoints(y)[w].position.x;
+                            float dy = c->position.y - g.arenaMan.getWaypoints(y)[w].position.y;
+                            float dist = sqrt(dx*dx+dy*dy);
+                            if (dist > CREEP_WAYPOINT_PROXIMAL)//  && c->creationTime +3.0f < accumulatedClock)
+                            {
+                                float ang =  atan2(dy,dx) / 0.0174531f;
+                                c->angle = ang+90.0f;
+                                c->velocity.x = -CREEP_SPEED*cos(ang * (0.0174531f));
+                                c->velocity.y = -CREEP_SPEED*sin(ang * (0.0174531f));
+                            }else{
+                                c->lastWP++;
+                            }
                         }
-                    }
                    
-                }
-
-                //Creep attacks generator #3  priority
-                for (auto geni = 0;geni < g.arenaMan.getGeneratorCount(teami);geni++)
-                {
-                    float dx = c->position.x - g.arenaMan.getGeneratorPosition(teami,geni).x+64;
-                    float dy = c->position.y - g.arenaMan.getGeneratorPosition(teami,geni).y+64;
-                    
-                    if (sqrt(dx*dx+dy*dy) < CREEP_GENERATOR_PROXIMAL)
-                    {
-                        float ang =  atan2(dy,dx) / 0.0174531f;
-                        c->angle = ang+90.0f;
-                        c->velocity.x = -CREEP_SPEED*cos(ang * (0.0174531f));
-                        c->velocity.y = -CREEP_SPEED*sin(ang * (0.0174531f));
-                        break;
                     }
-                }
 
-                //Creep attacks tanks #2  priority               
-                for (auto tanki = 0;tanki < g.teamMan.teams[teami].players.size();tanki++)
-                {
-                    if (g.teamMan.teams[teami].players[tanki].hasHost &&
-                        g.teamMan.teams[teami].players[tanki].tank.health > 0)
+                    //Creep attacks generator #3  priority
+                    for (auto geni = 0;geni < g.arenaMan.getGeneratorCount(teami);geni++)
                     {
-                        //sf::FloatRect tankR(g.teamMan.teams[teami].players[tanki].tank.position,
-                        float dx = c->position.x - g.teamMan.teams[teami].players[tanki].tank.position.x+12;
-                        float dy = c->position.y - g.teamMan.teams[teami].players[tanki].tank.position.y+12;
+                        float dx = c->position.x - g.arenaMan.getGeneratorPosition(teami,geni).x+64;
+                        float dy = c->position.y - g.arenaMan.getGeneratorPosition(teami,geni).y+64;
                     
-                    
-                        if (sqrt(dx*dx+dy*dy) < CREEP_TANK_PROXIMAL)
+                        if (sqrt(dx*dx+dy*dy) < CREEP_GENERATOR_PROXIMAL )
                         {
                             float ang =  atan2(dy,dx) / 0.0174531f;
                             c->angle = ang+90.0f;
@@ -516,89 +536,120 @@ sf::Uint32 StageRun::doLoop(Game & g)
                             break;
                         }
                     }
-                    
-                }
 
-                //Creep Attacks creep #1 priority
-                for (auto creepi = 0;creepi < g.teamMan.teams[teami].creep.size();creepi++)
-                {
-                    //sf::FloatRect tankR(g.teamMan.teams[teami].players[tanki].tank.position,
-                    float dx = c->position.x - g.teamMan.teams[teami].creep[creepi].position.x+32;
-                    float dy = c->position.y - g.teamMan.teams[teami].creep[creepi].position.y+32;
-                    
-                    if (sqrt(dx*dx+dy*dy) < CREEP_CREEP_PROXIMAL)
+                    //Creep attacks tanks #2  priority               
+                    for (auto tanki = 0;tanki < g.teamMan.teams[teami].players.size();tanki++)
                     {
-                        float ang =  atan2(dy,dx) / 0.0174531f;
-                        c->angle = ang+90.0f;
-                        c->velocity.x = -CREEP_SPEED*cos(ang * (0.0174531f));
-                        c->velocity.y = -CREEP_SPEED*sin(ang * (0.0174531f));
-                        break;
+                        if (g.teamMan.teams[teami].players[tanki].hasHost &&
+                            g.teamMan.teams[teami].players[tanki].tank.health > 0)
+                        {
+                            //sf::FloatRect tankR(g.teamMan.teams[teami].players[tanki].tank.position,
+                            float dx = c->position.x - g.teamMan.teams[teami].players[tanki].tank.position.x+12;
+                            float dy = c->position.y - g.teamMan.teams[teami].players[tanki].tank.position.y+12;
+                    
+                    
+                            if (sqrt(dx*dx+dy*dy) < CREEP_TANK_PROXIMAL)
+                            {
+                                float ang =  atan2(dy,dx) / 0.0174531f;
+                                c->angle = ang+90.0f;
+                                c->velocity.x = -CREEP_SPEED*cos(ang * (0.0174531f));
+                                c->velocity.y = -CREEP_SPEED*sin(ang * (0.0174531f));
+                                break;
+                            }
+                        }
+                    
                     }
-                }
 
-                ////Remove creep that has hit a tank or another creep
-                CollisionResult cr;
-                sf::Vector2u sz(32,32);// = g.assetMan.getImage(ImageType::Minion1).img.getSize();
+                    //Creep Attacks creep #1 priority
+                    for (auto creepi = 0;creepi < g.teamMan.teams[teami].creep.size();creepi++)
+                    {
+                        //sf::FloatRect tankR(g.teamMan.teams[teami].players[tanki].tank.position,
+                        float dx = c->position.x - g.teamMan.teams[teami].creep[creepi].position.x+32;
+                        float dy = c->position.y - g.teamMan.teams[teami].creep[creepi].position.y+32;
+                    
+                        if (sqrt(dx*dx+dy*dy) < CREEP_CREEP_PROXIMAL)
+                        {
+                            float ang =  atan2(dy,dx) / 0.0174531f;
+                            c->angle = ang+90.0f;
+                            c->velocity.x = -CREEP_SPEED*cos(ang * (0.0174531f));
+                            c->velocity.y = -CREEP_SPEED*sin(ang * (0.0174531f));
+                            break;
+                        }
+                    }
+
+                    ////Remove creep that has hit a tank or another creep
+                    CollisionResult cr;
+                    sf::Vector2u sz(32,32);// = g.assetMan.getImage(ImageType::Minion1).img.getSize();
+               if (c->attackClock.getElapsedTime().asSeconds() > 1.0f)
+                {
+                        yes1 = isTankCollision(c->position, 
+                                                    sf::Vector2f((float)sz.x,(float)sz.y),
+                                                    g.teamMan.teams[otherTeam].players,
+                                                    cr,
+                                                    otherTeam);
+                        sf::Vector2f tempPos1 = c->position;
+                        tempPos1.x+=32;
+                        tempPos1.y+=32;
+
+                        
+                        yes2 = isCreepCollision(tempPos1, 
+                                                     sf::Vector2f((float)sz.x,(float)sz.y),
+                                                     g.teamMan.teams[otherTeam].creep, 
+                                                     cr,
+                                                     otherTeam);
                 
-                bool yes1 = isTankCollision(c->position, 
-                                            sf::Vector2f((float)sz.x,(float)sz.y),
-                                            g.teamMan.teams[otherTeam].players,
-                                            cr,
-                                            otherTeam);
+                    if (yes1){
+                        g.teamMan.teams[cr.team].players[cr.slot].tank.health -= c->health;
+                        if (g.teamMan.teams[cr.team].players[cr.slot].tank.health <= 0 )
+                        {//Server must empower player
+                            Explosion exp;
+                            exp.type = ExplosionType::TankDeath;
+                            exp.position = cr.loc;
+                            exp.index = 0;
+                            g.teamMan.explosions.push_back(exp);
 
-                bool yes2 = isCreepCollision(c->position, 
-                                             sf::Vector2f((float)sz.x,(float)sz.y),
-                                             g.teamMan.teams[otherTeam].creep, 
-                                             cr,
-                                             otherTeam);
-                if (yes1){
-                    g.teamMan.teams[cr.team].players[cr.slot].tank.health -= 5;
-                    if (g.teamMan.teams[cr.team].players[cr.slot].tank.health <= 0 )
-                    {//Server must empower player
-                        Explosion exp;
-                        exp.type = ExplosionType::TankDeath;
-                        exp.position = cr.loc;
-                        exp.index = 0;
-                        g.teamMan.explosions.push_back(exp);
-
-                    }else if (g.teamMan.teams[cr.team].players[cr.slot].tank.health > 0)
-                    {
-                        Explosion exp;
-                        exp.type = ExplosionType::TankHit;
-                        exp.position = cr.loc;
-                        exp.index = 0;
-                        g.teamMan.explosions.push_back(exp);
+                        }else if (g.teamMan.teams[cr.team].players[cr.slot].tank.health > 0)
+                        {
+                            Explosion exp;
+                            exp.type = ExplosionType::TankHit;
+                            exp.position = cr.loc;
+                            exp.index = 0;
+                            g.teamMan.explosions.push_back(exp);
+                        }
                     }
-                }
 
 
-                if (yes2)
-                {
-                    g.teamMan.teams[cr.team].creep[cr.slot].health -= 5;
-                    if (g.teamMan.teams[cr.team].creep[cr.slot].health <= 0 )
-                    {//Server must empower player
-                        Explosion exp;
-                        exp.type = ExplosionType::TankDeath;
-                        exp.position = cr.loc;
-                        exp.index = 0;
-                        g.teamMan.explosions.push_back(exp);
-
-                    }else if (g.teamMan.teams[cr.team].creep[cr.slot].health > 0)
+                    if (yes2)
                     {
-                        Explosion exp;
-                        exp.type = ExplosionType::TankHit;
-                        exp.position = cr.loc;
-                        exp.index = 0;
-                        g.teamMan.explosions.push_back(exp);
-                    }
-                }
+                        c->velocity =-c->velocity;
+                        g.teamMan.teams[cr.team].creep[cr.slot].health -= c->health/2;
+                        if (g.teamMan.teams[cr.team].creep[cr.slot].health <= 0 )
+                        {//Server must empower player
+                            Explosion exp;
+                            exp.type = ExplosionType::TankDeath;
+                            exp.position = cr.loc;
+                            exp.index = 0;
+                            g.teamMan.explosions.push_back(exp);
 
+                        }else if (g.teamMan.teams[cr.team].creep[cr.slot].health > 0)
+                        {
+                            Explosion exp;
+                            exp.type = ExplosionType::TankHit;
+                            exp.position = cr.loc;
+                            exp.index = 0;
+                            g.teamMan.explosions.push_back(exp);
+                        }
+                    }
+                    c->attackClock.restart();
+                }
                 if (c->health <= 0 || yes1 || (yes2 && rand()%2==1) || c->creationTime + CREEP_LIFE_S < accumulatedClock )
                 {
                     c = g.teamMan.teams[y].creep.erase(c);
                 }else
                     c++;
 
+                    
+                
             }
         
         }

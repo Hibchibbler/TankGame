@@ -26,10 +26,12 @@ namespace tg
     public:
         Generator(){
             health = 2000;
+            lastFiringAngle=0;
         }
         sf::Vector2f position;
         sf::Int32 health;
         std::vector<Projectile> prjctls;
+        float lastFiringAngle;
     };
 
     //TODO: max of 5 generators.

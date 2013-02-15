@@ -48,7 +48,7 @@ namespace tg
             accelerating= AccelerateAction::Idle;
             turningBody = TurnAction::Idle;
             explosionIndex = 0;
-            visible = true;
+            visible = 1;
         }
         sf::Int32 maxHealth;
         sf::Int32 health;
@@ -75,7 +75,7 @@ namespace tg
         float accy;
         float prevDist;
         float curDist;
-        bool visible;
+        sf::Uint32 visible;
         
         sf::Clock explosionClock;
         sf::Uint32 explosionIndex;

@@ -18,6 +18,101 @@ public:
     sf::Vector2f loc;
 };
 
+#define CENTER sf::Vector2i( 0, 0)
+#define NIL    sf::Vector2i( 0, 0)
+//
+sf::Vector2i fogMask0[] = 
+{
+            NIL        ,         NIL        ,         NIL        ,        NIL         ,         NIL        ,         NIL        ,         NIL        ,         NIL        ,         NIL        ,         NIL        ,         NIL        ,
+            NIL        ,         NIL        ,         NIL        ,         NIL        , sf::Vector2i(-1,-4), sf::Vector2i( 0,-4), sf::Vector2i( 1,-4),         NIL        ,         NIL        ,         NIL        ,         NIL        ,
+            NIL        ,         NIL        ,         NIL        , sf::Vector2i(-2,-3), sf::Vector2i(-1,-3), sf::Vector2i( 0,-3), sf::Vector2i( 1,-3), sf::Vector2i( 2,-3),         NIL        ,         NIL        ,         NIL        ,
+            NIL        ,         NIL        ,         NIL        , sf::Vector2i(-2,-2), sf::Vector2i(-1,-2), sf::Vector2i( 0,-2), sf::Vector2i( 1,-2), sf::Vector2i( 2,-2),         NIL        ,         NIL        ,         NIL        ,
+            NIL        ,         NIL        , sf::Vector2i(-3,-1), sf::Vector2i(-2,-1), sf::Vector2i(-1,-1), sf::Vector2i( 0,-1), sf::Vector2i( 1,-1), sf::Vector2i( 2,-1), sf::Vector2i( 3,-1),         NIL        ,         NIL        ,
+            NIL        ,         NIL        , sf::Vector2i(-3, 0), sf::Vector2i(-2, 0), sf::Vector2i(-1, 0),        CENTER      , sf::Vector2i( 1, 0), sf::Vector2i( 2, 0), sf::Vector2i( 3, 0),         NIL        ,         NIL        ,
+            NIL        ,         NIL        , sf::Vector2i(-3, 1), sf::Vector2i(-2, 1), sf::Vector2i(-1, 1), sf::Vector2i( 0, 1), sf::Vector2i( 1, 1), sf::Vector2i( 2, 1), sf::Vector2i( 3, 1),         NIL        ,         NIL        ,
+            NIL        ,         NIL        ,         NIL        , sf::Vector2i(-2, 2), sf::Vector2i(-1, 2), sf::Vector2i( 0, 2), sf::Vector2i( 1, 2), sf::Vector2i( 2, 2),         NIL        ,         NIL        ,         NIL        ,
+            NIL        ,         NIL        ,         NIL        , sf::Vector2i(-2, 3), sf::Vector2i(-1, 3), sf::Vector2i( 0, 3), sf::Vector2i( 1, 3), sf::Vector2i( 2, 3),         NIL        ,         NIL        ,         NIL        ,
+            NIL        ,         NIL        ,         NIL        ,         NIL        , sf::Vector2i(-1, 4), sf::Vector2i( 0, 4), sf::Vector2i( 1, 4),         NIL        ,         NIL        ,         NIL        ,         NIL        ,
+            NIL        ,         NIL        ,         NIL        ,        NIL         ,         NIL        ,         NIL        ,         NIL        ,         NIL        ,         NIL        ,         NIL        ,         NIL        
+};
+
+sf::Vector2i fogMask1[] = 
+{
+            NIL        ,         NIL        ,         NIL        ,        NIL         , sf::Vector2i(-1,-5), sf::Vector2i( 0,-5), sf::Vector2i( 1,-5),         NIL        ,         NIL        ,         NIL        ,         NIL        ,
+            NIL        ,         NIL        ,         NIL        , sf::Vector2i(-2,-4), sf::Vector2i(-1,-4), sf::Vector2i( 0,-4), sf::Vector2i( 1,-4), sf::Vector2i( 2,-4),         NIL        ,         NIL        ,         NIL        ,
+            NIL        ,         NIL        , sf::Vector2i(-3,-3), sf::Vector2i(-2,-3), sf::Vector2i(-1,-3), sf::Vector2i( 0,-3), sf::Vector2i( 1,-3), sf::Vector2i( 2,-3), sf::Vector2i( 3,-3),         NIL        ,         NIL        ,
+            NIL        , sf::Vector2i(-4,-2), sf::Vector2i(-3,-2), sf::Vector2i(-2,-2), sf::Vector2i(-1,-2), sf::Vector2i( 0,-2), sf::Vector2i( 1,-2), sf::Vector2i( 2,-2), sf::Vector2i( 3,-2), sf::Vector2i( 4,-2),         NIL        ,
+    sf::Vector2i(-5,-1), sf::Vector2i(-4,-1), sf::Vector2i(-3,-1), sf::Vector2i(-2,-1), sf::Vector2i(-1,-1), sf::Vector2i( 0,-1), sf::Vector2i( 1,-1), sf::Vector2i( 2,-1), sf::Vector2i( 3,-1), sf::Vector2i( 4,-1), sf::Vector2i( 5,-1),
+    sf::Vector2i(-5, 0), sf::Vector2i(-4, 0), sf::Vector2i(-3, 0), sf::Vector2i(-2, 0), sf::Vector2i(-1, 0),        CENTER      , sf::Vector2i( 1, 0), sf::Vector2i( 2, 0), sf::Vector2i( 3, 0), sf::Vector2i( 4, 0), sf::Vector2i( 5, 0),
+    sf::Vector2i(-5, 1), sf::Vector2i(-4, 1), sf::Vector2i(-3, 1), sf::Vector2i(-2, 1), sf::Vector2i(-1, 1), sf::Vector2i( 0, 1), sf::Vector2i( 1, 1), sf::Vector2i( 2, 1), sf::Vector2i( 3, 1), sf::Vector2i( 4, 1), sf::Vector2i( 5, 1),
+            NIL        , sf::Vector2i(-4, 2), sf::Vector2i(-3, 2), sf::Vector2i(-2, 2), sf::Vector2i(-1, 2), sf::Vector2i( 0, 2), sf::Vector2i( 1, 2), sf::Vector2i( 2, 2), sf::Vector2i( 3, 2), sf::Vector2i( 4, 2),         NIL        ,
+            NIL        ,         NIL        , sf::Vector2i(-3, 3), sf::Vector2i(-2, 3), sf::Vector2i(-1, 3), sf::Vector2i( 0, 3), sf::Vector2i( 1, 3), sf::Vector2i( 2, 3), sf::Vector2i( 3, 3),         NIL        ,         NIL        ,
+            NIL        ,         NIL        ,         NIL        , sf::Vector2i(-2, 4), sf::Vector2i(-1, 4), sf::Vector2i( 0, 4), sf::Vector2i( 1, 4), sf::Vector2i( 2, 4),         NIL        ,         NIL        ,         NIL        ,
+            NIL        ,         NIL        ,         NIL        ,        NIL         , sf::Vector2i(-1, 5), sf::Vector2i( 0, 5), sf::Vector2i( 1, 5),         NIL        ,         NIL        ,         NIL        ,         NIL        
+};
+//11*11 elements
+
+sf::Vector2i fogMask2[] = 
+{
+            NIL        ,         NIL        ,         NIL        ,         NIL        ,        NIL         ,        NIL         , sf::Vector2i(-1,-7), sf::Vector2i( 0,-7), sf::Vector2i( 1,-7),        NIL         ,         NIL        ,         NIL        ,         NIL        ,         NIL        ,         NIL        ,
+            NIL        ,         NIL        ,         NIL        ,         NIL        ,        NIL         , sf::Vector2i(-2,-6), sf::Vector2i(-1,-6), sf::Vector2i( 0,-6), sf::Vector2i( 1,-6), sf::Vector2i( 2,-6),         NIL        ,         NIL        ,         NIL        ,         NIL        ,         NIL        ,
+            NIL        ,         NIL        ,         NIL        , sf::Vector2i(-4,-5), sf::Vector2i(-3,-5), sf::Vector2i(-2,-5), sf::Vector2i(-1,-5), sf::Vector2i( 0,-5), sf::Vector2i( 1,-5), sf::Vector2i( 2,-5), sf::Vector2i( 3,-5), sf::Vector2i( 4,-5),         NIL        ,         NIL        ,         NIL        ,
+            NIL        ,         NIL        , sf::Vector2i(-5,-4), sf::Vector2i(-4,-4), sf::Vector2i(-3,-4), sf::Vector2i(-2,-4), sf::Vector2i(-1,-4), sf::Vector2i( 0,-4), sf::Vector2i( 1,-4), sf::Vector2i( 2,-4), sf::Vector2i( 3,-4), sf::Vector2i( 4,-4), sf::Vector2i( 5,-4),         NIL        ,         NIL        ,
+            NIL        ,         NIL        , sf::Vector2i(-5,-3), sf::Vector2i(-4,-3), sf::Vector2i(-3,-3), sf::Vector2i(-2,-3), sf::Vector2i(-1,-3), sf::Vector2i( 0,-3), sf::Vector2i( 1,-3), sf::Vector2i( 2,-3), sf::Vector2i( 3,-3), sf::Vector2i( 4,-3), sf::Vector2i( 5,-3),         NIL        ,         NIL        ,
+            NIL        , sf::Vector2i(-6,-2), sf::Vector2i(-5,-2), sf::Vector2i(-4,-2), sf::Vector2i(-3,-2), sf::Vector2i(-2,-2), sf::Vector2i(-1,-2), sf::Vector2i( 0,-2), sf::Vector2i( 1,-2), sf::Vector2i( 2,-2), sf::Vector2i( 3,-2), sf::Vector2i( 4,-2), sf::Vector2i( 5,-2), sf::Vector2i( 6,-2),         NIL        ,
+    sf::Vector2i(-7,-1), sf::Vector2i(-6,-1), sf::Vector2i(-5,-1), sf::Vector2i(-4,-1), sf::Vector2i(-3,-1), sf::Vector2i(-2,-1), sf::Vector2i(-1,-1), sf::Vector2i( 0,-1), sf::Vector2i( 1,-1), sf::Vector2i( 2,-1), sf::Vector2i( 3,-1), sf::Vector2i( 4,-1), sf::Vector2i( 5,-1), sf::Vector2i( 6,-1), sf::Vector2i( 7,-1),
+    sf::Vector2i(-7, 0), sf::Vector2i(-6, 0), sf::Vector2i(-5, 0), sf::Vector2i(-4, 0), sf::Vector2i(-3, 0), sf::Vector2i(-2, 0), sf::Vector2i(-1, 0),        CENTER      , sf::Vector2i( 1, 0), sf::Vector2i( 2, 0), sf::Vector2i( 3, 0), sf::Vector2i( 4, 0), sf::Vector2i( 5, 0), sf::Vector2i( 6, 0), sf::Vector2i( 7, 0),
+    sf::Vector2i(-7, 1), sf::Vector2i(-6, 1), sf::Vector2i(-5, 1), sf::Vector2i(-4, 1), sf::Vector2i(-3, 1), sf::Vector2i(-2, 1), sf::Vector2i(-1, 1), sf::Vector2i( 0, 1), sf::Vector2i( 1, 1), sf::Vector2i( 2, 1), sf::Vector2i( 3, 1), sf::Vector2i( 4, 1), sf::Vector2i( 5, 1), sf::Vector2i( 6, 1), sf::Vector2i( 7, 1),
+            NIL        , sf::Vector2i(-6, 2), sf::Vector2i(-5, 2), sf::Vector2i(-4, 2), sf::Vector2i(-3, 2), sf::Vector2i(-2, 2), sf::Vector2i(-1, 2), sf::Vector2i( 0, 2), sf::Vector2i( 1, 2), sf::Vector2i( 2, 2), sf::Vector2i( 3, 2), sf::Vector2i( 4, 2), sf::Vector2i( 5, 2), sf::Vector2i( 6, 2),         NIL        ,
+            NIL        ,         NIL        , sf::Vector2i(-5, 3), sf::Vector2i(-4, 3), sf::Vector2i(-3, 3), sf::Vector2i(-2, 3), sf::Vector2i(-1, 3), sf::Vector2i( 0, 3), sf::Vector2i( 1, 3), sf::Vector2i( 2, 3), sf::Vector2i( 3, 3), sf::Vector2i( 4, 3), sf::Vector2i( 5, 3),         NIL        ,         NIL        ,
+            NIL        ,         NIL        , sf::Vector2i(-5, 4), sf::Vector2i(-4, 4), sf::Vector2i(-3, 4), sf::Vector2i(-2, 4), sf::Vector2i(-1, 4), sf::Vector2i( 0, 4), sf::Vector2i( 1, 4), sf::Vector2i( 2, 4), sf::Vector2i( 3, 4), sf::Vector2i( 4, 4), sf::Vector2i( 5, 4),         NIL        ,         NIL        ,
+            NIL        ,         NIL        ,         NIL        , sf::Vector2i(-4, 5), sf::Vector2i(-3, 5), sf::Vector2i(-2, 5), sf::Vector2i(-1, 5), sf::Vector2i( 0, 5), sf::Vector2i( 1, 5), sf::Vector2i( 2, 5), sf::Vector2i( 3, 5), sf::Vector2i( 4, 5),         NIL        ,         NIL        ,         NIL        ,
+            NIL        ,         NIL        ,         NIL        ,         NIL        ,        NIL         , sf::Vector2i(-2, 6), sf::Vector2i(-1, 6), sf::Vector2i( 0, 6), sf::Vector2i( 1, 6), sf::Vector2i( 2, 6),         NIL        ,         NIL        ,         NIL        ,         NIL        ,         NIL        ,
+            NIL        ,         NIL        ,         NIL        ,         NIL        ,        NIL         ,        NIL         , sf::Vector2i(-1, 7), sf::Vector2i( 0, 7), sf::Vector2i( 1, 7),        NIL         ,         NIL        ,         NIL        ,         NIL        ,         NIL        ,         NIL        
+};
+//225
+
+void partFogQuick(sf::Vector2f pos, Game & g, sf::Vector2i fogMask[], int num)
+{
+    int index;
+    sf::Vector2f p;
+    
+    //We skip zeros...for efficiency, but we can't skip the Zero
+    //that is implied by the tanks CURRENT location
+    g.arenaMan.posToIndex(pos,index);
+    if (index >= 0 && index < g.arenaMan.getMapHorizTileNum()*g.arenaMan.getMapVertTileNum())
+    {
+        g.arenaMan.getTile(index).fog = false;
+        g.arenaMan.getTile(index).fogFalseIndex = 0;
+        g.arenaMan.getTile(index).fogClock.restart();
+    }
+
+    for (int i = 0;i < num;i++)
+    {
+        if (fogMask[i].x == 0 && fogMask[i].y == 0)
+            continue;
+        p.x = pos.x + 128*fogMask[i].x;
+        p.y = pos.y + 128*fogMask[i].y;
+        g.arenaMan.posToIndex(p,index);
+        if (index >= 0 && index < g.arenaMan.getMapHorizTileNum()*g.arenaMan.getMapVertTileNum())
+        {
+            g.arenaMan.getTile(index).fog = false;
+            g.arenaMan.getTile(index).fogFalseIndex = 0;
+            g.arenaMan.getTile(index).fogClock.restart();
+        }
+
+    }
+}
+
+//void partFog(Tile & t)
+//{
+//    t.fog = false;
+//    t.fogFalseIndex = 0;//It is present, and diminishing
+//    t.fogClock.restart();
+//}
+
+
+
 bool isTankCollision(sf::Vector2f projPos, sf::Vector2f projSize, std::vector<Player> & players, CollisionResult & cr, sf::Uint32 team=-1)
 {
     ////TODO: assumes size of tank.
@@ -46,7 +141,11 @@ bool isCreepCollision(sf::Vector2f projPos, sf::Vector2f projSize, std::vector<C
     for (int ci = 0;ci < creeps.size();ci++)
     {
         Creep & creep = creeps[ci];
-        sf::FloatRect fr(creep.position,sf::Vector2f(48,48));
+        sf::Vector2f tempPos;
+        tempPos = creep.position;
+        tempPos.x += 32;
+        tempPos.y += 32;
+        sf::FloatRect fr(tempPos,sf::Vector2f(64,64));
         sf::FloatRect pr(projPos, projSize);
         if (fr.intersects(pr))
         {
@@ -60,12 +159,12 @@ bool isCreepCollision(sf::Vector2f projPos, sf::Vector2f projSize, std::vector<C
     return false;
 }
 
-int isGeneratorCollision(sf::Vector2f projPos, sf::Vector2f projSize, std::vector<sf::Vector2f> & gens, CollisionResult & cr, sf::Uint32 team=-1)
+int isGeneratorCollision(sf::Vector2f projPos, sf::Vector2f projSize, std::vector<TurretEntity> & gens, CollisionResult & cr, sf::Uint32 team=-1)
 {
     ////TODO: assumes size of generator.
     for (int gi =0;gi < gens.size();gi++)
     {
-        sf::Vector2f genPos = gens[gi];
+        sf::Vector2f genPos = gens[gi].position;
 
         if (projPos.x > genPos.x &&
             projPos.x < genPos.x+128.0f &&
@@ -151,7 +250,7 @@ sf::Uint32 updateVelocity(Player & player, std::vector<sf::Vector2f> & obstructi
     if (player.tank.accelerating == AccelerateAction::Forward)
     {
         player.tank.throttle+=2;
-        float max = (13+player.tank.power/10.0f > 40 ? 40 : 13+player.tank.power/5.0f);
+        float max = floor((13+player.tank.power/10.0f > 40 ? 40 : 13+player.tank.power/5.0f));
         if (player.tank.throttle > max)
             player.tank.throttle = max;
     }else if (player.tank.accelerating == AccelerateAction::Reverse)
@@ -264,7 +363,7 @@ bool updateProjectilCollisions(Game & g, Player & player, sf::Uint32 playerTeam,
 
         bool yes4 = isBaseCollision(i->position,
                                     sf::Vector2f((float)sz.x,(float)sz.y),
-                                    g.arenaMan.getStartPosition(otherTeam),//g.teamMan.teams[otherTeam].base1,
+                                    g.arenaMan.getStartPosition(otherTeam),
                                     cr4,
                                     otherTeam);
 
@@ -311,7 +410,7 @@ bool updateProjectilCollisions(Game & g, Player & player, sf::Uint32 playerTeam,
                                                 cr2.slot,
                                                 damage);
                     if (ret == 2){
-                        player.tank.power+=1;
+                        player.tank.power+=g.teamMan.teams[cr2.team].creep[cr2.slot].worth;
                         player.tank.maxHealth+=2;
                     }
 

@@ -53,16 +53,16 @@ sf::Sprite & AssetManager::getSprite(int i)
     case ImageType::Floor2:
         spriteSheet.sprite.setTextureRect(sf::IntRect(256,0,128,128));
         return spriteSheet.sprite;
-    case ImageType::FloorBase1:
+    case ImageType::Base1:
         spriteSheet.sprite.setTextureRect(sf::IntRect(0,128,128,128));
         return spriteSheet.sprite;
-    case ImageType::FloorBase2:
+    case ImageType::Base2:
         spriteSheet.sprite.setTextureRect(sf::IntRect(128,128,128,128));
         return spriteSheet.sprite;
-    case ImageType::FloorGenerator1:
+    case ImageType::Generator1:
         spriteSheet.sprite.setTextureRect(sf::IntRect(0,256,128,128));
         return spriteSheet.sprite;
-    case ImageType::FloorGenerator2:
+    case ImageType::Generator2:
         spriteSheet.sprite.setTextureRect(sf::IntRect(128,256,128,128));
         return spriteSheet.sprite;
     case ImageType::FogOfWar15:
@@ -88,6 +88,12 @@ sf::Sprite & AssetManager::getSprite(int i)
         return spriteSheet.sprite;
     case ImageType::Minion1:
         spriteSheet.sprite.setTextureRect(sf::IntRect(320,314,64,64));
+        return spriteSheet.sprite;
+    case ImageType::Minion3:
+        spriteSheet.sprite.setTextureRect(sf::IntRect(446,371,64,64));
+        return spriteSheet.sprite;
+    case ImageType::Minion4:
+        spriteSheet.sprite.setTextureRect(sf::IntRect(390,317,64,64));
         return spriteSheet.sprite;
     case ImageType::Dash1:
         spriteSheet.sprite.setTextureRect(sf::IntRect(0,447,512,65));

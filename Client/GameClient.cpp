@@ -116,24 +116,12 @@ sf::Uint32 GameClient::doLocalEvents()
 
 sf::Uint32 GameClient::doInit()
 {
-    //Initialize Start Stage
-    //curStage = &stageStart;
-    //curStage->doInit(*this);
-
-    //Initialize Lobby Stage
-    //curStage = &stageLobby;
-    //curStage->doInit(*this);
-
-    //Initialize Run Stage
-    //curStage = &stageRun;
-    //curStage->doInit(*this);
-
     //Set the start stage..
     curStage = &stageStart;
     curStage->doInit(*this);
 
     assetMan.load();
-    arenaMan.load("Assets\\12_full.map");
+    arenaMan.load("Assets\\small.map");
     teamMan.load();
 
 

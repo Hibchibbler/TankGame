@@ -63,7 +63,7 @@ sf::Uint32 StageRun::doRemoteEvent(Game & g,
         //std::cout << "Got StateOfUnion" << std::endl;
         sf::Uint32 teamSize;
         sf::Uint32 slotNum;
-
+        sf::Uint32 visible;
         for (int t= 1;t < 3;t++){
             //Players
             cevent.packet >> teamSize;//-----------------team 1 , then 2 
@@ -72,16 +72,19 @@ sf::Uint32 StageRun::doRemoteEvent(Game & g,
                 Player & aPlayer = g.teamMan.getPlayerBySlot(t,slotNum);
                 
                 cevent.packet >> aPlayer.hasHost;
-                cevent.packet >> aPlayer.tank.health;
-                cevent.packet >> aPlayer.tank.power;
-                cevent.packet >> aPlayer.tank.throttle;
-                cevent.packet >> aPlayer.tank.bodyAngle;
-                cevent.packet >> aPlayer.tank.turretAngle;
-                cevent.packet >> aPlayer.tank.shadowPos.x;
-                cevent.packet >> aPlayer.tank.shadowPos.y;
-                cevent.packet >> aPlayer.tank.velocity.x;
-                cevent.packet >> aPlayer.tank.velocity.y;
-
+                cevent.packet >>aPlayer.tank.visible;
+                if (aPlayer.tank.visible == 1){
+                    cevent.packet >> aPlayer.tank.health;
+                    cevent.packet >> aPlayer.tank.power;
+                    cevent.packet >> aPlayer.tank.throttle;
+                    cevent.packet >> aPlayer.tank.bodyAngle;
+                    cevent.packet >> aPlayer.tank.turretAngle;
+                    cevent.packet >> aPlayer.tank.shadowPos.x;
+                    cevent.packet >> aPlayer.tank.shadowPos.y;
+                    cevent.packet >> aPlayer.tank.velocity.x;
+                    cevent.packet >> aPlayer.tank.velocity.y;
+                    
+                }
                 
                 aPlayer.tank.shadowUpdated = true;
                 if (!hasRxStateOfUnion)
@@ -131,6 +134,7 @@ sf::Uint32 StageRun::doRemoteEvent(Game & g,
                 cevent.packet >> creep.position.x;
                 cevent.packet >> creep.position.y;
                 cevent.packet >> creep.angle;
+                cevent.packet >> creep.creepType;
                 g.teamMan.teams[t].creep.push_back(creep);
             }
 
@@ -146,6 +150,7 @@ sf::Uint32 StageRun::doRemoteEvent(Game & g,
                     cevent.packet >> proj.position.y;
                     cevent.packet >> proj.angle;
                     g.teamMan.teams[t].gen[gi].prjctls.push_back(proj);
+                    g.teamMan.teams[t].gen[gi].lastFiringAngle = proj.angle;
                 }
             }
             //  Base Heal Laser
@@ -274,6 +279,8 @@ sf::Uint32 StageRun::doLoop(Game & g)
 }
 sf::Uint32 StageRun::doLocalInput(sf::RenderWindow & window, Game & g)
 {
+    if (!hasFocus)
+        return 0;
     //Window Scrolling 
     if (scrollClock.getElapsedTime().asSeconds() > 0.06)
     {
@@ -319,8 +326,6 @@ sf::Uint32 StageRun::doLocalInput(sf::RenderWindow & window, Game & g)
 
     if (inputClock.getElapsedTime().asSeconds() > 0.075f)
     {
-        if (!hasFocus)
-            return 0;
 
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::X)){
             showShadow=!showShadow;
@@ -356,7 +361,8 @@ sf::Uint32 StageRun::doLocalInput(sf::RenderWindow & window, Game & g)
            //it to the server.
         }
     
-        if (sf::Mouse::isButtonPressed(sf::Mouse::Left) && fireClock.getElapsedTime().asSeconds() > 0.250f){
+        if (sf::Mouse::isButtonPressed(sf::Mouse::Left))// && fireClock.getElapsedTime().asSeconds() > 0.150f)
+        {
             thisPlayer.tank.attacking = AttackAction::Attacking;
             fireClock.restart();
         }else{
@@ -522,98 +528,7 @@ sf::Uint32 StageRun::prepareAssets(Game &g)
 }
 
 #define BASE_VISION_RANGE 700
-#define CENTER sf::Vector2i( 0, 0)
-#define NIL    sf::Vector2i( 0, 0)
-//
-sf::Vector2i fogMask0[] = 
-{
-            NIL        ,         NIL        ,         NIL        ,        NIL         ,         NIL        ,         NIL        ,         NIL        ,         NIL        ,         NIL        ,         NIL        ,         NIL        ,
-            NIL        ,         NIL        ,         NIL        , sf::Vector2i(-2,-4), sf::Vector2i(-1,-4), sf::Vector2i( 0,-4), sf::Vector2i( 1,-4), sf::Vector2i( 2,-4),         NIL        ,         NIL        ,         NIL        ,
-            NIL        ,         NIL        , sf::Vector2i(-3,-3), sf::Vector2i(-2,-3), sf::Vector2i(-1,-3), sf::Vector2i( 0,-3), sf::Vector2i( 1,-3), sf::Vector2i( 2,-3), sf::Vector2i( 3,-3),         NIL        ,         NIL        ,
-            NIL        , sf::Vector2i(-4,-2), sf::Vector2i(-3,-2), sf::Vector2i(-2,-2), sf::Vector2i(-1,-2), sf::Vector2i( 0,-2), sf::Vector2i( 1,-2), sf::Vector2i( 2,-2), sf::Vector2i( 3,-2), sf::Vector2i( 4,-2),         NIL        ,
-            NIL        , sf::Vector2i(-4,-1), sf::Vector2i(-3,-1), sf::Vector2i(-2,-1), sf::Vector2i(-1,-1), sf::Vector2i( 0,-1), sf::Vector2i( 1,-1), sf::Vector2i( 2,-1), sf::Vector2i( 3,-1), sf::Vector2i( 4,-1),         NIL        ,
-            NIL        , sf::Vector2i(-4, 0), sf::Vector2i(-3, 0), sf::Vector2i(-2, 0), sf::Vector2i(-1, 0),        CENTER      , sf::Vector2i( 1, 0), sf::Vector2i( 2, 0), sf::Vector2i( 3, 0), sf::Vector2i( 4, 0),         NIL        ,
-            NIL        , sf::Vector2i(-4, 1), sf::Vector2i(-3, 1), sf::Vector2i(-2, 1), sf::Vector2i(-1, 1), sf::Vector2i( 0, 1), sf::Vector2i( 1, 1), sf::Vector2i( 2, 1), sf::Vector2i( 3, 1), sf::Vector2i( 4, 1),         NIL        ,
-            NIL        , sf::Vector2i(-4, 2), sf::Vector2i(-3, 2), sf::Vector2i(-2, 2), sf::Vector2i(-1, 2), sf::Vector2i( 0, 2), sf::Vector2i( 1, 2), sf::Vector2i( 2, 2), sf::Vector2i( 3, 2), sf::Vector2i( 4, 2),         NIL        ,
-            NIL        ,         NIL        , sf::Vector2i(-3, 3), sf::Vector2i(-2, 3), sf::Vector2i(-1, 3), sf::Vector2i( 0, 3), sf::Vector2i( 1, 3), sf::Vector2i( 2, 3), sf::Vector2i( 3, 3),         NIL        ,         NIL        ,
-            NIL        ,         NIL        ,         NIL        , sf::Vector2i(-2, 4), sf::Vector2i(-1, 4), sf::Vector2i( 0, 4), sf::Vector2i( 1, 4), sf::Vector2i( 2, 4),         NIL        ,         NIL        ,         NIL        ,
-            NIL        ,         NIL        ,         NIL        ,        NIL         ,         NIL        ,         NIL        ,         NIL        ,         NIL        ,         NIL        ,         NIL        ,         NIL        
-};
 
-sf::Vector2i fogMask1[] = 
-{
-            NIL        ,         NIL        ,         NIL        ,        NIL         , sf::Vector2i(-1,-5), sf::Vector2i( 0,-5), sf::Vector2i( 1,-5),         NIL        ,         NIL        ,         NIL        ,         NIL        ,
-            NIL        ,         NIL        ,         NIL        , sf::Vector2i(-2,-4), sf::Vector2i(-1,-4), sf::Vector2i( 0,-4), sf::Vector2i( 1,-4), sf::Vector2i( 2,-4),         NIL        ,         NIL        ,         NIL        ,
-            NIL        ,         NIL        , sf::Vector2i(-3,-3), sf::Vector2i(-2,-3), sf::Vector2i(-1,-3), sf::Vector2i( 0,-3), sf::Vector2i( 1,-3), sf::Vector2i( 2,-3), sf::Vector2i( 3,-3),         NIL        ,         NIL        ,
-            NIL        , sf::Vector2i(-4,-2), sf::Vector2i(-3,-2), sf::Vector2i(-2,-2), sf::Vector2i(-1,-2), sf::Vector2i( 0,-2), sf::Vector2i( 1,-2), sf::Vector2i( 2,-2), sf::Vector2i( 3,-2), sf::Vector2i( 4,-2),         NIL        ,
-    sf::Vector2i(-5,-1), sf::Vector2i(-4,-1), sf::Vector2i(-3,-1), sf::Vector2i(-2,-1), sf::Vector2i(-1,-1), sf::Vector2i( 0,-1), sf::Vector2i( 1,-1), sf::Vector2i( 2,-1), sf::Vector2i( 3,-1), sf::Vector2i( 4,-1), sf::Vector2i( 5,-1),
-    sf::Vector2i(-5, 0), sf::Vector2i(-4, 0), sf::Vector2i(-3, 0), sf::Vector2i(-2, 0), sf::Vector2i(-1, 0),        CENTER      , sf::Vector2i( 1, 0), sf::Vector2i( 2, 0), sf::Vector2i( 3, 0), sf::Vector2i( 4, 0), sf::Vector2i( 5, 0),
-    sf::Vector2i(-5, 1), sf::Vector2i(-4, 1), sf::Vector2i(-3, 1), sf::Vector2i(-2, 1), sf::Vector2i(-1, 1), sf::Vector2i( 0, 1), sf::Vector2i( 1, 1), sf::Vector2i( 2, 1), sf::Vector2i( 3, 1), sf::Vector2i( 4, 1), sf::Vector2i( 5, 1),
-            NIL        , sf::Vector2i(-4, 2), sf::Vector2i(-3, 2), sf::Vector2i(-2, 2), sf::Vector2i(-1, 2), sf::Vector2i( 0, 2), sf::Vector2i( 1, 2), sf::Vector2i( 2, 2), sf::Vector2i( 3, 2), sf::Vector2i( 4, 2),         NIL        ,
-            NIL        ,         NIL        , sf::Vector2i(-3, 3), sf::Vector2i(-2, 3), sf::Vector2i(-1, 3), sf::Vector2i( 0, 3), sf::Vector2i( 1, 3), sf::Vector2i( 2, 3), sf::Vector2i( 3, 3),         NIL        ,         NIL        ,
-            NIL        ,         NIL        ,         NIL        , sf::Vector2i(-2, 4), sf::Vector2i(-1, 4), sf::Vector2i( 0, 4), sf::Vector2i( 1, 4), sf::Vector2i( 2, 4),         NIL        ,         NIL        ,         NIL        ,
-            NIL        ,         NIL        ,         NIL        ,        NIL         , sf::Vector2i(-1, 5), sf::Vector2i( 0, 5), sf::Vector2i( 1, 5),         NIL        ,         NIL        ,         NIL        ,         NIL        
-};
-//11*11 elements
-
-sf::Vector2i fogMask2[] = 
-{
-            NIL        ,         NIL        ,         NIL        ,         NIL        ,        NIL         ,        NIL         , sf::Vector2i(-1,-7), sf::Vector2i( 0,-7), sf::Vector2i( 1,-7),        NIL         ,         NIL        ,         NIL        ,         NIL        ,         NIL        ,         NIL        ,
-            NIL        ,         NIL        ,         NIL        ,         NIL        ,        NIL         , sf::Vector2i(-2,-6), sf::Vector2i(-1,-6), sf::Vector2i( 0,-6), sf::Vector2i( 1,-6), sf::Vector2i( 2,-6),         NIL        ,         NIL        ,         NIL        ,         NIL        ,         NIL        ,
-            NIL        ,         NIL        ,         NIL        ,         NIL        , sf::Vector2i(-3,-5), sf::Vector2i(-2,-5), sf::Vector2i(-1,-5), sf::Vector2i( 0,-5), sf::Vector2i( 1,-5), sf::Vector2i( 2,-5), sf::Vector2i( 3,-5),         NIL        ,         NIL        ,         NIL        ,         NIL        ,
-            NIL        ,         NIL        ,         NIL        , sf::Vector2i(-4,-4), sf::Vector2i(-3,-4), sf::Vector2i(-2,-4), sf::Vector2i(-1,-4), sf::Vector2i( 0,-4), sf::Vector2i( 1,-4), sf::Vector2i( 2,-4), sf::Vector2i( 3,-4), sf::Vector2i( 4,-4),         NIL        ,         NIL        ,         NIL        ,
-            NIL        ,         NIL        , sf::Vector2i(-5,-3), sf::Vector2i(-4,-3), sf::Vector2i(-3,-3), sf::Vector2i(-2,-3), sf::Vector2i(-1,-3), sf::Vector2i( 0,-3), sf::Vector2i( 1,-3), sf::Vector2i( 2,-3), sf::Vector2i( 3,-3), sf::Vector2i( 4,-3), sf::Vector2i( 5,-3),         NIL        ,         NIL        ,
-            NIL        , sf::Vector2i(-6,-2), sf::Vector2i(-5,-2), sf::Vector2i(-4,-2), sf::Vector2i(-3,-2), sf::Vector2i(-2,-2), sf::Vector2i(-1,-2), sf::Vector2i( 0,-2), sf::Vector2i( 1,-2), sf::Vector2i( 2,-2), sf::Vector2i( 3,-2), sf::Vector2i( 4,-2), sf::Vector2i( 5,-2), sf::Vector2i( 6,-2),         NIL        ,
-    sf::Vector2i(-7,-1), sf::Vector2i(-6,-1), sf::Vector2i(-5,-1), sf::Vector2i(-4,-1), sf::Vector2i(-3,-1), sf::Vector2i(-2,-1), sf::Vector2i(-1,-1), sf::Vector2i( 0,-1), sf::Vector2i( 1,-1), sf::Vector2i( 2,-1), sf::Vector2i( 3,-1), sf::Vector2i( 4,-1), sf::Vector2i( 5,-1), sf::Vector2i( 6,-1), sf::Vector2i( 7,-1),
-    sf::Vector2i(-7, 0), sf::Vector2i(-6, 0), sf::Vector2i(-5, 0), sf::Vector2i(-4, 0), sf::Vector2i(-3, 0), sf::Vector2i(-2, 0), sf::Vector2i(-1, 0),        CENTER      , sf::Vector2i( 1, 0), sf::Vector2i( 2, 0), sf::Vector2i( 3, 0), sf::Vector2i( 4, 0), sf::Vector2i( 5, 0), sf::Vector2i( 6, 0), sf::Vector2i( 7, 0),
-    sf::Vector2i(-7, 1), sf::Vector2i(-6, 1), sf::Vector2i(-5, 1), sf::Vector2i(-4, 1), sf::Vector2i(-3, 1), sf::Vector2i(-2, 1), sf::Vector2i(-1, 1), sf::Vector2i( 0, 1), sf::Vector2i( 1, 1), sf::Vector2i( 2, 1), sf::Vector2i( 3, 1), sf::Vector2i( 4, 1), sf::Vector2i( 5, 1), sf::Vector2i( 6, 1), sf::Vector2i( 7, 1),
-            NIL        , sf::Vector2i(-6, 2), sf::Vector2i(-5, 2), sf::Vector2i(-4, 2), sf::Vector2i(-3, 2), sf::Vector2i(-2, 2), sf::Vector2i(-1, 2), sf::Vector2i( 0, 2), sf::Vector2i( 1, 2), sf::Vector2i( 2, 2), sf::Vector2i( 3, 2), sf::Vector2i( 4, 2), sf::Vector2i( 5, 2), sf::Vector2i( 6, 2),         NIL        ,
-            NIL        ,         NIL        , sf::Vector2i(-5, 3), sf::Vector2i(-4, 3), sf::Vector2i(-3, 3), sf::Vector2i(-2, 3), sf::Vector2i(-1, 3), sf::Vector2i( 0, 3), sf::Vector2i( 1, 3), sf::Vector2i( 2, 3), sf::Vector2i( 3, 3), sf::Vector2i( 4, 3), sf::Vector2i( 5, 3),         NIL        ,         NIL        ,
-            NIL        ,         NIL        ,         NIL        , sf::Vector2i(-4, 4), sf::Vector2i(-3, 4), sf::Vector2i(-2, 4), sf::Vector2i(-1, 4), sf::Vector2i( 0, 4), sf::Vector2i( 1, 4), sf::Vector2i( 2, 4), sf::Vector2i( 3, 4), sf::Vector2i( 4, 4),         NIL        ,         NIL        ,         NIL        ,
-            NIL        ,         NIL        ,         NIL        ,         NIL        , sf::Vector2i(-3, 5), sf::Vector2i(-2, 5), sf::Vector2i(-1, 5), sf::Vector2i( 0, 5), sf::Vector2i( 1, 5), sf::Vector2i( 2, 5), sf::Vector2i( 3, 5),         NIL        ,         NIL        ,         NIL        ,         NIL        ,
-            NIL        ,         NIL        ,         NIL        ,         NIL        ,        NIL         , sf::Vector2i(-2, 6), sf::Vector2i(-1, 6), sf::Vector2i( 0, 6), sf::Vector2i( 1, 6), sf::Vector2i( 2, 6),         NIL        ,         NIL        ,         NIL        ,         NIL        ,         NIL        ,
-            NIL        ,         NIL        ,         NIL        ,         NIL        ,        NIL         ,        NIL         , sf::Vector2i(-1, 7), sf::Vector2i( 0, 7), sf::Vector2i( 1, 7),        NIL         ,         NIL        ,         NIL        ,         NIL        ,         NIL        ,         NIL        
-};
-//225
-
-void partFogQuick(sf::Vector2f pos, Game & g, sf::Vector2i fogMask[], int num)
-{
-    int index;
-    sf::Vector2f p;
-    
-    //We skip zeros...for efficiency, but we can't skip the Zero
-    //that is implied by the tanks CURRENT location
-    g.arenaMan.posToIndex(pos,index);
-    if (index >= 0 && index < g.arenaMan.getMapHorizTileNum()*g.arenaMan.getMapVertTileNum())
-    {
-        g.arenaMan.getTile(index).fog = false;
-        g.arenaMan.getTile(index).fogFalseIndex = 0;
-        g.arenaMan.getTile(index).fogClock.restart();
-    }
-
-    for (int i = 0;i < num;i++)
-    {
-        if (fogMask[i].x == 0 && fogMask[i].y == 0)
-            continue;
-        p.x = pos.x + 128*fogMask[i].x;
-        p.y = pos.y + 128*fogMask[i].y;
-        g.arenaMan.posToIndex(p,index);
-        if (index >= 0 && index < g.arenaMan.getMapHorizTileNum()*g.arenaMan.getMapVertTileNum())
-        {
-            g.arenaMan.getTile(index).fog = false;
-            g.arenaMan.getTile(index).fogFalseIndex = 0;
-            g.arenaMan.getTile(index).fogClock.restart();
-        }
-
-    }
-}
-
-void partFog(Tile & t)
-{
-    t.fog = false;
-    t.fogFalseIndex = 0;//It is present, and diminishing
-    t.fogClock.restart();
-}
 
 
 
@@ -633,9 +548,25 @@ sf::Uint32 StageRun::drawAll(sf::RenderWindow & window, Game & g)
     
     pos = thisPlayer.tank.position;
 
-    partFogQuick(g.arenaMan.getStartPosition(g.myTeam), g, fogMask2, 121);
+    int myTeam = g.myTeam;
+    int otherTeam = (g.myTeam == 1 ? 2 : 1);
+
+    partFogQuick(g.arenaMan.getStartPosition(g.myTeam), g, fogMask2, 225);
 
     entityVertices.clear();
+    //Arena Entities - bases, turrets, totems, waypoints
+    addStraightQuad(entityVertices,
+                    sf::FloatRect(g.arenaMan.getStartPosition(g.myTeam).x, g.arenaMan.getStartPosition(g.myTeam).y, 128,128),
+                    g.assetMan.getSprite(ImageType::Base1).getTextureRect());
+
+    
+    addStraightQuad(entityVertices,
+                sf::FloatRect(g.arenaMan.getStartPosition(otherTeam).x, g.arenaMan.getStartPosition(otherTeam).y, 128,128),
+                g.assetMan.getSprite(ImageType::Base2).getTextureRect());
+    
+    
+
+
     //My Tanks
     sf::Uint32 curTeam = g.myTeam;
     sf::Sprite blueBody = g.assetMan.getSprite((curTeam==1 ? ImageType::TankBlue : ImageType::TankRed));
@@ -677,14 +608,14 @@ sf::Uint32 StageRun::drawAll(sf::RenderWindow & window, Game & g)
             }
 
             //We ain't dead, so be visible.
-            g.teamMan.teams[curTeam].players[h].tank.visible = true;
+            g.teamMan.teams[curTeam].players[h].tank.visible = 1;
 
             //Clear fog for my team tanks
             partFogQuick(curPos, g, fogMask2, 225);
             //partFog(curPos,g);
         }else
         {
-            g.teamMan.teams[curTeam].players[h].tank.visible = false;
+            g.teamMan.teams[curTeam].players[h].tank.visible = 0;
             if (g.mySlot == h )
             {
                 addRotQuad(entityVertices,
@@ -726,9 +657,10 @@ sf::Uint32 StageRun::drawAll(sf::RenderWindow & window, Game & g)
     }
 
     //My Creep
-    sf::Sprite creep = g.assetMan.getSprite( (curTeam==1 ? ImageType::Minion1 : ImageType::Minion2));
+    //sf::Sprite creep = g.assetMan.getSprite( (curTeam==1 ? ImageType::Minion1 : ImageType::Minion2));
     for (int lk = 0;lk < g.teamMan.teams[curTeam].creep.size();lk++)
     {
+        sf::Sprite creep = g.assetMan.getSprite(g.teamMan.teams[curTeam].creep[lk].creepType);
         addRotQuad(entityVertices,
                     sf::FloatRect(g.teamMan.teams[curTeam].creep[lk].position.x, 
                                     g.teamMan.teams[curTeam].creep[lk].position.y, 64,64),
@@ -747,12 +679,13 @@ sf::Uint32 StageRun::drawAll(sf::RenderWindow & window, Game & g)
     for (int h = 0;h < g.teamMan.teams[curTeam].players.size();h++)
     {
         if (g.teamMan.teams[curTeam].players[h].hasHost &&
-            g.teamMan.teams[curTeam].players[h].tank.health > 0)
+            g.teamMan.teams[curTeam].players[h].tank.health > 0 &&
+            g.teamMan.teams[curTeam].players[h].tank.visible == 1)
         {
-            int index;
+            /*int index;
             g.arenaMan.posToIndex(g.teamMan.teams[curTeam].players[h].tank.position, index);
             if (index >= 0 && index < g.arenaMan.getMapHorizTileNum()*g.arenaMan.getMapVertTileNum() && !g.arenaMan.getTile(index).fog)
-            {
+            {*/
                 //Draw their tanks
                 addRotQuad(entityVertices,
                                 sf::FloatRect(g.teamMan.teams[curTeam].players[h].tank.position.x, g.teamMan.teams[curTeam].players[h].tank.position.y, 73,116),
@@ -763,15 +696,15 @@ sf::Uint32 StageRun::drawAll(sf::RenderWindow & window, Game & g)
                                 sf::FloatRect(g.teamMan.teams[curTeam].players[h].tank.position.x, g.teamMan.teams[curTeam].players[h].tank.position.y, 47,176),
                                 blueTurret.getTextureRect(),
                                 g.teamMan.teams[curTeam].players[h].tank.turretAngle-STD_ROTATE_OFFSET);
-                g.teamMan.teams[curTeam].players[h].tank.visible = true;
-            }else{
-                //Opponent tank is under fog - don't draw
-                g.teamMan.teams[curTeam].players[h].tank.visible = false;
-            }
-        }else
-        {
-            //Opponent tank has no health - don't draw
-            g.teamMan.teams[curTeam].players[h].tank.visible = false;
+                //g.teamMan.teams[curTeam].players[h].tank.visible = true;
+            //}else{
+            //    //Opponent tank is under fog - don't draw
+            //    g.teamMan.teams[curTeam].players[h].tank.visible = false;
+            //}
+        //}else
+        //{
+        //    //Opponent tank has no health - don't draw
+        //    g.teamMan.teams[curTeam].players[h].tank.visible = false;
         }
     }
 
@@ -782,39 +715,41 @@ sf::Uint32 StageRun::drawAll(sf::RenderWindow & window, Game & g)
         {
             for (int k = 0;k < g.teamMan.teams[curTeam].players[h].prjctls.size();k++)
             {
-                int index;
+                /*int index;
                 g.arenaMan.posToIndex(g.teamMan.teams[curTeam].players[h].prjctls[k].position, index);
                 if (index >= 0 && index < g.arenaMan.getMapHorizTileNum()*g.arenaMan.getMapVertTileNum() && !g.arenaMan.getTile(index).fog)
-                {
+                {*/
                     addRotQuad(entityVertices,
                                 sf::FloatRect(g.teamMan.teams[curTeam].players[h].prjctls[k].position.x, g.teamMan.teams[curTeam].players[h].prjctls[k].position.y, 32,32),
                                 p.getTextureRect(),
                                 0.0f);
-                }
+                /*}*/
             }
         }
     }
     
     //Their Creep
-    creep = g.assetMan.getSprite( (curTeam==1 ? ImageType::Minion1 : ImageType::Minion2));
+    //creep = g.assetMan.getSprite( (curTeam==1 ? ImageType::Minion1 : ImageType::Minion2));
     for (int lk = 0;lk < g.teamMan.teams[curTeam].creep.size();lk++)
     {
-        int index;
+        sf::Sprite creep = g.assetMan.getSprite(g.teamMan.teams[curTeam].creep[lk].creepType);
+        /*int index;
         g.arenaMan.posToIndex(g.teamMan.teams[curTeam].creep[lk].position, index);
         if (index >= 0 && index < g.arenaMan.getMapHorizTileNum()*g.arenaMan.getMapVertTileNum() && !g.arenaMan.getTile(index).fog)
-        {
+        {*/
 
             addRotQuad(entityVertices,
                     sf::FloatRect(g.teamMan.teams[curTeam].creep[lk].position.x, 
                                     g.teamMan.teams[curTeam].creep[lk].position.y, 64,64),
                     creep.getTextureRect(),
                     g.teamMan.teams[curTeam].creep[lk].angle);
-        }
+        /*}*/
     }
 
     //Draw Generator lasers    
     sf::Sprite prjctl = g.assetMan.getSprite(ImageType::ProjectileDeathRay);
     prjctl.setOrigin(32.0f,32.0f);
+    
     for (int y = 1;y < 3;y++)
     {
         for (int gi = 0;gi < g.arenaMan.getGeneratorCount(y);gi++)
@@ -834,6 +769,22 @@ sf::Uint32 StageRun::drawAll(sf::RenderWindow & window, Game & g)
                /* }*/
             }
         }
+    }
+
+    //Draw turrets after drawing lazer..so it looks like it is coming out of the barrel....
+    for (int gc = 0;gc < g.arenaMan.getGeneratorCount(myTeam);gc++)
+    {
+        addRotQuad(entityVertices,
+                        sf::FloatRect(g.arenaMan.getGeneratorPosition(myTeam, gc).x, g.arenaMan.getGeneratorPosition(myTeam,gc).y, 128,128),
+                        g.assetMan.getSprite(ImageType::Generator1).getTextureRect(),
+                        g.teamMan.teams[myTeam].gen[gc].lastFiringAngle+180.0f);
+    }
+    for (int gc = 0;gc < g.arenaMan.getGeneratorCount(otherTeam);gc++)
+    {
+        addRotQuad(entityVertices,
+                        sf::FloatRect(g.arenaMan.getGeneratorPosition(otherTeam, gc).x, g.arenaMan.getGeneratorPosition(otherTeam,gc).y, 128,128),
+                        g.assetMan.getSprite(ImageType::Generator2).getTextureRect(),
+                        g.teamMan.teams[otherTeam].gen[gc].lastFiringAngle+180.0f);
     }
 
     //Draw Base heal ray
@@ -1017,7 +968,7 @@ sf::Uint32 StageRun::drawAll(sf::RenderWindow & window, Game & g)
         for (int h = 0;h < g.teamMan.teams[y].players.size();h++)
         {
             if (g.teamMan.teams[y].players[h].hasHost &&
-                g.teamMan.teams[y].players[h].tank.visible)
+                g.teamMan.teams[y].players[h].tank.visible==1)
             {
                 std::stringstream ss;
                 if (g.myTeam == y && g.mySlot == h)

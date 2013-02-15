@@ -15,6 +15,8 @@ namespace tg
             totalDistance=0;
             lastWP = 0;
             wpType=1;
+            worth = 1;
+
         }
         float angle;
         sf::Vector2f position;
@@ -24,6 +26,10 @@ namespace tg
         float creationTime;
         int lastWP;
         int wpType;
+        int creepType;
+        int worth;
+
+        sf::Clock attackClock;
     private:
     };
 

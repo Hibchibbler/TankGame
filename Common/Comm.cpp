@@ -13,8 +13,6 @@ Daniel Ferguson, Eddie Stranberg
 #define COMM_THREAD_LOOP_DELAY      40000 //40 ms
 
 
-
-
 bool tg::Comm::StartClient(sf::Uint16 port, sf::IpAddress addr)
     
 {//We are creating a connecting client
@@ -104,7 +102,7 @@ bool tg::Comm::Receive(tg::CommEvent &gpacket)
             gpacket.connectionId = i->connectionId;
             i->RecvQueue.pop();
             i->RecvMutex->unlock();
-            EstablishedMutex.unlock();
+            //EstablishedMutex.unlock();
             return true;
         }
         i->RecvMutex->unlock();
@@ -140,7 +138,9 @@ void tg::Comm::CommLooper(Comm* comm)
     while (comm->NotDone){
 
         // Check for, and process, any new connection requests
-        //TODO: spawn a thread for each willing listener;  the listener mutex and selector stuff is WIP.
+        //TODO: spawn a thread for each willing listener; 
+        //      the listener mutex and selector stuff is WIP.
+        //      
         if (comm->ListeningSelector.wait(sf::microseconds(3))){
             tg::Connection newConnection;
             newConnection.Socket = new sf::TcpSocket();
@@ -186,7 +186,9 @@ void tg::Comm::CommLooper(Comm* comm)
                     i->IsConnected = true;
                     
                     comm->EstablishedSelector.add(*i->Socket);
+                    comm->EstablishedMutex.lock();
                     comm->Established.push_back(*i);//this must run before the QueueSystemMessage
+                    comm->EstablishedMutex.unlock();
                     
                     comm->SendSystem(CommEventType::Acceptance,comm->TotalConnectCount, std::string("Connected"));
                     comm->TotalConnectCount++;
@@ -296,9 +298,8 @@ void tg::Comm::CommLooper(Comm* comm)
                     connection = comm->Established.erase(connection);
                 }
             }
-         }//comm->EstablishedMutex.unlock();
-            
-      
+        }
+        //comm->EstablishedMutex.unlock();
 
         //Sleep little baby
         sf::sleep(sf::milliseconds(0));
