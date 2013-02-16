@@ -69,6 +69,8 @@ namespace tg
         sf::Clock loopClock;
         sf::Clock inputClock;
         sf::Clock accumulatingClock;
+        sf::Clock baseRotateClock;
+        float base1Angle, base2Angle;
 
         sf::Time previousTime;
         sf::Time currentTime;

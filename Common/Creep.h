@@ -30,6 +30,7 @@ namespace tg
         int worth;
 
         sf::Clock attackClock;
+        sf::Clock rotateClock;
     private:
     };
 

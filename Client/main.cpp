@@ -39,6 +39,7 @@ int main()
         }
 
         ret = gameClient.doDraw(frameTime);
+        sf::sleep(sf::milliseconds(0));
     }
 
     gameClient.doCleanup();

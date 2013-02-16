@@ -13,9 +13,17 @@ using namespace tg;
 class CollisionResult
 {
 public:
+    enum Type{
+        Tank,
+        Creep,
+        Base,
+        Turret
+    };
+    sf::Uint32 type;
     sf::Uint32 team;
     sf::Uint32 slot;
     sf::Vector2f loc;
+    sf::Uint32 damage;
 };
 
 #define CENTER sf::Vector2i( 0, 0)
@@ -128,6 +136,7 @@ bool isTankCollision(sf::Vector2f projPos, sf::Vector2f projSize, std::vector<Pl
                 cr.team = team;
                 cr.slot = ti;
                 cr.loc = projPos;
+                cr.type = CollisionResult::Tank;
                 return true;
             }
         }
@@ -152,6 +161,7 @@ bool isCreepCollision(sf::Vector2f projPos, sf::Vector2f projSize, std::vector<C
             cr.team = team;
             cr.slot = ci;
             cr.loc = projPos;
+            cr.type = CollisionResult::Creep;
             return true;
         }
     }
@@ -175,6 +185,7 @@ int isGeneratorCollision(sf::Vector2f projPos, sf::Vector2f projSize, std::vecto
             cr.team = team;
             cr.slot = gi;
             cr.loc = projPos;
+            cr.type = CollisionResult::Turret;
             return true;
         }
     }
@@ -191,6 +202,7 @@ bool isBaseCollision(sf::Vector2f projPos, sf::Vector2f projSize, sf::Vector2f b
         cr.team = team;
         cr.slot = -1;//Only one base per team.
         cr.loc = projPos;
+        cr.type = CollisionResult::Base;
         return true;
     }
     return false;
@@ -328,6 +340,12 @@ bool updateProjectilCollisions(Game & g, Player & player, sf::Uint32 playerTeam,
             sf::FloatRect fr(oi->x,oi->y, 128,128);
             if (fr.contains(p)){
                 obstructed = true;
+
+                Explosion exp;
+                exp.type = ExplosionType::TankHit;
+                exp.position = i->position;
+                exp.index = 0;
+                g.teamMan.explosions.push_back(exp);
                 break;
             }
         }
@@ -343,25 +361,25 @@ bool updateProjectilCollisions(Game & g, Player & player, sf::Uint32 playerTeam,
         CollisionResult cr3;
         CollisionResult cr4;
 
-        bool yes1 = isTankCollision(i->position, 
+        int yes1 = isTankCollision(i->position, 
                                     sf::Vector2f((float)sz.x,(float)sz.y),
                                     g.teamMan.teams[otherTeam].players,
                                     cr1,
                                     otherTeam);
 
-        bool yes2 = isCreepCollision(i->position, 
+        int yes2 = isCreepCollision(i->position, 
                                     sf::Vector2f((float)sz.x,(float)sz.y),
                                     g.teamMan.teams[otherTeam].creep, 
                                     cr2,
                                     otherTeam);
 
-        bool yes3 = isGeneratorCollision(i->position,
+        int yes3 = isGeneratorCollision(i->position,
                                     sf::Vector2f((float)sz.x,(float)sz.y) ,
                                     g.arenaMan.getGenerator(otherTeam),
                                     cr3,
                                     otherTeam);
 
-        bool yes4 = isBaseCollision(i->position,
+        int yes4 = isBaseCollision(i->position,
                                     sf::Vector2f((float)sz.x,(float)sz.y),
                                     g.arenaMan.getStartPosition(otherTeam),
                                     cr4,

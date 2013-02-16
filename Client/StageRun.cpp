@@ -23,6 +23,7 @@ StageRun::StageRun(Game & g)
     zoomPow = 1;
     visionRange = 1000;
     viewPreset = 0;
+    base1Angle = base2Angle = 0.f;
 }
 
 sf::Uint32 StageRun::doInit(Game & g)
@@ -424,7 +425,7 @@ sf::Uint32 StageRun::doDraw(sf::RenderWindow & window, Game & g, sf::Time ft)
         firstRun = false;
     }
 
-    if (true)//drawClock.getElapsedTime().asSeconds() > 0.001f)
+    if (drawClock.getElapsedTime().asSeconds() > 0.001f)
     {
 
         window.clear();
@@ -475,17 +476,17 @@ sf::Uint32 StageRun::addRotQuad(sf::VertexArray & v, sf::FloatRect p, sf::IntRec
 
     angle = angle*(3.14156f/180.0f);
 
-    px1 = ((0-p.width/2.0f) * cos(angle) - (0-p.height/2.0f) * sin(angle)) + p.left;
-    py1 = ((0-p.width/2.0f) * sin(angle) + (0-p.height/2.0f) * cos(angle)) + p.top;
+    px1 = ((0-p.width/2.0f) * cos(angle) - (0-p.height/2.0f) * sin(angle)) + p.left;// +p.width/2.0f;
+    py1 = ((0-p.width/2.0f) * sin(angle) + (0-p.height/2.0f) * cos(angle)) + p.top;//  +p.height/2.0f;
 
-    px2 = ((p.width-p.width/2.0f) * cos(angle) - (0-p.height/2.0f) * sin(angle)) + p.left;
-    py2 = ((p.width-p.width/2.0f) * sin(angle) + (0-p.height/2.0f) * cos(angle)) + p.top;
+    px2 = ((p.width-p.width/2.0f) * cos(angle) - (0-p.height/2.0f) * sin(angle)) + p.left;//+p.width/2.0f;
+    py2 = ((p.width-p.width/2.0f) * sin(angle) + (0-p.height/2.0f) * cos(angle)) + p.top;// +p.height/2.0f;
 
-    px3 = ((p.width-p.width/2.0f) * cos(angle) - (p.height-p.height/2.0f) * sin(angle)) + p.left;
-    py3 = ((p.width-p.width/2.0f) * sin(angle) + (p.height-p.height/2.0f) * cos(angle)) + p.top;
+    px3 = ((p.width-p.width/2.0f) * cos(angle) - (p.height-p.height/2.0f) * sin(angle)) + p.left;//+p.width/2.0f;
+    py3 = ((p.width-p.width/2.0f) * sin(angle) + (p.height-p.height/2.0f) * cos(angle)) + p.top;// +p.height/2.0f;
 
-    px4 = ((0-p.width/2.0f) * cos(angle) - (p.height-p.height/2.0f) * sin(angle)) + p.left;
-    py4 = ((0-p.width/2.0f) * sin(angle) + (p.height-p.height/2.0f) * cos(angle)) + p.top;
+    px4 = ((0-p.width/2.0f) * cos(angle) - (p.height-p.height/2.0f) * sin(angle)) + p.left;//+p.width/2.0f;
+    py4 = ((0-p.width/2.0f) * sin(angle) + (p.height-p.height/2.0f) * cos(angle)) + p.top;// +p.height/2.0f;
 
 
     v.append(sf::Vertex(sf::Vector2f(px1,py1),
@@ -555,15 +556,21 @@ sf::Uint32 StageRun::drawAll(sf::RenderWindow & window, Game & g)
 
     entityVertices.clear();
     //Arena Entities - bases, turrets, totems, waypoints
-    addStraightQuad(entityVertices,
+    addRotQuad(entityVertices,
                     sf::FloatRect(g.arenaMan.getStartPosition(g.myTeam).x, g.arenaMan.getStartPosition(g.myTeam).y, 128,128),
-                    g.assetMan.getSprite(ImageType::Base1).getTextureRect());
+                    g.assetMan.getSprite(ImageType::Base1).getTextureRect(),
+                    base1Angle);
 
     
-    addStraightQuad(entityVertices,
+    addRotQuad(entityVertices,
                 sf::FloatRect(g.arenaMan.getStartPosition(otherTeam).x, g.arenaMan.getStartPosition(otherTeam).y, 128,128),
-                g.assetMan.getSprite(ImageType::Base2).getTextureRect());
-    
+                g.assetMan.getSprite(ImageType::Base2).getTextureRect(),
+                base2Angle);
+    if (baseRotateClock.getElapsedTime().asSeconds() > 0.1){
+        base1Angle = ((int)base1Angle + 1)%360; 
+        base2Angle = ((int)base2Angle - 1)%360; 
+        baseRotateClock.restart();
+    }
     
 
 
