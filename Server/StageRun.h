@@ -18,6 +18,10 @@ namespace tg
         sf::Uint32 doLoop(Game & g);
         sf::Uint32 doLocalInput(sf::RenderWindow & window, Game & g);
     private:
+        bool firstLoop;
+        void doFirstLoop(Game & g);
+
+
         sf::Clock updateStateTimer;
         sf::Clock sendStateTimer;
         sf::Clock velocityClock;
@@ -35,6 +39,9 @@ namespace tg
         sf::Time loopTime;
 
         std::vector<sf::Vector2f> obstructionList;
+
+        sf::Uint32 blueMinionDeaths;
+        sf::Uint32 redMinionDeaths;
     };
 
 };

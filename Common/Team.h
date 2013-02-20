@@ -4,6 +4,7 @@
 #include "Player.h"
 #include "Creep.h"
 #include <vector>
+#include <list>
 
 
 namespace tg
@@ -40,6 +41,7 @@ namespace tg
     {
     public:
         Team(){
+            lastUID=0;
             players.reserve(5);
             gen.push_back(Generator());
             gen.push_back(Generator());
@@ -53,6 +55,8 @@ namespace tg
         std::vector<Generator> gen;
 
         Base base1;
+
+        sf::Uint32 lastUID;
     };
 };
 

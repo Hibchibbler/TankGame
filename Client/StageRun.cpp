@@ -226,7 +226,7 @@ sf::Uint32 StageRun::doWindowEvent(sf::RenderWindow & w,
             zoom -= 1;
 
         }
-        std::cout << "Zoom: " << zoom << std::endl;
+        //std::cout << "Zoom: " << zoom << std::endl;
     }else if (event.type == sf::Event::MouseEntered){
         hasFocus = true;
     }else if (event.type == sf::Event::MouseLeft){
@@ -325,7 +325,7 @@ sf::Uint32 StageRun::doLocalInput(sf::RenderWindow & window, Game & g)
     
 
 
-    if (inputClock.getElapsedTime().asSeconds() > 0.075f)
+    if (inputClock.getElapsedTime().asSeconds() > 0.100f)
     {
 
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::X)){
@@ -525,6 +525,19 @@ sf::Uint32 StageRun::prepareAssets(Game &g)
     //viewRect = sf::FloatRect((int)(g.arenaMan.getStartPosition(g.myTeam).x-(g.scrWidth/2.0f)),(int)(g.arenaMan.getStartPosition(g.myTeam).y-(g.scrHeight/2.0f)),g.scrWidth,g.scrHeight);
     arenaView.setCenter((int)(g.arenaMan.getStartPosition(g.myTeam).x-(g.scrWidth/2.0f)),
                         (int)(g.arenaMan.getStartPosition(g.myTeam).y-(g.scrHeight/2.0f)));
+
+    //Set all tanks to not visible...will be updated by server, whenever they become visible to local player.
+    //and local player will be made visible upon first packet.
+    for (int t = 1;t < 3;t++)
+    {
+        for (int h = 0;h < g.teamMan.teams[t].players.size();h++)
+        {
+            if (g.teamMan.teams[t].players[h].hasHost)
+            {
+                g.teamMan.teams[t].players[h].tank.visible = 0;
+            }
+        }
+    }
     return 0;
 }
 
@@ -543,8 +556,10 @@ sf::Uint32 StageRun::drawAll(sf::RenderWindow & window, Game & g)
 
     sf::Vector2f pos = thisPlayer.tank.position;
 
-    arenaView.setSize(g.scrWidth,g.scrHeight);
-    arenaView.zoom(zoom);
+    arenaView.setSize(g.scrWidth*zoom,g.scrHeight*zoom);
+    //arenaView.zoom(zoom);
+    //sf::View tv = arenaView.getSize();
+    
     window.setView(arenaView);
     
     pos = thisPlayer.tank.position;
@@ -557,13 +572,13 @@ sf::Uint32 StageRun::drawAll(sf::RenderWindow & window, Game & g)
     entityVertices.clear();
     //Arena Entities - bases, turrets, totems, waypoints
     addRotQuad(entityVertices,
-                    sf::FloatRect(g.arenaMan.getStartPosition(g.myTeam).x, g.arenaMan.getStartPosition(g.myTeam).y, 128,128),
+                    sf::FloatRect(g.arenaMan.getStartPosition(g.myTeam).x+64, g.arenaMan.getStartPosition(g.myTeam).y+64, 128,128),
                     g.assetMan.getSprite(ImageType::Base1).getTextureRect(),
                     base1Angle);
 
     
     addRotQuad(entityVertices,
-                sf::FloatRect(g.arenaMan.getStartPosition(otherTeam).x, g.arenaMan.getStartPosition(otherTeam).y, 128,128),
+                sf::FloatRect(g.arenaMan.getStartPosition(otherTeam).x+64, g.arenaMan.getStartPosition(otherTeam).y+64, 128,128),
                 g.assetMan.getSprite(ImageType::Base2).getTextureRect(),
                 base2Angle);
     if (baseRotateClock.getElapsedTime().asSeconds() > 0.1){
@@ -615,14 +630,14 @@ sf::Uint32 StageRun::drawAll(sf::RenderWindow & window, Game & g)
             }
 
             //We ain't dead, so be visible.
-            g.teamMan.teams[curTeam].players[h].tank.visible = 1;
+            //g.teamMan.teams[curTeam].players[h].tank.visible = 1;
 
             //Clear fog for my team tanks
             partFogQuick(curPos, g, fogMask2, 225);
             //partFog(curPos,g);
         }else
         {
-            g.teamMan.teams[curTeam].players[h].tank.visible = 0;
+            //g.teamMan.teams[curTeam].players[h].tank.visible = 0;
             if (g.mySlot == h )
             {
                 addRotQuad(entityVertices,
@@ -669,8 +684,8 @@ sf::Uint32 StageRun::drawAll(sf::RenderWindow & window, Game & g)
     {
         sf::Sprite creep = g.assetMan.getSprite(g.teamMan.teams[curTeam].creep[lk].creepType);
         addRotQuad(entityVertices,
-                    sf::FloatRect(g.teamMan.teams[curTeam].creep[lk].position.x, 
-                                    g.teamMan.teams[curTeam].creep[lk].position.y, 64,64),
+                    sf::FloatRect(g.teamMan.teams[curTeam].creep[lk].position.x+32, 
+                                    g.teamMan.teams[curTeam].creep[lk].position.y+32, 64,64),
                     creep.getTextureRect(),
                     g.teamMan.teams[curTeam].creep[lk].angle);
             
@@ -687,31 +702,18 @@ sf::Uint32 StageRun::drawAll(sf::RenderWindow & window, Game & g)
     {
         if (g.teamMan.teams[curTeam].players[h].hasHost &&
             g.teamMan.teams[curTeam].players[h].tank.health > 0 &&
-            g.teamMan.teams[curTeam].players[h].tank.visible == 1)
+            g.teamMan.teams[curTeam].players[h].tank.visible)
         {
-            /*int index;
-            g.arenaMan.posToIndex(g.teamMan.teams[curTeam].players[h].tank.position, index);
-            if (index >= 0 && index < g.arenaMan.getMapHorizTileNum()*g.arenaMan.getMapVertTileNum() && !g.arenaMan.getTile(index).fog)
-            {*/
-                //Draw their tanks
-                addRotQuad(entityVertices,
-                                sf::FloatRect(g.teamMan.teams[curTeam].players[h].tank.position.x, g.teamMan.teams[curTeam].players[h].tank.position.y, 73,116),
-                                blueBody.getTextureRect(),
-                                g.teamMan.teams[curTeam].players[h].tank.bodyAngle-STD_ROTATE_OFFSET);
+            //Draw their tanks
+            addRotQuad(entityVertices,
+                            sf::FloatRect(g.teamMan.teams[curTeam].players[h].tank.position.x, g.teamMan.teams[curTeam].players[h].tank.position.y, 73,116),
+                            blueBody.getTextureRect(),
+                            g.teamMan.teams[curTeam].players[h].tank.bodyAngle-STD_ROTATE_OFFSET);
 
-                addRotQuad(entityVertices,
-                                sf::FloatRect(g.teamMan.teams[curTeam].players[h].tank.position.x, g.teamMan.teams[curTeam].players[h].tank.position.y, 47,176),
-                                blueTurret.getTextureRect(),
-                                g.teamMan.teams[curTeam].players[h].tank.turretAngle-STD_ROTATE_OFFSET);
-                //g.teamMan.teams[curTeam].players[h].tank.visible = true;
-            //}else{
-            //    //Opponent tank is under fog - don't draw
-            //    g.teamMan.teams[curTeam].players[h].tank.visible = false;
-            //}
-        //}else
-        //{
-        //    //Opponent tank has no health - don't draw
-        //    g.teamMan.teams[curTeam].players[h].tank.visible = false;
+            addRotQuad(entityVertices,
+                            sf::FloatRect(g.teamMan.teams[curTeam].players[h].tank.position.x, g.teamMan.teams[curTeam].players[h].tank.position.y, 47,176),
+                            blueTurret.getTextureRect(),
+                            g.teamMan.teams[curTeam].players[h].tank.turretAngle-STD_ROTATE_OFFSET);
         }
     }
 
@@ -722,35 +724,24 @@ sf::Uint32 StageRun::drawAll(sf::RenderWindow & window, Game & g)
         {
             for (int k = 0;k < g.teamMan.teams[curTeam].players[h].prjctls.size();k++)
             {
-                /*int index;
-                g.arenaMan.posToIndex(g.teamMan.teams[curTeam].players[h].prjctls[k].position, index);
-                if (index >= 0 && index < g.arenaMan.getMapHorizTileNum()*g.arenaMan.getMapVertTileNum() && !g.arenaMan.getTile(index).fog)
-                {*/
-                    addRotQuad(entityVertices,
-                                sf::FloatRect(g.teamMan.teams[curTeam].players[h].prjctls[k].position.x, g.teamMan.teams[curTeam].players[h].prjctls[k].position.y, 32,32),
-                                p.getTextureRect(),
-                                0.0f);
-                /*}*/
+                addRotQuad(entityVertices,
+                            sf::FloatRect(g.teamMan.teams[curTeam].players[h].prjctls[k].position.x, g.teamMan.teams[curTeam].players[h].prjctls[k].position.y, 32,32),
+                            p.getTextureRect(),
+                            0.0f);
             }
         }
     }
     
     //Their Creep
-    //creep = g.assetMan.getSprite( (curTeam==1 ? ImageType::Minion1 : ImageType::Minion2));
     for (int lk = 0;lk < g.teamMan.teams[curTeam].creep.size();lk++)
     {
         sf::Sprite creep = g.assetMan.getSprite(g.teamMan.teams[curTeam].creep[lk].creepType);
-        /*int index;
-        g.arenaMan.posToIndex(g.teamMan.teams[curTeam].creep[lk].position, index);
-        if (index >= 0 && index < g.arenaMan.getMapHorizTileNum()*g.arenaMan.getMapVertTileNum() && !g.arenaMan.getTile(index).fog)
-        {*/
 
-            addRotQuad(entityVertices,
-                    sf::FloatRect(g.teamMan.teams[curTeam].creep[lk].position.x, 
-                                    g.teamMan.teams[curTeam].creep[lk].position.y, 64,64),
-                    creep.getTextureRect(),
-                    g.teamMan.teams[curTeam].creep[lk].angle);
-        /*}*/
+        addRotQuad(entityVertices,
+                sf::FloatRect(g.teamMan.teams[curTeam].creep[lk].position.x+32, 
+                                g.teamMan.teams[curTeam].creep[lk].position.y+32, 64,64),
+                creep.getTextureRect(),
+                g.teamMan.teams[curTeam].creep[lk].angle);
     }
 
     //Draw Generator lasers    
@@ -761,19 +752,12 @@ sf::Uint32 StageRun::drawAll(sf::RenderWindow & window, Game & g)
     {
         for (int gi = 0;gi < g.arenaMan.getGeneratorCount(y);gi++)
         {
-            for (int k = 0;k < g.teamMan.teams[y].gen[gi].prjctls.size();k++)
+            for (int k = g.teamMan.teams[y].gen[gi].prjctls.size()-1;k > 0 ;k--)
             {
-               /* float dx,dy;
-                dx = g.teamMan.teams[y].gen[gi].prjctls[k].position.x - pos.x;
-                dy = g.teamMan.teams[y].gen[gi].prjctls[k].position.y - pos.y;
-
-                if (sqrt(dx*dx+dy*dy) < visionRange)
-                {*/
-                    addRotQuad(entityVertices,
-                                sf::FloatRect(g.teamMan.teams[y].gen[gi].prjctls[k].position.x, g.teamMan.teams[y].gen[gi].prjctls[k].position.y, 64,64),
-                                prjctl.getTextureRect(),
-                                g.teamMan.teams[y].gen[gi].prjctls[k].angle);
-               /* }*/
+                addRotQuad(entityVertices,
+                            sf::FloatRect(g.teamMan.teams[y].gen[gi].prjctls[k].position.x+0, g.teamMan.teams[y].gen[gi].prjctls[k].position.y+0, 64,64),
+                            prjctl.getTextureRect(),
+                            g.teamMan.teams[y].gen[gi].prjctls[k].angle);
             }
         }
     }
@@ -782,14 +766,14 @@ sf::Uint32 StageRun::drawAll(sf::RenderWindow & window, Game & g)
     for (int gc = 0;gc < g.arenaMan.getGeneratorCount(myTeam);gc++)
     {
         addRotQuad(entityVertices,
-                        sf::FloatRect(g.arenaMan.getGeneratorPosition(myTeam, gc).x, g.arenaMan.getGeneratorPosition(myTeam,gc).y, 128,128),
+                        sf::FloatRect(g.arenaMan.getGeneratorPosition(myTeam, gc).x+64, g.arenaMan.getGeneratorPosition(myTeam,gc).y+64, 128,128),
                         g.assetMan.getSprite(ImageType::Generator1).getTextureRect(),
                         g.teamMan.teams[myTeam].gen[gc].lastFiringAngle+180.0f);
     }
     for (int gc = 0;gc < g.arenaMan.getGeneratorCount(otherTeam);gc++)
     {
         addRotQuad(entityVertices,
-                        sf::FloatRect(g.arenaMan.getGeneratorPosition(otherTeam, gc).x, g.arenaMan.getGeneratorPosition(otherTeam,gc).y, 128,128),
+                        sf::FloatRect(g.arenaMan.getGeneratorPosition(otherTeam, gc).x+64, g.arenaMan.getGeneratorPosition(otherTeam,gc).y+64, 128,128),
                         g.assetMan.getSprite(ImageType::Generator2).getTextureRect(),
                         g.teamMan.teams[otherTeam].gen[gc].lastFiringAngle+180.0f);
     }
@@ -800,17 +784,10 @@ sf::Uint32 StageRun::drawAll(sf::RenderWindow & window, Game & g)
     {
         for (int k = 0;k < g.teamMan.teams[y].base1.prjctls.size();k++)
         {
-            /*float dx,dy;
-            dx = g.teamMan.teams[y].base1.prjctls[k].position.x - pos.x;
-            dy = g.teamMan.teams[y].base1.prjctls[k].position.y - pos.y;
-
-            if (sqrt(dx*dx+dy*dy) < visionRange)
-            {*/
-                addRotQuad(entityVertices,
-                            sf::FloatRect(g.teamMan.teams[y].base1.prjctls[k].position.x, g.teamMan.teams[y].base1.prjctls[k].position.y, 64,64),
-                            prjctl.getTextureRect(),
-                            g.teamMan.teams[y].base1.prjctls[k].angle);
-          /*  }*/
+            addRotQuad(entityVertices,
+                        sf::FloatRect(g.teamMan.teams[y].base1.prjctls[k].position.x, g.teamMan.teams[y].base1.prjctls[k].position.y, 64,64),
+                        prjctl.getTextureRect(),
+                        g.teamMan.teams[y].base1.prjctls[k].angle);
         }
     }
     
@@ -975,7 +952,8 @@ sf::Uint32 StageRun::drawAll(sf::RenderWindow & window, Game & g)
         for (int h = 0;h < g.teamMan.teams[y].players.size();h++)
         {
             if (g.teamMan.teams[y].players[h].hasHost &&
-                g.teamMan.teams[y].players[h].tank.visible==1)
+                g.teamMan.teams[y].players[h].tank.health > 0 &&
+                g.teamMan.teams[y].players[h].tank.visible == 1)
             {
                 std::stringstream ss;
                 if (g.myTeam == y && g.mySlot == h)

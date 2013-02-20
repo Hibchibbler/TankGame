@@ -129,7 +129,7 @@ bool isTankCollision(sf::Vector2f projPos, sf::Vector2f projSize, std::vector<Pl
         if (players[ti].hasHost)
         {
             Tank & tank = players[ti].tank;
-            sf::FloatRect fr(tank.position,sf::Vector2f(64,64));
+            sf::FloatRect fr(tank.position,sf::Vector2f(75,75));
             sf::FloatRect pr(projPos, projSize);
             if (fr.intersects(pr))
             {
@@ -150,11 +150,11 @@ bool isCreepCollision(sf::Vector2f projPos, sf::Vector2f projSize, std::vector<C
     for (int ci = 0;ci < creeps.size();ci++)
     {
         Creep & creep = creeps[ci];
-        sf::Vector2f tempPos;
-        tempPos = creep.position;
-        tempPos.x += 32;
-        tempPos.y += 32;
-        sf::FloatRect fr(tempPos,sf::Vector2f(64,64));
+        //sf::Vector2f tempPos;
+        //tempPos = creep.position;
+        ////tempPos.x += 32;
+        ////tempPos.y += 32;
+        sf::FloatRect fr(creep.position,sf::Vector2f(64,64));
         sf::FloatRect pr(projPos, projSize);
         if (fr.intersects(pr))
         {
@@ -283,18 +283,18 @@ sf::Uint32 updateVelocity(Player & player, std::vector<sf::Vector2f> & obstructi
         player.tank.bodyAngle = 0;
     }
 
-    //TODO: HACK: hardcoded arena boundaries based on debug map and a 128px wide floor tile.
-    if (player.tank.position.x + player.tank.velocity.x *  frameTime.asSeconds()*PIXELS_PER_SECOND < (128) ||
-        player.tank.position.x + player.tank.velocity.x *  frameTime.asSeconds()*PIXELS_PER_SECOND > (59*128) )
-    {
-        player.tank.velocity.x = 0;
-    }
+    ////TODO: HACK: hardcoded arena boundaries based on debug map and a 128px wide floor tile.
+    //if (player.tank.position.x + player.tank.velocity.x *  frameTime.asSeconds()*PIXELS_PER_SECOND < (128) ||
+    //    player.tank.position.x + player.tank.velocity.x *  frameTime.asSeconds()*PIXELS_PER_SECOND > (59*128) )
+    //{
+    //    player.tank.velocity.x = 0;
+    //}
 
-    if (player.tank.position.y + player.tank.velocity.y *  frameTime.asSeconds()*PIXELS_PER_SECOND < (128) ||
-        player.tank.position.y + player.tank.velocity.y *  frameTime.asSeconds()*PIXELS_PER_SECOND > (59*128) )
-    {
-        player.tank.velocity.y = 0;
-    }
+    //if (player.tank.position.y + player.tank.velocity.y *  frameTime.asSeconds()*PIXELS_PER_SECOND < (128) ||
+    //    player.tank.position.y + player.tank.velocity.y *  frameTime.asSeconds()*PIXELS_PER_SECOND > (59*128) )
+    //{
+    //    player.tank.velocity.y = 0;
+    //}
 
     player.tank.turningBody = TurnAction::Idle;
     player.tank.accelerating = AccelerateAction::Idle;

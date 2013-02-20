@@ -174,6 +174,8 @@ namespace TankMapEditor2
             {
                 map.Load(ofd.FileName);
                 Init(map.width, map.height);
+                txtWidth.Text = map.width.ToString();
+                txtHeight.Text = map.height.ToString();
                 DrawMap(true);
             }
         }
@@ -319,6 +321,7 @@ namespace TankMapEditor2
                 int a = comboBoxCellTypes.SelectedIndex;
                 current = GetBrush(a);
                 txtAttributes.Text = current.attributes;
+                cbIncrementAttr.Checked = false;
             }
         }
 

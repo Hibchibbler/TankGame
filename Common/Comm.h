@@ -26,15 +26,19 @@ namespace tg
     public:
         Connection(){
             IsConnected = false;
-            Socket = NULL;
+            error = false;
+            /*Socket = NULL;
+            SendMutex = NULL;
+            RecvMutex = NULL;*/
         }
         bool IsConnected;
-        sf::TcpSocket* Socket;
+        bool error;
+        sf::TcpSocket Socket;
         sf::Uint32 connectionId;
         std::queue<sf::Packet> RecvQueue;
         std::queue<sf::Packet> SendQueue;
-        sf::Mutex* SendMutex;
-        sf::Mutex* RecvMutex;
+        sf::Mutex SendMutex;
+        sf::Mutex RecvMutex;
     private:
 
     };
@@ -72,10 +76,16 @@ namespace tg
         CommLooperThread(tg::Comm::CommLooper,this){
             NotDone = true;
             TotalConnectCount=0;
+            
+
+            for (int c = 0;c <15;c++)
+            {
+                Established.push_back(std::shared_ptr<tg::Connection>(new tg::Connection()));
+            }
         }
         ~Comm(){
         }
-        void AddConnection(tg::Connection &client);
+        void AddConnection(std::shared_ptr<tg::Connection> client);
         bool StartClient(sf::Uint16 port, sf::IpAddress addr);
         bool StartServer(sf::Uint16 port);
         void Stop();
@@ -99,9 +109,10 @@ namespace tg
         sf::Mutex EstablishedMutex;
         sf::Mutex SystemMutex;
 
-        std::vector<tg::Connection> Listening;
-        std::vector<tg::Connection> Connecting;
-        std::vector<tg::Connection> Established;
+        std::vector<std::shared_ptr<tg::Connection> > Listening;
+        std::vector<std::shared_ptr<tg::Connection> > Connecting;
+        std::vector<std::shared_ptr<tg::Connection> > Established;
+        
         std::queue<sf::Packet> SystemPackets;
 
         bool NotDone;

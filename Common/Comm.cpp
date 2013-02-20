@@ -20,7 +20,7 @@ bool tg::Comm::StartClient(sf::Uint16 port, sf::IpAddress addr)
     this->port = port;
 
     NotDone = true;
-    AddConnection(tg::Connection());
+    AddConnection(std::shared_ptr<tg::Connection>(new tg::Connection()));
     std::cout << "StartClient" << std::endl;
     CommLooperThread.launch();
     return true;
@@ -44,21 +44,7 @@ void tg::Comm::Stop()
     CommLooperThread.wait();
 
     Listener.close();
-    std::vector<tg::Connection>::iterator i = Connecting.begin();
-    for (;i != Connecting.end();i++){
-        delete i->Socket;
-        delete i->SendMutex;
-        delete i->RecvMutex;
-    }
     Connecting.clear();
-
-    i = Established.begin();
-    for (;i != Established.end();i++){
-        i->Socket->disconnect();
-        delete i->Socket;
-        delete i->SendMutex;
-        delete i->RecvMutex;
-    }
     Established.clear();
 }
 
@@ -66,12 +52,14 @@ void tg::Comm::Stop()
 void tg::Comm::Send(tg::CommEvent &gpacket)
 {
     //EstablishedMutex.lock();
-    std::vector<tg::Connection>::iterator i = Established.begin();
+    std::vector<std::shared_ptr<tg::Connection> >::iterator i = Established.begin();
     for (;i != Established.end();i++){
-        if (gpacket.connectionId == -1 || gpacket.connectionId == i->connectionId){
-            i->SendMutex->lock();
-            i->SendQueue.push(gpacket.packet);
-            i->SendMutex->unlock();
+        if (!(*i)->IsConnected)
+            continue;
+        if (gpacket.connectionId == -1 || gpacket.connectionId == (*i)->connectionId){
+            (*i)->SendMutex.lock();
+            (*i)->SendQueue.push(gpacket.packet);
+            (*i)->SendMutex.unlock();
         }
     }
     //EstablishedMutex.unlock();
@@ -82,7 +70,7 @@ bool tg::Comm::Receive(tg::CommEvent &gpacket)
 {
     //first check for system messages
     SystemMutex.lock();
-    while (!SystemPackets.empty()){
+    if(!SystemPackets.empty()){
         gpacket.connectionId = -1;
         gpacket.packet = SystemPackets.front();
         SystemPackets.pop();
@@ -94,72 +82,61 @@ bool tg::Comm::Receive(tg::CommEvent &gpacket)
 
     //now check for data
     //EstablishedMutex.lock();
-    std::vector<tg::Connection>::iterator i = Established.begin();
+    std::vector<std::shared_ptr<tg::Connection> >::iterator i = Established.begin();
     for (;i != Established.end();i++){
-        i->RecvMutex->lock();
-        if (!i->RecvQueue.empty()){
-            gpacket.packet = i->RecvQueue.front();
-            gpacket.connectionId = i->connectionId;
-            i->RecvQueue.pop();
-            i->RecvMutex->unlock();
-            //EstablishedMutex.unlock();
-            return true;
+        if ((*i)->IsConnected && !(*i)->error)
+        {
+            (*i)->RecvMutex.lock();
+            if (!(*i)->RecvQueue.empty()){
+                gpacket.packet = (*i)->RecvQueue.front();
+                gpacket.connectionId = (*i)->connectionId;
+                (*i)->RecvQueue.pop();
+                (*i)->RecvMutex.unlock();
+                //EstablishedMutex.unlock();
+                return true;
+            }
         }
-        i->RecvMutex->unlock();
+        (*i)->RecvMutex.unlock();
     }
     //EstablishedMutex.unlock();
     return false;
 }
 
 //AddConnection adds to the Connecting connections container
-void tg::Comm::AddConnection(tg::Connection &client)
+void tg::Comm::AddConnection(std::shared_ptr<tg::Connection> client)
 {
     ConnectingMutex.lock();
     Connecting.push_back(client);
     ConnectingMutex.unlock();
 }
 
-
-//std::vector<sf::Uint32> tg::Comm::getConnectionIds()
-//{
-//    EstablishedMutex.lock();
-//    std::vector<sf::Uint32> cids;
-//    for (auto i = Established.begin();i != Established.end();i++){
-//        cids.push_back(i->connectionId);
-//    }
-//    EstablishedMutex.unlock();
-//    return cids;
-//}
-
 void tg::Comm::CommLooper(Comm* comm)
 {
     std::cout << "Looper" << std::endl;
     
     while (comm->NotDone){
-
+        std::vector<std::shared_ptr<tg::Connection> >::iterator i;
         // Check for, and process, any new connection requests
         //TODO: spawn a thread for each willing listener; 
         //      the listener mutex and selector stuff is WIP.
         //      
-        if (comm->ListeningSelector.wait(sf::microseconds(3))){
-            tg::Connection newConnection;
-            newConnection.Socket = new sf::TcpSocket();
-            newConnection.SendMutex = new sf::Mutex();
-            newConnection.RecvMutex = new sf::Mutex();
+        if (comm->ListeningSelector.wait(sf::microseconds(1))){
+
+            int newConnIndex = 0;
+            for (newConnIndex = 0 ; newConnIndex < 15;newConnIndex++)
+            {
+                if (!comm->Established[newConnIndex]->IsConnected)
+                    break;
+            }
             
-            sf::Socket::Status s= comm->Listener.accept(*newConnection.Socket);
+            sf::Socket::Status s= comm->Listener.accept(comm->Established[newConnIndex]->Socket);
             if (s == sf::Socket::Done){
-                std::cout << "Client connected from " << newConnection.Socket->getRemoteAddress().toString() << std::endl;
+                std::cout << "Client connected from " << comm->Established[newConnIndex]->Socket.getRemoteAddress().toString() << std::endl;
 
                 // Add the client to our internal list, and add the client to the selector
-                newConnection.connectionId = comm->TotalConnectCount;
-                newConnection.IsConnected = true;
-                
-                comm->EstablishedMutex.lock();
-                comm->Established.push_back(newConnection);
-                comm->EstablishedSelector.add(*newConnection.Socket);
-                comm->EstablishedMutex.unlock();
-
+                comm->Established[newConnIndex]->connectionId = comm->TotalConnectCount;
+                comm->Established[newConnIndex]->IsConnected = true;
+                comm->EstablishedSelector.add(comm->Established[newConnIndex]->Socket);
                 comm->SendSystem(CommEventType::Acceptance, comm->TotalConnectCount, std::string("accepted Connection Request"));
                 comm->TotalConnectCount++;
             }else{
@@ -170,136 +147,100 @@ void tg::Comm::CommLooper(Comm* comm)
     
         //Check for and process and new outgoing connections
         comm->ConnectingMutex.lock();
-        {
-            std::vector<tg::Connection>::iterator i;
-            i = comm->Connecting.begin();
-            while (i != comm->Connecting.end()){
-                if (i->Socket == NULL){
-                    i->Socket = new sf::TcpSocket();
-                    i->SendMutex = new sf::Mutex();
-                    i->RecvMutex = new sf::Mutex();
-                }
-                sf::Socket::Status s = i->Socket->connect(comm->address, comm->port);//"192.168.2.110"
-                if (s == sf::Socket::Done){
+        i = comm->Connecting.begin();
+        while (i != comm->Connecting.end()){
+            sf::Socket::Status s = (*i)->Socket.connect(comm->address, comm->port);//"192.168.2.110"
+            if (s == sf::Socket::Done){
                 
-                    i->connectionId = comm->TotalConnectCount;
-                    i->IsConnected = true;
+                (*i)->connectionId = comm->TotalConnectCount;
+                (*i)->IsConnected = true;
                     
-                    comm->EstablishedSelector.add(*i->Socket);
-                    comm->EstablishedMutex.lock();
-                    comm->Established.push_back(*i);//this must run before the QueueSystemMessage
-                    comm->EstablishedMutex.unlock();
-                    
-                    comm->SendSystem(CommEventType::Acceptance,comm->TotalConnectCount, std::string("Connected"));
-                    comm->TotalConnectCount++;
-                    //The last thing we do.
-                    i = comm->Connecting.erase(i);
-                }else {
-                    if(s == sf::Socket::Disconnected)
-                        comm->SendSystem(CommEventType::Disconnect, comm->TotalConnectCount, std::string("Failed to Connect to Remote Host"));
-                    else
-                        comm->SendSystem(CommEventType::Error,  comm->TotalConnectCount, std::string("Error on connect"));
-                    //we'd better remove the socket from the selector
-                    delete i->Socket;
-                    delete i->SendMutex;
-                    delete i->RecvMutex;
-                    i = comm->Connecting.erase(i);
-                }
 
-            }
-            
-        }comm->ConnectingMutex.unlock();
-        
-
-        //comm->EstablishedMutex.lock();
-        {
-            //Retrieve new incoming data
-            if ( comm->EstablishedSelector.wait(sf::milliseconds(3)) ) {
-                //Some data is available
-                std::vector<tg::Connection>::iterator i;
-                i = comm->Established.begin();
-                
-                while(i != comm->Established.end()){
-                    bool ok=true;
-                    if (comm->EstablishedSelector.isReady(*i->Socket)){
-                        //Client Ready to receive
-
-                        tg::CommEvent RecvPacket;
-                        RecvPacket.connectionId = i->connectionId;
-                        sf::Socket::Status s;
-                        s = i->Socket->receive(RecvPacket.packet);
-                        if (s == sf::Socket::Done){
-               
-                            i->RecvMutex->lock();
-                            i->RecvQueue.push(RecvPacket.packet);
-                            i->RecvMutex->unlock();
-                            ok=true;
-                        }else{
-                        
-                            if(s == sf::Socket::Disconnected)
-                                comm->SendSystem(CommEventType::Disconnect, RecvPacket.connectionId, std::string("Client disconnected"));
-                            else
-                                comm->SendSystem(CommEventType::Error, RecvPacket.connectionId, std::string("Error on receive"));
-                            //we'd better remove the socket from the selector
-                            comm->EstablishedSelector.remove(*i->Socket);
-                            
-                            //i = comm->Established.erase(i);
-                            ok=false;
-                        }
-                    }
-                    if (ok){
-                        i++;
-                    }else{
-                        delete i->Socket;
-                        delete i->SendMutex;
-                        delete i->RecvMutex;
-                        i = comm->Established.erase(i);
-                    }
-
-                }
-            }
-            //Send any pending outgoing data
-        }//comm->EstablishedMutex.unlock();
-
-        sf::sleep(sf::milliseconds(0));
-
-        //comm->EstablishedMutex.lock();
-        {
-            std::vector<tg::Connection>::iterator connection =  comm->Established.begin();
-            for (;connection != comm->Established.end();){
-                bool ok = true;
-                connection->SendMutex->lock();
-                while(!connection->SendQueue.empty()){
-                    sf::Packet packet = connection->SendQueue.front();
-                    connection->SendQueue.pop();
-                    sf::Socket::Status s = connection->Socket->send(packet);
-                    if (s == sf::Socket::Done){
-                        comm->SendSystem(CommEventType::Sent, connection->connectionId, std::string("Sent"));
-                        ok = true;
-                    }else{
-                        if (s == sf::Socket::Disconnected)
-                            comm->SendSystem(CommEventType::Disconnect, connection->connectionId, std::string("Client disconnected"));
-                        else
-                            comm->SendSystem(CommEventType::Error, connection->connectionId, std::string("Error on Send"));
-
-                        //we'd better remove the socket from the selector
-                        comm->EstablishedSelector.remove(*connection->Socket);
-                        ok = false;
+                for (int y = 0 ; y < 15;y++)
+                {
+                    if (!comm->Established[y]->IsConnected)
+                    {
+                        comm->Established[y] = (*i);
                         break;
                     }
                 }
-                connection->SendMutex->unlock();
-                if (ok)
-                    connection++;
-                else{
-                    delete connection->Socket;
-                    delete connection->SendMutex;
-                    delete connection->RecvMutex;
-                    connection = comm->Established.erase(connection);
+                comm->EstablishedSelector.add((*i)->Socket);
+                comm->SendSystem(CommEventType::Acceptance,comm->TotalConnectCount, std::string("Connected"));
+                comm->TotalConnectCount++;
+                //The last thing we do.
+                i = comm->Connecting.erase(i);
+            }else {
+                if(s == sf::Socket::Disconnected)
+                    comm->SendSystem(CommEventType::Disconnect, comm->TotalConnectCount, std::string("Failed to Connect to Remote Host"));
+                else
+                    comm->SendSystem(CommEventType::Error,  comm->TotalConnectCount, std::string("Error on connect"));
+                //we'd better remove the socket from the selector
+                i = comm->Connecting.erase(i);
+            }
+        }
+        comm->ConnectingMutex.unlock();
+
+
+        //Retrieve new incoming data
+        if ( comm->EstablishedSelector.wait(sf::microseconds(1)) ) {
+            //Some data is available
+            i = comm->Established.begin();
+            for (;i != comm->Established.end();i++){
+                if (!(*i)->IsConnected || (*i)->error)
+                    continue;
+                if (comm->EstablishedSelector.isReady((*i)->Socket)){
+                    //Client Ready to receive
+
+                    tg::CommEvent RecvPacket;
+                    RecvPacket.connectionId = (*i)->connectionId;
+                    sf::Socket::Status s;
+                    s = (*i)->Socket.receive(RecvPacket.packet);
+                    if (s == sf::Socket::Done){
+               
+                        (*i)->RecvMutex.lock();
+                        (*i)->RecvQueue.push(RecvPacket.packet);
+                        (*i)->RecvMutex.unlock();
+
+                    }else{
+                        
+                        if(s == sf::Socket::Disconnected)
+                            comm->SendSystem(CommEventType::Disconnect, RecvPacket.connectionId, std::string("Client disconnected"));
+                        else
+                            comm->SendSystem(CommEventType::Error, RecvPacket.connectionId, std::string("Error on receive"));
+                        (*i)->error = true;
+                        //we'd better remove the socket from the selector
+                        comm->EstablishedSelector.remove((*i)->Socket);
+                    }
                 }
             }
         }
-        //comm->EstablishedMutex.unlock();
+
+        //Send any pending outgoing data
+        i =  comm->Established.begin();
+        for (;i != comm->Established.end();i++){
+            if (!(*i)->IsConnected || (*i)->error)
+                continue;
+            (*i)->SendMutex.lock();
+            while(!(*i)->SendQueue.empty()){
+                //std::cout << (*i)->SendQueue.size() << std::endl;
+                sf::Packet packet = (*i)->SendQueue.front();
+                (*i)->SendQueue.pop();
+                sf::Socket::Status s = (*i)->Socket.send(packet);
+                if (s == sf::Socket::Done){
+                    //comm->SendSystem(CommEventType::Sent, (*i)->connectionId, std::string("Sent"));
+                }else{
+                    if (s == sf::Socket::Disconnected)
+                        comm->SendSystem(CommEventType::Disconnect, (*i)->connectionId, std::string("Client disconnected"));
+                    else
+                        comm->SendSystem(CommEventType::Error, (*i)->connectionId, std::string("Error on Send"));
+                    (*i)->error = true;
+                    //we'd better remove the socket from the selector
+                    comm->EstablishedSelector.remove((*i)->Socket);
+                    break;
+                }
+            }
+            (*i)->SendMutex.unlock();
+        }
 
         //Sleep little baby
         sf::sleep(sf::milliseconds(0));

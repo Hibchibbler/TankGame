@@ -83,18 +83,34 @@ sf::Sprite & AssetManager::getSprite(int i)
     case ImageType::Ghost:
         spriteSheet.sprite.setTextureRect(sf::IntRect(256,382,64,64));
         return spriteSheet.sprite;
-    case ImageType::Minion2:
-        spriteSheet.sprite.setTextureRect(sf::IntRect(257,314,64,64));
-        return spriteSheet.sprite;
+
+
     case ImageType::Minion1:
-        spriteSheet.sprite.setTextureRect(sf::IntRect(320,314,64,64));
+        spriteSheet.sprite.setTextureRect(sf::IntRect(512,1,64,64));
+        return spriteSheet.sprite;
+    case ImageType::Minion2:
+        spriteSheet.sprite.setTextureRect(sf::IntRect(578,1,64,64));
         return spriteSheet.sprite;
     case ImageType::Minion3:
-        spriteSheet.sprite.setTextureRect(sf::IntRect(446,371,64,64));
+        spriteSheet.sprite.setTextureRect(sf::IntRect(644,1,69,69));
         return spriteSheet.sprite;
     case ImageType::Minion4:
-        spriteSheet.sprite.setTextureRect(sf::IntRect(390,317,64,64));
+        spriteSheet.sprite.setTextureRect(sf::IntRect(715,1,69,69));
         return spriteSheet.sprite;
+
+    case ImageType::Minion5:
+        spriteSheet.sprite.setTextureRect(sf::IntRect(512,67,64,64));
+        return spriteSheet.sprite;    
+    case ImageType::Minion6:
+        spriteSheet.sprite.setTextureRect(sf::IntRect(578,67,64,64));
+        return spriteSheet.sprite;
+    case ImageType::Minion7:
+        spriteSheet.sprite.setTextureRect(sf::IntRect(644,72,69,69));
+        return spriteSheet.sprite;
+    case ImageType::Minion8:
+        spriteSheet.sprite.setTextureRect(sf::IntRect(715,72,69,69));
+        return spriteSheet.sprite;
+
     case ImageType::Dash1:
         spriteSheet.sprite.setTextureRect(sf::IntRect(0,447,512,65));
         return spriteSheet.sprite;

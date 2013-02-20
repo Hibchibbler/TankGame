@@ -186,7 +186,8 @@ int Messages::sendStateOfUnion(Comm & comm, TeamManager & teamMan, ArenaManager 
                             }
 
                             if (visible == 0 && isVisible(teamMan.teams[aTeam].players[aSlot].tank.position, 
-                                                          teamMan.teams[curTeam].players[curSlot].tank.position, 1100))
+                                                          teamMan.teams[curTeam].players[curSlot].tank.position, 1100) &&
+                                                teamMan.teams[curTeam].players[curSlot].tank.health > 0)
                             {
                                 visible = 1;
                             }
@@ -195,7 +196,7 @@ int Messages::sendStateOfUnion(Comm & comm, TeamManager & teamMan, ArenaManager 
                                 for (auto c =0 ;c <teamMan.teams[curTeam].creep.size();c++)
                                 {
                                     if (isVisible(teamMan.teams[aTeam].players[aSlot].tank.position,
-                                                  teamMan.teams[curTeam].creep[c].position,700))
+                                                  teamMan.teams[curTeam].creep[c].position,550))
                                     {
                                         visible = 1;
                                         break;
@@ -213,7 +214,8 @@ int Messages::sendStateOfUnion(Comm & comm, TeamManager & teamMan, ArenaManager 
                                 }
                                 
                                 if (visible == 0 && isVisible(teamMan.teams[aTeam].players[aSlot].prjctls[p].position, 
-                                                              teamMan.teams[curTeam].players[curSlot].tank.position, 1100))
+                                                              teamMan.teams[curTeam].players[curSlot].tank.position, 1100) &&
+                                                    teamMan.teams[curTeam].players[curSlot].tank.health > 0)
                                 {
                                     visible = 1;
                                 }
@@ -223,13 +225,12 @@ int Messages::sendStateOfUnion(Comm & comm, TeamManager & teamMan, ArenaManager 
                                     for (auto c =0 ;c <teamMan.teams[curTeam].creep.size();c++)
                                     {
                                         if (isVisible(teamMan.teams[aTeam].players[aSlot].prjctls[p].position,
-                                                      teamMan.teams[curTeam].creep[c].position,700))
+                                                      teamMan.teams[curTeam].creep[c].position,550))
                                         {
                                             visible = 1;
                                             break;
                                         }
                                     }
-
                                 }
 
                                 if (visible == 1)
@@ -282,7 +283,8 @@ int Messages::sendStateOfUnion(Comm & comm, TeamManager & teamMan, ArenaManager 
                         }
 
                         if (visible == 0 && isVisible(teamMan.teams[aTeam].creep[y].position, 
-                                                          teamMan.teams[curTeam].players[curSlot].tank.position, 1100))
+                                                          teamMan.teams[curTeam].players[curSlot].tank.position, 1100) &&
+                                                      teamMan.teams[curTeam].players[curSlot].tank.health > 0)    
                         {
                             visible = 1;
                         }
@@ -292,7 +294,7 @@ int Messages::sendStateOfUnion(Comm & comm, TeamManager & teamMan, ArenaManager 
                             for (auto c =0 ;c <teamMan.teams[curTeam].creep.size();c++)
                             {
                                 if (isVisible(teamMan.teams[aTeam].creep[y].position,
-                                              teamMan.teams[curTeam].creep[c].position,700))
+                                              teamMan.teams[curTeam].creep[c].position,550))
                                 {
                                     visible = 1;
                                     break;
@@ -339,20 +341,19 @@ int Messages::sendStateOfUnion(Comm & comm, TeamManager & teamMan, ArenaManager 
 
                 //Explosions
                 event.packet << teamMan.explosions.size();
-                for (auto ex = teamMan.explosions.begin();ex != teamMan.explosions.end();)
+                for (auto ex = teamMan.explosions.begin();ex != teamMan.explosions.end();ex++)
                 {
                     event.packet << ex->position.x;
                     event.packet << ex->position.y;
                     event.packet << ex->type;
-
-                    //Remove it from server, after it is sends it..
-                    ex = teamMan.explosions.erase(ex);
                 }
    
                 comm.Send(event);
             }
         }
     }
+    //All players got explosions, clear the list..
+    teamMan.explosions.clear();
     return 0;
 }
 

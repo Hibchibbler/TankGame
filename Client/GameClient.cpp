@@ -121,7 +121,7 @@ sf::Uint32 GameClient::doInit()
     curStage->doInit(*this);
 
     assetMan.load();
-    arenaMan.load("Assets\\small.map");
+    arenaMan.load("Assets\\37x25.map");
     teamMan.load();
 
 
@@ -135,7 +135,7 @@ sf::Uint32 GameClient::doInit()
 
     window.create(sf::VideoMode(800,600,32), "Mega Blaster Tank Game - Resolution Choosing Mode");
     
-    window.setVerticalSyncEnabled(true);
+    //window.setVerticalSyncEnabled(true);
     
     //window.setFramerateLimit(30);
     return 0;
